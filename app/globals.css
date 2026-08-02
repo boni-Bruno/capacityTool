@@ -175,36 +175,32 @@ input:disabled { background: var(--gray-bg); color: var(--muted); }
   gap: 12px;
 }
 
-/* ---- grade anual turno x mes ---- */
+/* ---- matriz mes x turno ---- */
 .grade-rolagem { overflow-x: auto; }
-.grade { width: auto; min-width: 100%; }
-.grade th, .grade td { padding: 7px 6px; }
-.grade-mes { text-align: center; font-size: 12px; }
-.grade-turno { white-space: nowrap; font-size: 13px; }
-.grade-cel { text-align: center; }
 
-.pino {
-  display: inline-block; width: 15px; height: 15px; border-radius: 4px;
-  vertical-align: middle;
+.matriz { width: auto; min-width: 100%; }
+.matriz th, .matriz td { padding: 6px 8px; }
+.matriz tbody tr:hover td { background: #f7f6f3; }
+
+.matriz-turno { text-align: center; }
+.matriz-mes { white-space: nowrap; }
+.matriz-cel { text-align: center; }
+
+/* Cabeçalhos de linha e coluna marcam a faixa inteira de uma vez. */
+.matriz-cab {
+  border: none; background: none; padding: 2px 4px; cursor: pointer;
+  font: inherit; font-size: 13px; color: var(--muted); border-radius: 5px;
 }
-.pino-cheio   { background: var(--teal-fg); }
-.pino-parcial { background: var(--teal-bg); border: 1px solid var(--teal-fg); }
-.pino-vazio   { background: var(--gray-bg); border: 1px solid var(--border); }
+.matriz-cab:hover { background: var(--gray-bg); color: var(--text); }
 
-.legenda {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  font-size: 12px; color: var(--muted); margin: 12px 0 0;
+.matriz-flag { position: relative; display: inline-flex; align-items: center; }
+.matriz-flag input {
+  width: 17px; height: 17px; cursor: pointer; accent-color: var(--accent);
 }
-.legenda .pino { width: 11px; height: 11px; margin-left: 10px; }
-.legenda .pino:first-child { margin-left: 0; }
-
-.campo-inline { display: flex; flex-direction: column; gap: 2px; }
-.campo-inline .campo-rot { font-size: 11px; }
-
-.btn-perigo {
-  background: #a32d2d; border-color: #a32d2d; color: #fff;
+.matriz-parcial {
+  position: absolute; right: -11px; top: -3px;
+  font-size: 11px; color: #8a4b0d; cursor: help;
 }
-.btn-perigo:hover:not(:disabled) { background: #8c2626; }
 
 .acoes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 td.acoes { white-space: nowrap; }

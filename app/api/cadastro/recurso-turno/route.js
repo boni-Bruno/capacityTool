@@ -1,46 +1,33 @@
 import { NextResponse } from 'next/server';
-import { abrirVigencia, encerrarVigencia } from '../../../../lib/vigencia';
+import { definirTurnosDoAno } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeSessao } from '../../../../lib/sessao';
 
-// Vínculo recurso x turno. escala_id fica quase sempre null: na empresa o
-// rodízio é das pessoas e resolvido por calendário, não por escala.
+// Salva a matriz mês x turno de um recurso, um ano por vez.
+//
+// Corpo: { recurso_id, ano, marcados: { turnoId: [meses] } }
+//
+// O ano inteiro vem da tela em cada salvamento — turno que não aparece em
+// `marcados` fica desligado no ano. O que está configurado fora do ano é
+// preservado pelo recomporFaixas().
 export async function POST(req) {
   try {
     await exigeSessao();
     const b = await req.json();
-    const r = await abrirVigencia(
-      'recurso_turno',
-      { recurso_id: Number(b.recurso_id), turno_id: Number(b.turno_id) },
-      b.a_partir_de,
-      {
-        escala_id: b.escala_id ? Number(b.escala_id) : null,
-        escala_data_referencia: b.escala_data_referencia || null,
-      },
-      // Fim opcional: turno que roda só num período do ano, em vez de
-      // ficar ligado até alguém lembrar de encerrar.
-      b.ate || null
-    );
+
+    const recursoId = Number(b.recurso_id);
+    const ano = Number(b.ano);
+    if (!Number.isInteger(recursoId) || recursoId <= 0) {
+      throw new Error('Recurso inválido.');
+    }
+    if (!Number.isInteger(ano) || ano < 2000 || ano > 2100) {
+      throw new Error('Ano inválido.');
+    }
+
+    const r = await definirTurnosDoAno(recursoId, ano, b.marcados ?? {});
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {
     console.error('[recurso-turno POST]', e);
-    return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },
-                             { status: e.status ?? 400 });
-  }
-}
-
-export async function DELETE(req) {
-  try {
-    await exigeSessao();
-    const b = await req.json();
-    const r = await encerrarVigencia(
-      'recurso_turno',
-      { recurso_id: Number(b.recurso_id), turno_id: Number(b.turno_id) },
-      b.em
-    );
-    return NextResponse.json({ ok: true, ...r });
-  } catch (e) {
-    console.error('[recurso-turno DELETE]', e);
     return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },
                              { status: e.status ?? 400 });
   }

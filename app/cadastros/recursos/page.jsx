@@ -1,17 +1,11 @@
 import { Suspense } from 'react';
 import { areas } from '../../../lib/db';
-import {
-  recursos, turnosDoRecurso, gradeAnualTurnos, vigenciasDoRecurso,
-} from '../../../lib/cadastro';
+import { recursos, matrizTurnosDoAno } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
-import EditorTurnos from './editor';
-import Grade from './grade';
-import Vigencias from './vigencias';
+import Matriz from './matriz';
 
 export const dynamic = 'force-dynamic';
-
-const hoje = () => new Date().toISOString().slice(0, 10);
 
 export default async function Page({ searchParams }) {
   let listaAreas;
@@ -26,7 +20,6 @@ export default async function Page({ searchParams }) {
   }
 
   const areaId = Number(searchParams?.area ?? listaAreas[0].id);
-  const data = searchParams?.data ?? hoje();
   const anoAtual = new Date().getFullYear();
   const ano = Number(searchParams?.ano ?? anoAtual);
   const listaRecursos = await recursos(areaId);
@@ -50,16 +43,29 @@ export default async function Page({ searchParams }) {
     );
   }
 
-  // O recurso escolhido pode não pertencer à área selecionada — acontece ao
-  // trocar de área com um recurso já na URL. Cai no primeiro da lista.
+  // O recurso da URL pode não ser da área selecionada — acontece ao trocar de
+  // área com um recurso já escolhido. Cai no primeiro da lista.
   const pedido = Number(searchParams?.recurso);
   const recurso = listaRecursos.find((r) => r.id === pedido) ?? listaRecursos[0];
 
-  const [lista, grade, faixas] = await Promise.all([
-    turnosDoRecurso(recurso.id, data),
-    gradeAnualTurnos(recurso.id, ano),
-    vigenciasDoRecurso(recurso.id),
-  ]);
+  const celulas = await matrizTurnosDoAno(recurso.id, ano);
+
+  // A consulta vem esparramada em turno x mês; aqui vira a lista de turnos
+  // (colunas) e dois mapas indexados por "turnoId:mes".
+  const turnos = [];
+  const inicial = {};
+  const parciais = {};
+  for (const c of celulas) {
+    const turnoId = Number(c.turno_id);
+    if (!turnos.some((t) => t.turno_id === turnoId)) {
+      turnos.push({ turno_id: turnoId, codigo: c.codigo, nome: c.nome });
+    }
+    const dias = Number(c.dias_cobertos);
+    const total = Number(c.dias_mes);
+    const k = `${turnoId}:${Number(c.mes)}`;
+    inicial[k] = dias > 0;
+    parciais[k] = dias > 0 && dias < total;
+  }
 
   campos.push(
     {
@@ -67,12 +73,11 @@ export default async function Page({ searchParams }) {
       opcoes: listaRecursos.map((r) => ({ valor: String(r.id), rotulo: r.nome })),
     },
     {
-      nome: 'ano', rotulo: 'Ano da grade', tipo: 'select', valor: String(ano),
+      nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
       opcoes: [anoAtual - 1, anoAtual, anoAtual + 1].map((a) => ({
         valor: String(a), rotulo: String(a),
       })),
     },
-    { nome: 'data', rotulo: 'Vigente em', tipo: 'data', valor: data },
   );
 
   return (
@@ -84,28 +89,26 @@ export default async function Page({ searchParams }) {
 
       <div className="painel">
         <h2>
-          {recurso.nome}
+          {recurso.nome} · {ano}
           <span className="selo padrao" style={{ marginLeft: 8 }}>
             {recurso.tipo_recurso.toLowerCase()}
           </span>
         </h2>
-        <Grade linhas={grade} ano={ano} />
+
+        <Matriz
+          recursoId={recurso.id}
+          ano={ano}
+          turnos={turnos}
+          inicial={inicial}
+          parciais={parciais}
+        />
+
         <p className="rodape">
-          Ligar o turno aqui é necessário, mas não basta: o motor também exige
+          Marcar o turno aqui é necessário, mas não basta: o motor também exige
           que o calendário do recurso tenha esse turno naquele dia da semana
           (<code>calendario_regra</code>). Sem isso a linha sai com planejada
           zero. Regra de calendário ainda não tem tela — hoje é no banco.
         </p>
-      </div>
-
-      <div className="painel">
-        <h2>Ligar e desligar · o que vale em {data}</h2>
-        <EditorTurnos recursoId={recurso.id} turnos={lista} data={data} />
-      </div>
-
-      <div className="painel">
-        <h2>Histórico de vigências</h2>
-        <Vigencias linhas={faixas} />
       </div>
     </>
   );
