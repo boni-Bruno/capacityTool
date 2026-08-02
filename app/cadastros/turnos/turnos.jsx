@@ -21,10 +21,24 @@ export default function Turnos({ lista, plantas, selecionado }) {
   const [erro, setErro] = useState(null);
   const [aviso, setAviso] = useState(null);
 
-  function escolher(id) {
+  function urlDoTurno(id) {
     const p = new URLSearchParams(params.toString());
     p.set('turno', id);
-    router.push('?' + p.toString());
+    return '?' + p.toString();
+  }
+
+  // Trocar de turno já existente: navegação normal, a lista não mudou.
+  function escolher(id) {
+    router.push(urlDoTurno(id));
+  }
+
+  // Depois de criar é diferente: a lista mudou e o turno novo precisa aparecer.
+  // O Router Cache do Next é indexado por segmento de rota e não inclui os
+  // searchParams na chave, então um push para "?turno=novo" pode servir o
+  // segmento em cache — sem o registro recém-criado. Navegação de verdade
+  // recarrega do servidor e não tem como errar.
+  function abrirNovo(id) {
+    window.location.assign(urlDoTurno(id));
   }
 
   async function chamar(metodo, corpo, aoTerminar) {
@@ -54,7 +68,7 @@ export default function Turnos({ lista, plantas, selecionado }) {
   const criar = () =>
     chamar('POST', novo, (j) => {
       setNovo({ codigo: '', nome: '', planta_id: novo.planta_id });
-      escolher(j.id);   // já abre o turno novo para cadastrar os dias
+      abrirNovo(j.id);   // já abre o turno novo para cadastrar os dias
     });
 
   const salvarNome = (id) =>
