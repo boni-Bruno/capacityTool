@@ -1,0 +1,161 @@
+# Contexto do projeto — Ferramenta de Capacidade
+
+Leia antes de alterar qualquer coisa. As decisões abaixo foram tomadas
+deliberadamente; várias parecem erro à primeira vista e não são.
+
+---
+
+## O que é
+
+Ferramenta de planejamento de capacidade fabril, substituindo uma solução
+em Excel + Qlik Sense que ficou impossível de manter.
+
+Calcula três medidas:
+
+| Medida | Grão | Fórmula |
+|---|---|---|
+| Instalada | recurso × dia | `1440 × qt_recursos × equivalencia` |
+| Planejada | recurso × dia × turno | `minutos × qt_recursos × equivalencia − paradas` |
+| Disponível | recurso × dia × turno | `planejada × oee` |
+
+Moeda base: **minutos inteiros**. Horas só na exibição.
+
+Stack: PostgreSQL (Neon) + Next.js (App Router, JavaScript) + Vercel.
+
+---
+
+## Decisões que NÃO devem ser "corrigidas"
+
+### A instalada tem tabela própria, no grão dia
+
+`capacidade_instalada_dia` é separada de `capacidade_fato` de propósito.
+
+A instalada é o teto físico: 24 h por dia, todo dia, inclusive domingo e
+feriado. No domingo **não existe linha de turno** — e é justamente ali que
+o teto precisa aparecer. Se ela morasse na tabela de turno, sumiria nos
+dias sem turno e o rateio dividiria por zero.
+
+No sistema Qlik antigo ela era calculada em dia inteiro e repetida em cada
+barra de turno, inflando o total. Esse era o bug.
+
+**Nenhuma parada abate a instalada.** Preventiva não reduz teto físico.
+
+### O horário do turno mora em `turno_horario`, não em `turno`
+
+A tabela `turno` guarda só nome. O horário fica em `turno_horario`, uma
+linha por dia da semana, com vigência. Assim sábado pode ter horário
+diferente sem criar turno novo, e sem dois lugares guardando a mesma coisa.
+
+Turno sem linha para um dia da semana = não roda nesse dia.
+
+O trigger `fn_turno_horario_calcula` preenche `min_bruto` e
+`cruza_meia_noite` sozinho. O front manda só início e fim.
+
+**Cuidado com virada de meia-noite:** somar interval a um campo `time` no
+Postgres dá a volta no relógio (`time '05:00' + 24h` = `'05:00'`). O
+trigger converte para `interval` antes de somar. Já houve um bug aqui: o
+3º turno virou −1020 minutos e sumiu do cálculo em silêncio. Existe um
+check que agora recusa duração fora de 1..1440.
+
+### Intervalo de refeição depende do tipo de recurso
+
+`recurso.tipo_recurso` é MAQUINA ou PESSOA. `turno_intervalo.aplica_a`
+diz de quem o intervalo desconta. Máquina não para para almoçar; posto de
+pessoa para. A view `vw_turno_minutos` resolve isso.
+
+### "Rodízio" é calendário, não escala
+
+Na empresa, os recursos em rodízio nunca param — há gente com folgas em
+dias diferentes cobrindo. O rodízio é das pessoas, invisível para a
+capacidade da máquina.
+
+Então existem dois calendários: `RODIZIO` (dom-sáb) e `PADRAO` (seg-sáb).
+As tabelas `escala` e `escala_dia` existem mas ficam **sem uso** —
+só serviriam se a folga andasse fora do ciclo semanal.
+
+### Feriado é cadastrado uma vez, por planta
+
+`excecao` guarda a data uma vez. `excecao_calendario` marca quais
+calendários observam. Um feriado que a linha de rodízio trabalha e a linha
+padrão para é **uma data com uma marcação**, não duas datas em dois lugares.
+
+O mesmo mecanismo cobre parada coletiva e dia extraordinário
+(`dia_util = true` habilita um dia normalmente parado).
+
+### Setup não é parada planejada
+
+Já está embutido no OEE. Descontar de novo seria contar a mesma perda duas
+vezes. Paradas planejadas são preventiva, preditiva, férias coletivas,
+obra e inventário.
+
+Regra de fronteira: parada da **planta inteira** vai em `excecao`; parada
+de **recursos específicos** vai em `parada`.
+
+### Tudo tem vigência, com exclusion constraint
+
+`recurso_parametro`, `recurso_turno`, `recurso_oee`, `recurso_calendario`
+e `turno_horario` usam `daterange` com `exclude using gist`. O banco recusa
+fisicamente duas linhas valendo ao mesmo tempo.
+
+Isso é o que garante que o número do passado nunca mude sozinho. Editar um
+registro no lugar de fechar a vigência e abrir outra **reescreve o
+histórico** — nunca faça isso na UI.
+
+### Cada cálculo cria uma rodada nova
+
+`fn_calcular_capacidade` insere em `calculo_execucao` e nunca sobrescreve
+rodadas anteriores. A tela mostra a mais recente com status OK. Isso
+permite comparar antes/depois de uma mudança de parâmetro.
+
+A fato guarda os parâmetros usados (`qt_recursos`, `equivalencia`,
+`oee_pct`, `dia_util`), não só o resultado — o número fica auditável sem
+reconstruir o cadastro daquela data.
+
+---
+
+## Princípio geral
+
+O sistema Qlik antigo falhava em silêncio: `Alt(...,0)` devolvia zero
+quando algo dava errado, e ninguém percebia. **Aqui, falha tem que dar
+erro na cara.** Prefira constraint que recusa a default que mascara.
+
+---
+
+## Estado atual
+
+Funcionando:
+- Banco completo, motor de cálculo validado
+- Tela única de leitura: filtros de área e ano, três indicadores, gráfico
+  mensal, tabela por recurso com clique para filtrar
+- Botão de recalcular
+- Senha única compartilhada via `APP_SENHA` (middleware)
+
+Ainda não existe:
+- Telas de cadastro (turnos do recurso, paradas, OEE, recursos)
+- Sistema de usuários com perfis e escopo por área
+- Multi-empresa com Row Level Security
+- Conversão de minutos para peças/metros/ton/rob
+
+Pendências de dado, não de código:
+- OEE real por recurso (parte ainda com valor chutado)
+- Feriados municipais de Blumenau e estaduais de SC
+- Definir quais feriados o calendário RODIZIO observa
+- Comparar um mês fechado contra o Qlik antes de divulgar números
+
+---
+
+## Ordem sugerida das próximas telas
+
+1. Turnos do recurso — é o que o gestor de área mexe
+2. Paradas planejadas — muda toda semana
+3. Recursos, calendários, OEE — mudam pouco
+4. Login com usuários e perfis — quando a segunda pessoa entrar
+
+Perfis já desenhados (ainda não implementados):
+- **Gestor total**: escreve tudo, publica baseline, gere usuários
+- **Gestor de área**: altera turnos da área dele; paradas ficam sujeitas a
+  aprovação; enxerga só a própria área
+- **Analista**: só leitura e exportação
+
+A regra de "o que exige aprovação" deve ser **configuração no banco**, não
+código — política muda, deploy não deveria.
