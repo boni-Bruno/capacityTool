@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
 } from 'recharts';
+import { emHoras, horas, horasEMinutos } from '../../lib/formato';
 
 // Um gráfico para os três níveis do drill-down: mês, dia e turno.
 //
@@ -17,12 +18,15 @@ import {
 export default function Grafico({ dados, mostrarInstalada = true }) {
   const router = useRouter();
 
+  // Os dados chegam em minutos, que é a moeda base do projeto. A barra precisa
+  // de número, então vira hora fracionária aqui — sem arredondar, para o
+  // tooltip poder reconstruir o minuto exato.
   const d = dados.map((x) => ({
     rotulo: x.rotulo,
     href: x.href ?? null,
-    ...(mostrarInstalada ? { Instalada: Number(x.instalada ?? 0) } : {}),
-    Planejada: Number(x.planejada ?? 0),
-    Disponível: Number(x.disponivel ?? 0),
+    ...(mostrarInstalada ? { Instalada: emHoras(x.instalada) } : {}),
+    Planejada: emHoras(x.planejada),
+    Disponível: emHoras(x.disponivel),
   }));
 
   const clicavel = d.some((x) => x.href);
@@ -44,10 +48,16 @@ export default function Grafico({ dados, mostrarInstalada = true }) {
         <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: '#6b6a65' }}
                axisLine={{ stroke: '#d8d6cf' }} tickLine={false} />
         <YAxis tick={{ fontSize: 12, fill: '#6b6a65' }} axisLine={false} tickLine={false}
-               tickFormatter={(v) => (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)} />
+               width={54}
+               tickFormatter={(v) =>
+                 v >= 1000
+                   ? (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k h'
+                   : horas(v * 60) + ' h'} />
         <Tooltip
           cursor={{ fill: 'rgba(42,120,214,.06)' }}
-          formatter={(v, n) => [Number(v).toLocaleString('pt-BR') + ' h', n]}
+          formatter={(v, n) => [
+            `${horas(v * 60)} h  (${horasEMinutos(v * 60)})`, n,
+          ]}
           contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e3dd' }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
         {mostrarInstalada && (

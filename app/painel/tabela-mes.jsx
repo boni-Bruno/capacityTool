@@ -4,6 +4,8 @@
 //
 // Serve aos três níveis do drill-down. No de turno `mostrarInstalada` é falso:
 // instalada é grão dia e não se reparte por turno.
+import { horas, horasEMinutos } from '../../lib/formato';
+
 export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'Horas' }) {
   const linhas = [
     ...(mostrarInstalada
@@ -13,8 +15,9 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'H
     { rot: 'Disponível', campo: 'disponivel', classe: 'med-disp' },
   ];
 
+  // Os valores chegam em minutos; a célula mostra hora com uma casa e o
+  // title traz a leitura exata em hora e minuto.
   const total = (campo) => dados.reduce((s, x) => s + Number(x[campo] ?? 0), 0);
-  const fmt = (v) => Number(v ?? 0).toLocaleString('pt-BR');
 
   if (!dados.length) return null;
 
@@ -23,7 +26,7 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'H
       <table className="tabela-mes">
         <thead>
           <tr>
-            <th>{unidade}</th>
+            <th>{unidade} (h)</th>
             {dados.map((x) => <th key={x.rotulo} className="num">{x.rotulo}</th>)}
             <th className="num">total</th>
           </tr>
@@ -36,9 +39,13 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'H
                 {l.rot}
               </td>
               {dados.map((x) => (
-                <td key={x.rotulo} className="num">{fmt(x[l.campo])}</td>
+                <td key={x.rotulo} className="num" title={horasEMinutos(x[l.campo])}>
+                  {horas(x[l.campo])}
+                </td>
               ))}
-              <td className="num forte">{fmt(total(l.campo))}</td>
+              <td className="num forte" title={horasEMinutos(total(l.campo))}>
+                {horas(total(l.campo))}
+              </td>
             </tr>
           ))}
         </tbody>

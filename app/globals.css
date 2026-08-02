@@ -22,7 +22,14 @@ body {
   line-height: 1.5;
 }
 
-.wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+/* Largura total da janela. Esta é uma ferramenta de tabela e gráfico — coluna
+   estreita centralizada sobrava margem dos dois lados e apertava justamente a
+   grade de 12 meses e a matriz mês x turno, que é onde a largura serve. */
+.wrap { width: 100%; margin: 0; padding: 1.5rem 2rem 4rem; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 1.25rem 1rem 3rem; }
+}
 
 .topo {
   display: flex; align-items: center; justify-content: space-between;
@@ -37,9 +44,11 @@ select {
   background: var(--card); color: var(--text); cursor: pointer;
 }
 
+/* Painéis vão até a borda; os indicadores não. Três cartões esticados por uma
+   tela ultrawide viram três números perdidos no meio do nada. */
 .kpis {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px; margin-bottom: 1.5rem;
+  gap: 12px; margin-bottom: 1.5rem; max-width: 860px;
 }
 .kpi {
   background: var(--card); border: 1px solid var(--border);
@@ -155,9 +164,11 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   letter-spacing: .08em; color: var(--muted); margin: 0 0 .75rem;
 }
 
+/* auto-fill em vez de auto-fit: o cartão para de crescer quando sobra espaço,
+   em vez de esticar até o fim da tela. */
 .menu-grade {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px; margin-bottom: 2rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 340px));
+  gap: 12px; margin-bottom: 2rem; justify-content: start;
 }
 
 .menu-card {

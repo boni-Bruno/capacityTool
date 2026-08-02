@@ -4,6 +4,7 @@ import {
   ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
 } from '../../lib/db';
 import { MESES, DIAS } from '../../lib/dias';
+import { horas, horasEMinutos } from '../../lib/formato';
 import Grafico from './grafico';
 import Filtros from './filtros';
 import TabelaMes from './tabela-mes';
@@ -25,8 +26,6 @@ function dozeMeses(linhas) {
   });
 }
 
-// Os totais já chegam em horas — as consultas dividem por 60 no banco.
-const hs = (v) => Number(v ?? 0).toLocaleString('pt-BR');
 const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).toFixed(1) + '%');
 
 export default async function Page({ searchParams }) {
@@ -186,19 +185,25 @@ export default async function Page({ searchParams }) {
       <div className="kpis">
         <div className="kpi">
           <p className="rot">Instalada</p>
-          <p className="val">{hs(tot.instalada)} h</p>
+          <p className="val" title={horasEMinutos(tot.instalada)}>
+            {horas(tot.instalada)} h
+          </p>
           <p className="sub">
             {mostrarInstalada ? 'teto físico 24/7' : 'teto do dia (não se reparte por turno)'}
           </p>
         </div>
         <div className="kpi">
           <p className="rot">Planejada</p>
-          <p className="val">{hs(tot.planejada)} h</p>
+          <p className="val" title={horasEMinutos(tot.planejada)}>
+            {horas(tot.planejada)} h
+          </p>
           <p className="sub">{pct(tot.planejada, tot.instalada)} do teto</p>
         </div>
         <div className="kpi">
           <p className="rot">Disponível</p>
-          <p className="val">{hs(tot.disponivel)} h</p>
+          <p className="val" title={horasEMinutos(tot.disponivel)}>
+            {horas(tot.disponivel)} h
+          </p>
           <p className="sub">{oeeMedio ? `com OEE ${oeeMedio}%` : '—'}</p>
         </div>
       </div>
@@ -243,7 +248,7 @@ export default async function Page({ searchParams }) {
 
         <p className="rodape">
           {dataISO
-            ? `Teto do dia: ${hs(teto)} h. Instalada é grão dia — 24 h por dia, ` +
+            ? `Teto do dia: ${horas(teto)} h. Instalada é grão dia — 24 h por dia, ` +
               `todo dia — e por isso não aparece repartida entre os turnos.`
             : 'Clique numa coluna para descer um nível.'}
         </p>
@@ -261,9 +266,9 @@ export default async function Page({ searchParams }) {
             <tr>
               <th>Recurso</th>
               <th>Calendário</th>
-              <th className="num">Instalada</th>
-              <th className="num">Planejada</th>
-              <th className="num">Disponível</th>
+              <th className="num">Instalada (h)</th>
+              <th className="num">Planejada (h)</th>
+              <th className="num">Disponível (h)</th>
               <th className="num">% do teto</th>
             </tr>
           </thead>
@@ -281,9 +286,9 @@ export default async function Page({ searchParams }) {
                     {r.calendario ? r.calendario.toLowerCase() : '—'}
                   </span>
                 </td>
-                <td className="num">{Number(r.instalada).toLocaleString('pt-BR')}</td>
-                <td className="num">{Number(r.planejada).toLocaleString('pt-BR')}</td>
-                <td className="num">{Number(r.disponivel).toLocaleString('pt-BR')}</td>
+                <td className="num" title={horasEMinutos(r.instalada)}>{horas(r.instalada)}</td>
+                <td className="num" title={horasEMinutos(r.planejada)}>{horas(r.planejada)}</td>
+                <td className="num" title={horasEMinutos(r.disponivel)}>{horas(r.disponivel)}</td>
                 <td className="num">
                   {r.pct_teto === null ? '—' : Number(r.pct_teto).toFixed(1) + '%'}
                 </td>
