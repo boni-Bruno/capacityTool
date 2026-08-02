@@ -1,138 +1,71 @@
-import { Suspense } from 'react';
-import { ultimaExecucao, areas, totais, porMes, porRecurso } from '../lib/db';
-import Grafico from './grafico';
-import Filtros from './filtros';
-import NavTopo from './nav-topo';
+import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
+// Menu. É a porta de entrada do app, então não consulta o banco de propósito:
+// se a DATABASE_URL cair, esta tela ainda abre e explica onde ir. Uma landing
+// page que depende do banco falha justamente na hora em que você precisa dela.
 
-const h = (min) => Math.round(Number(min) / 60).toLocaleString('pt-BR');
-const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).toFixed(1) + '%');
+const CONSULTAR = [
+  {
+    href: '/painel',
+    titulo: 'Painel de capacidade',
+    texto: 'Instalada, planejada e disponível por área e ano. Gráfico mensal, ' +
+           'tabela por recurso e o botão de recalcular.',
+  },
+];
 
-export default async function Page({ searchParams }) {
-  let exec, listaAreas;
+const CADASTRAR = [
+  {
+    href: '/cadastros/recursos',
+    titulo: 'Turnos do recurso',
+    texto: 'Quais turnos cada recurso roda, e a partir de quando. É o que o ' +
+           'gestor de área mexe com mais frequência.',
+  },
+  {
+    href: '/cadastros/turnos',
+    titulo: 'Horários dos turnos',
+    texto: 'Início e fim de cada turno por dia da semana, com os intervalos e ' +
+           'os minutos que o motor de fato enxerga.',
+  },
+  {
+    href: '/cadastros/paradas',
+    titulo: 'Paradas planejadas',
+    texto: 'Preventiva, preditiva, férias coletivas, obra e inventário. ' +
+           'Muda toda semana.',
+  },
+];
 
-  try {
-    exec = await ultimaExecucao();
-    listaAreas = await areas();
-  } catch (e) {
-    return (
-      <div className="wrap">
-        <NavTopo />
-        <h1 className="titulo">Capacidade</h1>
-        <div className="aviso">
-          <strong>Não consegui falar com o banco.</strong>
-          <p style={{ margin: '8px 0 0' }}>
-            Confira se a variável <code>DATABASE_URL</code> está preenchida
-            com a connection string do Neon.
-          </p>
-        </div>
-      </div>
-    );
-  }
+function Cartao({ href, titulo, texto }) {
+  return (
+    <Link href={href} className="menu-card">
+      <span className="menu-card-tit">{titulo}</span>
+      <span className="menu-card-txt">{texto}</span>
+    </Link>
+  );
+}
 
-  if (!exec) {
-    return (
-      <div className="wrap">
-        <NavTopo />
-        <h1 className="titulo">Capacidade</h1>
-        <div className="aviso">
-          <strong>Nenhum cálculo foi rodado ainda.</strong>
-          <p style={{ margin: '8px 0 0' }}>
-            No SQL Editor do Neon, rode <code>fn_calcular_capacidade(...)</code> e
-            recarregue esta página.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const anoExec = new Date(exec.periodo_inicio).getFullYear();
-  const ano = Number(searchParams?.ano ?? anoExec);
-  const areaId = Number(searchParams?.area ?? listaAreas[0]?.id);
-  const anos = [anoExec - 1, anoExec, anoExec + 1];
-
-  const [tot, meses, recursos] = await Promise.all([
-    totais(exec.id, areaId, ano),
-    porMes(exec.id, areaId, ano),
-    porRecurso(exec.id, areaId, ano),
-  ]);
-
-  const oeeMedio = Number(tot.min_planejada) === 0
-    ? null
-    : (Number(tot.min_disponivel) * 100 / Number(tot.min_planejada)).toFixed(0);
-
+export default function Menu() {
   return (
     <div className="wrap">
-      <NavTopo />
-      <div className="topo">
-        <h1 className="titulo">Capacidade</h1>
-        <Suspense>
-          <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos} />
-        </Suspense>
+      <header className="menu-topo">
+        <h1 className="menu-marca">Capacidade</h1>
+        <p className="menu-sub">Planejamento de capacidade fabril</p>
+      </header>
+
+      <h2 className="menu-secao">Consultar</h2>
+      <div className="menu-grade">
+        {CONSULTAR.map((c) => <Cartao key={c.href} {...c} />)}
       </div>
 
-      <div className="kpis">
-        <div className="kpi">
-          <p className="rot">Instalada</p>
-          <p className="val">{h(tot.min_instalada)} h</p>
-          <p className="sub">teto físico 24/7</p>
-        </div>
-        <div className="kpi">
-          <p className="rot">Planejada</p>
-          <p className="val">{h(tot.min_planejada)} h</p>
-          <p className="sub">{pct(tot.min_planejada, tot.min_instalada)} do teto</p>
-        </div>
-        <div className="kpi">
-          <p className="rot">Disponível</p>
-          <p className="val">{h(tot.min_disponivel)} h</p>
-          <p className="sub">{oeeMedio ? `com OEE ${oeeMedio}%` : '—'}</p>
-        </div>
+      <h2 className="menu-secao">Cadastrar</h2>
+      <div className="menu-grade">
+        {CADASTRAR.map((c) => <Cartao key={c.href} {...c} />)}
       </div>
 
-      <div className="painel">
-        <h2>Mês a mês</h2>
-        <Grafico dados={meses} />
-      </div>
-
-      <div className="painel">
-        <h2>Por recurso</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Recurso</th>
-              <th>Calendário</th>
-              <th className="num">Instalada</th>
-              <th className="num">Planejada</th>
-              <th className="num">Disponível</th>
-              <th className="num">% do teto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recursos.map((r) => (
-              <tr key={r.codigo}>
-                <td>{r.nome}</td>
-                <td>
-                  <span className={'selo ' + (r.calendario === 'RODIZIO' ? 'rodizio' : 'padrao')}>
-                    {r.calendario ? r.calendario.toLowerCase() : '—'}
-                  </span>
-                </td>
-                <td className="num">{Number(r.instalada).toLocaleString('pt-BR')}</td>
-                <td className="num">{Number(r.planejada).toLocaleString('pt-BR')}</td>
-                <td className="num">{Number(r.disponivel).toLocaleString('pt-BR')}</td>
-                <td className="num">
-                  {r.pct_teto === null ? '—' : Number(r.pct_teto).toFixed(1) + '%'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <p className="rodape">
-          Rodada {exec.id} · cenário {exec.cenario} · calculada em{' '}
-          {new Date(exec.concluido_em).toLocaleString('pt-BR')}
-        </p>
-      </div>
+      <p className="rodape">
+        Ainda não têm tela: recursos, calendários, OEE e feriados — hoje são
+        cadastrados direto no banco. Usuários com perfil e escopo por área
+        entram quando a segunda pessoa começar a mexer.
+      </p>
     </div>
   );
 }
