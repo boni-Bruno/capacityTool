@@ -1,10 +1,12 @@
 import { Suspense } from 'react';
 import {
   turnosParaCadastro, plantas, horariosDoTurno, intervalosDoTurno,
+  calendariosDoTurno,
 } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Turnos from './turnos';
 import EditorHorario from './editor';
+import Calendarios from './calendarios';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,9 +32,13 @@ export default async function Page({ searchParams }) {
   const pedido = Number(searchParams?.turno);
   const turno = lista.find((t) => t.id === pedido) ?? lista[0] ?? null;
 
-  const [horarios, intervalos] = turno
-    ? await Promise.all([horariosDoTurno(turno.id), intervalosDoTurno(turno.id)])
-    : [[], []];
+  const [horarios, intervalos, calendarios] = turno
+    ? await Promise.all([
+        horariosDoTurno(turno.id),
+        intervalosDoTurno(turno.id),
+        calendariosDoTurno(turno.id),
+      ])
+    : [[], [], []];
 
   return (
     <>
@@ -62,6 +68,9 @@ export default async function Page({ searchParams }) {
               para edição, senão ela segue aberta com o horário do turno
               anterior. */}
           <EditorHorario key={turno.id} turnoId={turno.id} horarios={horarios} />
+
+          <Calendarios key={`cal:${turno.id}`} turnoId={turno.id}
+                       calendarios={calendarios} />
 
           {intervalos.length > 0 && (
             <p className="rodape">

@@ -121,10 +121,10 @@ export default async function Page({ searchParams }) {
         />
 
         <p className="rodape">
-          Marcar o turno aqui é necessário, mas não basta: o motor também exige
-          que o calendário do recurso tenha esse turno naquele dia da semana
-          (<code>calendario_regra</code>). Sem isso a linha sai com planejada
-          zero. Regra de calendário ainda não tem tela — hoje é no banco.
+          Marcar o turno aqui é necessário, mas não basta: o turno também tem
+          que rodar no calendário escolhido acima. Turno criado pela tela de
+          Turnos já entra nos calendários da planta; se algum estiver de fora, a
+          própria tela de Turnos avisa e conserta num clique.
         </p>
       </div>
     </>

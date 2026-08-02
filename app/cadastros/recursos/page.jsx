@@ -31,6 +31,8 @@ export default async function Page() {
     );
   }
 
+  const semParametro = recursos.filter((r) => r.sem_parametro);
+
   return (
     <>
       <div className="topo">
@@ -58,8 +60,28 @@ export default async function Page() {
             { nome: 'cc',         rot: 'CC',         placeholder: 'centro de custo' },
             { nome: 'ct',         rot: 'CT',         placeholder: 'centro de trabalho' },
             { nome: 'patrimonio', rot: 'Patrimônio', placeholder: 'nº do bem' },
+            // Entram direto na fórmula: instalada = 1440 x qt x equivalência.
+            { nome: 'qt_recursos',  rot: 'Qtd',          padrao: '1' },
+            { nome: 'equivalencia', rot: 'Equivalência', padrao: '1' },
           ]}
         />
+
+        {semParametro.length > 0 && (
+          <div className="aviso" style={{ marginTop: 12 }}>
+            <strong>
+              {semParametro.length === 1
+                ? 'Um recurso está sem parâmetro de capacidade'
+                : `${semParametro.length} recursos estão sem parâmetro de capacidade`}
+              : {semParametro.map((r) => r.nome).join(', ')}.
+            </strong>
+            <p style={{ margin: '6px 0 0' }}>
+              Recurso sem essa linha é invisível para o motor — nem a instalada
+              sai. Foi um defeito do cadastro, já corrigido: clique em
+              <strong> Editar</strong> e <strong>Salvar</strong> em cada um para
+              gerar o parâmetro, depois recalcule.
+            </p>
+          </div>
+        )}
         <p className="rodape">
           CC, CT e Patrimônio identificam a máquina física na controladoria. A
           trinca é única dentro da planta — dois recursos com a mesma trinca
