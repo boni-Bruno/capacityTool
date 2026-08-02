@@ -6,8 +6,9 @@ import Link from 'next/link';
 // rodapé do painel. Duas listas de link significam duas chances de uma tela
 // nova entrar em uma e faltar na outra.
 const TELAS = [
-  { href: '/painel',             rotulo: 'Painel' },
-  { href: '/cadastros/turnos',   rotulo: 'Turnos' },
+  { href: '/painel',              rotulo: 'Painel' },
+  { href: '/cadastros/estrutura', rotulo: 'Planta, área e recurso' },
+  { href: '/cadastros/turnos',    rotulo: 'Turnos' },
   { href: '/cadastros/recursos', rotulo: 'Turnos do recurso' },
   { href: '/cadastros/paradas',  rotulo: 'Paradas planejadas' },
 ];

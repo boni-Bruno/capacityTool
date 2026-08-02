@@ -15,6 +15,12 @@ const CONSULTAR = [
 
 const CADASTRAR = [
   {
+    href: '/cadastros/estrutura',
+    titulo: 'Planta, área e recurso',
+    texto: 'A estrutura física. Cada área pertence a uma planta, cada recurso ' +
+           'a uma área. CC, CT e Patrimônio identificam a máquina.',
+  },
+  {
     href: '/cadastros/recursos',
     titulo: 'Turnos do recurso',
     texto: 'Quais turnos cada recurso roda, e a partir de quando. É o que o ' +
@@ -62,9 +68,9 @@ export default function Menu() {
       </div>
 
       <p className="rodape">
-        Ainda não têm tela: recursos, calendários, OEE e feriados — hoje são
-        cadastrados direto no banco. Usuários com perfil e escopo por área
-        entram quando a segunda pessoa começar a mexer.
+        Ainda não têm tela: calendários, OEE e feriados — hoje são cadastrados
+        direto no banco. Usuários com perfil e escopo por área entram quando a
+        segunda pessoa começar a mexer.
       </p>
     </div>
   );
