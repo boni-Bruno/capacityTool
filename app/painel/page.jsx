@@ -1,6 +1,9 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { ultimaExecucao, areas, totais, porMes, porRecurso } from '../../lib/db';
+import {
+  ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
+} from '../../lib/db';
+import { MESES, DIAS } from '../../lib/dias';
 import Grafico from './grafico';
 import Filtros from './filtros';
 import TabelaMes from './tabela-mes';
@@ -22,7 +25,8 @@ function dozeMeses(linhas) {
   });
 }
 
-const h = (min) => Math.round(Number(min) / 60).toLocaleString('pt-BR');
+// Os totais já chegam em horas — as consultas dividem por 60 no banco.
+const hs = (v) => Number(v ?? 0).toLocaleString('pt-BR');
 const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).toFixed(1) + '%');
 
 export default async function Page({ searchParams }) {
@@ -93,24 +97,81 @@ export default async function Page({ searchParams }) {
   const foco = recursos.find((r) => Number(r.id) === pedido) ?? null;
   const recursoId = foco ? Number(foco.id) : null;
 
-  const [tot, linhasMes] = await Promise.all([
-    totais(exec.id, areaId, ano, recursoId),
-    porMes(exec.id, areaId, ano, recursoId),
-  ]);
-
-  const meses = dozeMeses(linhasMes);
-
-  const comRecurso = (id) => {
+  // Monta a URL preservando o que não está mudando. Passar null num campo o
+  // remove — é assim que se sobe um nível do drill-down.
+  const url = ({ recurso = recursoId, mes: m, dia: d } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
     p.set('ano', String(ano));
-    if (id !== null) p.set('recurso', String(id));
+    if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
+    if (m !== null && m !== undefined) p.set('mes', String(m));
+    if (d !== null && d !== undefined) p.set('dia', String(d));
     return '?' + p.toString();
   };
 
-  const oeeMedio = Number(tot.min_planejada) === 0
+  // Nível do drill-down: ano > mês a mês > dia a dia > turno.
+  const mesPedido = searchParams?.mes ? Number(searchParams.mes) : null;
+  const mes = mesPedido >= 1 && mesPedido <= 12 ? mesPedido : null;
+  const diaPedido = mes && searchParams?.dia ? Number(searchParams.dia) : null;
+  const diasNoMes = mes ? new Date(ano, mes, 0).getDate() : 0;
+  const dia = diaPedido >= 1 && diaPedido <= diasNoMes ? diaPedido : null;
+
+  const dd = (n) => String(n).padStart(2, '0');
+  const dataISO = mes && dia ? `${ano}-${dd(mes)}-${dd(dia)}` : null;
+
+  let dados;
+  let mostrarInstalada = true;
+  let teto = null;
+
+  if (dataISO) {
+    // Turno: sem instalada nas barras. Ela é grão dia — repetir o teto em cada
+    // turno era o que inflava o total no Qlik antigo. Vem separado, uma vez.
+    const [linhas, tetoDia] = await Promise.all([
+      porTurnoDoDia(exec.id, areaId, dataISO, recursoId),
+      tetoDoDia(exec.id, areaId, dataISO, recursoId),
+    ]);
+    dados = linhas.map((l) => ({
+      rotulo: l.codigo,
+      planejada: Number(l.planejada),
+      disponivel: Number(l.disponivel),
+    }));
+    mostrarInstalada = false;
+    teto = tetoDia;
+  } else if (mes) {
+    const linhas = await porDia(exec.id, areaId, ano, mes, recursoId);
+    dados = Array.from({ length: diasNoMes }, (_, i) => {
+      const achado = linhas.find((l) => Number(l.dia) === i + 1);
+      return {
+        rotulo: dd(i + 1),
+        instalada: Number(achado?.instalada ?? 0),
+        planejada: Number(achado?.planejada ?? 0),
+        disponivel: Number(achado?.disponivel ?? 0),
+        href: url({ mes, dia: i + 1 }),
+      };
+    });
+  } else {
+    const linhas = await porMes(exec.id, areaId, ano, recursoId);
+    dados = dozeMeses(linhas).map((m) => ({
+      rotulo: MESES[m.mes],
+      instalada: m.instalada,
+      planejada: m.planejada,
+      disponivel: m.disponivel,
+      href: url({ mes: m.mes }),
+    }));
+  }
+
+  // Os indicadores somam o que está no gráfico, então eles nunca discordam da
+  // tabela logo abaixo. No nível de turno a instalada vem do teto do dia.
+  const soma = (campo) => dados.reduce((s, x) => s + Number(x[campo] ?? 0), 0);
+  const tot = {
+    instalada: mostrarInstalada ? soma('instalada') : teto,
+    planejada: soma('planejada'),
+    disponivel: soma('disponivel'),
+  };
+
+  const oeeMedio = tot.planejada === 0
     ? null
-    : (Number(tot.min_disponivel) * 100 / Number(tot.min_planejada)).toFixed(0);
+    : (tot.disponivel * 100 / tot.planejada).toFixed(0);
 
   return (
     <div className="wrap">
@@ -125,17 +186,19 @@ export default async function Page({ searchParams }) {
       <div className="kpis">
         <div className="kpi">
           <p className="rot">Instalada</p>
-          <p className="val">{h(tot.min_instalada)} h</p>
-          <p className="sub">teto físico 24/7</p>
+          <p className="val">{hs(tot.instalada)} h</p>
+          <p className="sub">
+            {mostrarInstalada ? 'teto físico 24/7' : 'teto do dia (não se reparte por turno)'}
+          </p>
         </div>
         <div className="kpi">
           <p className="rot">Planejada</p>
-          <p className="val">{h(tot.min_planejada)} h</p>
-          <p className="sub">{pct(tot.min_planejada, tot.min_instalada)} do teto</p>
+          <p className="val">{hs(tot.planejada)} h</p>
+          <p className="sub">{pct(tot.planejada, tot.instalada)} do teto</p>
         </div>
         <div className="kpi">
           <p className="rot">Disponível</p>
-          <p className="val">{h(tot.min_disponivel)} h</p>
+          <p className="val">{hs(tot.disponivel)} h</p>
           <p className="sub">{oeeMedio ? `com OEE ${oeeMedio}%` : '—'}</p>
         </div>
       </div>
@@ -143,18 +206,47 @@ export default async function Page({ searchParams }) {
       <div className="painel">
         <div className="painel-topo">
           <h2>
-            Mês a mês
+            {dataISO ? 'Turno a turno' : mes ? 'Dia a dia' : 'Mês a mês'}
             {foco && <span className="foco"> · {foco.nome}</span>}
           </h2>
-          {foco && (
-            <Link className="btn btn-mini" href={comRecurso(null)}>
-              Ver a área toda
-            </Link>
-          )}
+
+          <nav className="trilha">
+            {/* Cada degrau volta um nível removendo o parâmetro. */}
+            <Link href={url({ mes: null, dia: null })}
+                  className={mes ? '' : 'trilha-atual'}>{ano}</Link>
+            {mes && (
+              <>
+                <span className="trilha-sep">›</span>
+                <Link href={url({ mes, dia: null })}
+                      className={dia ? '' : 'trilha-atual'}>{MESES[mes]}</Link>
+              </>
+            )}
+            {dia && (
+              <>
+                <span className="trilha-sep">›</span>
+                <span className="trilha-atual">
+                  dia {dd(dia)} ({DIAS[new Date(ano, mes - 1, dia).getDay()]})
+                </span>
+              </>
+            )}
+            {foco && (
+              <Link className="btn btn-mini" style={{ marginLeft: 10 }}
+                    href={url({ recurso: null })}>
+                Ver a área toda
+              </Link>
+            )}
+          </nav>
         </div>
 
-        <Grafico dados={meses} />
-        <TabelaMes meses={meses} />
+        <Grafico dados={dados} mostrarInstalada={mostrarInstalada} />
+        <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada} />
+
+        <p className="rodape">
+          {dataISO
+            ? `Teto do dia: ${hs(teto)} h. Instalada é grão dia — 24 h por dia, ` +
+              `todo dia — e por isso não aparece repartida entre os turnos.`
+            : 'Clique numa coluna para descer um nível.'}
+        </p>
       </div>
 
       <div className="painel">
@@ -179,7 +271,8 @@ export default async function Page({ searchParams }) {
             {recursos.map((r) => (
               <tr key={r.codigo} className={foco?.id === r.id ? 'linha-edit' : ''}>
                 <td>
-                  <Link className="link-linha" href={comRecurso(r.id)}>
+                  <Link className="link-linha"
+                        href={url({ recurso: r.id, mes: null, dia: null })}>
                     {r.nome}
                   </Link>
                 </td>
