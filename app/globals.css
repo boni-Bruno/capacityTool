@@ -304,3 +304,45 @@ td.acoes { white-space: nowrap; }
   position: absolute; right: 9px; font-size: 13px; color: var(--muted);
   pointer-events: none;
 }
+
+/* ---- ano em grades (feriados) ---- */
+.ano-grade {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+.mes-caixa { border: 1px solid var(--border); border-radius: 9px; padding: 9px 10px; }
+.mes-nome {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; margin: 0 0 7px;
+}
+.mes-grade {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+}
+.mes-cab {
+  font-size: 10px; color: var(--muted); text-align: center; padding-bottom: 2px;
+}
+
+.dia {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 1; font-size: 11px; border-radius: 4px;
+  color: var(--text); text-decoration: none; border: 1px solid transparent;
+}
+.dia:hover { border-color: var(--accent); }
+.dia-domingo { background: var(--gray-bg); color: var(--muted); }
+.dia-feriado { background: #fbe0e0; color: #8c2626; font-weight: 600; }
+.dia-parada_coletiva { background: #fde8d4; color: #8a4b0d; font-weight: 600; }
+.dia-extra { background: var(--teal-bg); color: var(--teal-fg); font-weight: 600; }
+.dia-aberto { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.pino-leg {
+  display: inline-block; width: 11px; height: 11px; border-radius: 3px;
+  margin: 0 5px 0 12px; vertical-align: middle;
+}
+.legenda .pino-leg:first-child { margin-left: 0; }
+
+.caixa {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; background: var(--card);
+}
+.caixa input { width: auto; cursor: pointer; }

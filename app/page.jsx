@@ -37,6 +37,12 @@ const ESTRUTURA = [
     texto: 'O regime de dias: em que dia da semana cada turno roda. Rodízio ' +
            'trabalha domingo, padrão não.',
   },
+  {
+    href: '/cadastros/feriados',
+    titulo: 'Feriados e exceções',
+    texto: 'O ano inteiro em doze grades. Feriado é por planta — cidades ' +
+           'diferentes, feriados diferentes.',
+  },
 ];
 
 const CADASTRAR = [
