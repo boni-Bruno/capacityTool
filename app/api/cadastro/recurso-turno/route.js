@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { definirTurnosDoAno } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeSessao } from '../../../../lib/sessao';
+import { revalidarCadastros } from '../../../../lib/revalidar';
 
 // Salva a matriz mês x turno de um recurso, um ano por vez.
 //
@@ -25,6 +26,7 @@ export async function POST(req) {
     }
 
     const r = await definirTurnosDoAno(recursoId, ano, b.marcados ?? {});
+    revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {
     console.error('[recurso-turno POST]', e);

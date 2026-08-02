@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { criarTurno, renomearTurno, excluirTurno } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeSessao } from '../../../../lib/sessao';
+import { revalidarCadastros } from '../../../../lib/revalidar';
 
 // Criar turno. Nasce sem nenhum horário: os 7 dias da semana ficam zerados
 // para o usuário cadastrar. Turno sem linha num dia = não roda nesse dia.
@@ -9,6 +10,7 @@ export async function POST(req) {
   try {
     await exigeSessao();
     const id = await criarTurno(await req.json());
+    revalidarCadastros();
     return NextResponse.json({ ok: true, id });
   } catch (e) {
     console.error('[turno POST]', e);
@@ -22,6 +24,7 @@ export async function PATCH(req) {
     await exigeSessao();
     const { id, codigo, nome } = await req.json();
     await renomearTurno(id, { codigo, nome });
+    revalidarCadastros();
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('[turno PATCH]', e);
@@ -37,6 +40,7 @@ export async function DELETE(req) {
     await exigeSessao();
     const { id } = await req.json();
     const r = await excluirTurno(id);
+    revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {
     console.error('[turno DELETE]', e);

@@ -39,8 +39,11 @@ export default function Turnos({ lista, plantas, selecionado }) {
       });
       const j = await r.json();
       if (!j.ok) throw new Error(j.erro);
-      aoTerminar?.(j);
+      // refresh antes de qualquer push: disparar os dois no mesmo instante faz
+      // a navegação vencer e o refresh se perder — a lista ficava sem o turno
+      // recém-criado mesmo com ele já gravado no banco.
       router.refresh();
+      aoTerminar?.(j);
     } catch (e) {
       setErro(e.message ?? 'Falhou');
     } finally {
