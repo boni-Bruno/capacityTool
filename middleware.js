@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
+import { token } from './lib/token';
 
 // Porteiro: roda antes de qualquer página. Sem o cookie certo, manda para /entrar.
-// A senha fica só no servidor (variável APP_SENHA); o cookie guarda um código
-// derivado dela, nunca a senha em si.
-
-export async function token(senha) {
-  const dados = new TextEncoder().encode(senha + '::capacidade');
-  const hash = await crypto.subtle.digest('SHA-256', dados);
-  return Array.from(new Uint8Array(hash))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
+//
+// Não é a única tranca: as rotas que gravam chamam exigeSessao() por conta
+// própria (lib/sessao.js), porque esta versão do Next tem bypass de middleware
+// conhecido (GHSA-f82v-jwr5-mffw).
 
 export async function middleware(req) {
   const senha = process.env.APP_SENHA;

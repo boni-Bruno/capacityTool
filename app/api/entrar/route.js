@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { token } from '../../../middleware';
+import { token } from '../../../lib/token';
 
 export async function POST(req) {
   const { senha } = await req.json();

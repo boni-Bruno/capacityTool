@@ -114,3 +114,59 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 .btn:hover:not(:disabled) { background: #f5f3ef; }
 .btn:disabled { opacity: .55; cursor: default; }
+
+.btn-primario {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.btn-primario:hover:not(:disabled) { background: #2569bd; }
+.btn-mini { height: 30px; padding: 0 10px; font-size: 13px; }
+
+/* ---- telas de cadastro ---- */
+.nav {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  font-size: 14px; margin-bottom: 1.5rem;
+  padding-bottom: .9rem; border-bottom: 1px solid var(--border);
+}
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a:hover { color: var(--accent); }
+.nav-sep { flex: 0 0 1px; height: 16px; background: var(--border); }
+
+.link-cadastros { font-size: 14px; color: var(--muted); text-decoration: none; }
+.link-cadastros:hover { color: var(--accent); }
+
+.campo { display: flex; flex-direction: column; gap: 4px; }
+.campo-rot { font-size: 12px; color: var(--muted); }
+.campo-check { flex-direction: row; align-items: center; gap: 8px; align-self: end; }
+.campo-check input { width: auto; }
+.campo-largo { grid-column: 1 / -1; }
+
+input[type="date"], input[type="time"], input[type="text"], input[type="number"] {
+  height: 36px; padding: 0 10px; font-size: 14px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); color: var(--text); font-family: inherit;
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+input:disabled { background: var(--gray-bg); color: var(--muted); }
+
+.form-grade {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.acoes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+td.acoes { white-space: nowrap; }
+
+.linha-edit td { background: #f4f8fd; }
+.linha-vazia td { color: var(--muted); }
+
+.muted { color: var(--muted); }
+.erro { font-size: 13px; color: #a32d2d; margin: 10px 0 0; }
+
+.selo.vira {
+  background: #fdf0e3; color: #8a4b0d; margin-left: 6px;
+}
+
+.ponto {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle;
+}

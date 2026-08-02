@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { ultimaExecucao, areas, totais, porMes, porRecurso } from '../lib/db';
 import Grafico from './grafico';
 import Filtros from './filtros';
@@ -127,6 +128,8 @@ export default async function Page({ searchParams }) {
         <p className="rodape">
           Rodada {exec.id} · cenário {exec.cenario} · calculada em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}
+          {' · '}
+          <Link className="link-cadastros" href="/cadastros/turnos">Cadastros</Link>
         </p>
       </div>
     </div>

@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+
+# DATABASE_URL e APP_SENHA moram aqui — nunca no repositório.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log

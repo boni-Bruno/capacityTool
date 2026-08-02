@@ -1,0 +1,63 @@
+import { Suspense } from 'react';
+import { areas } from '../../../lib/db';
+import { recursos, tiposParada, paradas, turnos } from '../../../lib/cadastro';
+import AvisoBanco from '../aviso-banco';
+import Seletor from '../seletor';
+import EditorParadas from './editor';
+
+export const dynamic = 'force-dynamic';
+
+export default async function Page({ searchParams }) {
+  let listaAreas;
+  try {
+    listaAreas = await areas();
+  } catch (e) {
+    return <AvisoBanco erro={e.message} />;
+  }
+
+  if (!listaAreas.length) {
+    return <div className="aviso"><strong>Nenhuma área cadastrada.</strong></div>;
+  }
+
+  const areaId = Number(searchParams?.area ?? listaAreas[0].id);
+  const anoAtual = new Date().getFullYear();
+  const ano = Number(searchParams?.ano ?? anoAtual);
+
+  const [listaRecursos, tipos, listaTurnos, lista] = await Promise.all([
+    recursos(areaId),
+    tiposParada(),
+    turnos(),
+    paradas(areaId, ano),
+  ]);
+
+  return (
+    <>
+      <div className="topo">
+        <h1 className="titulo">Paradas planejadas</h1>
+        <Suspense>
+          <Seletor
+            campos={[
+              {
+                nome: 'area', rotulo: 'Área', tipo: 'select', valor: String(areaId),
+                opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: a.nome })),
+              },
+              {
+                nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
+                opcoes: [anoAtual - 1, anoAtual, anoAtual + 1].map((a) => ({
+                  valor: String(a), rotulo: String(a),
+                })),
+              },
+            ]}
+          />
+        </Suspense>
+      </div>
+
+      <EditorParadas
+        recursos={listaRecursos}
+        tipos={tipos}
+        turnos={listaTurnos}
+        paradas={lista}
+      />
+    </>
+  );
+}
