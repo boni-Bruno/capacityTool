@@ -1,11 +1,16 @@
 import { Suspense } from 'react';
-import { calendariosCadastro, regrasDoCalendario } from '../../../lib/calendario';
+import {
+  calendariosCadastro, regrasDoCalendario,
+  pesosDoCalendario, diasTrabalhadosPorMes,
+} from '../../../lib/calendario';
 import { plantasParaEscolha } from '../../../lib/estrutura';
 import { DIAS } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Cadastro from '../cadastro';
 import Regras from './regras';
+import DiasUteis from './dias-uteis';
+import Importar from './importar';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,9 +50,19 @@ export default async function Page({ searchParams }) {
   // A lista já traz os dias resumidos; a tabela mostra texto, não o cru.
   const itens = lista.map((c) => ({ ...c, resumo: descreveDias(c.dias) }));
 
+  const anoAtual = new Date().getFullYear();
+  const ano = Number(searchParams?.ano ?? anoAtual);
+
   const pedido = Number(searchParams?.calendario);
   const cal = lista.find((c) => c.id === pedido) ?? lista[0] ?? null;
-  const turnos = cal ? await regrasDoCalendario(cal.id) : [];
+
+  const [turnos, pesos, contagem] = cal
+    ? await Promise.all([
+        regrasDoCalendario(cal.id),
+        pesosDoCalendario(cal.id),
+        diasTrabalhadosPorMes(cal.id, ano),
+      ])
+    : [[], [], []];
 
   const inicial = {};
   for (const t of turnos) {
@@ -60,17 +75,23 @@ export default async function Page({ searchParams }) {
     <>
       <div className="topo">
         <h1 className="titulo">Calendários</h1>
-        {lista.length > 1 && (
-          <Suspense>
-            <Seletor campos={[{
+        <Suspense>
+          <Seletor campos={[
+            ...(lista.length > 1 ? [{
               nome: 'calendario', rotulo: 'Editando', tipo: 'select',
               valor: String(cal?.id ?? ''),
               opcoes: lista.map((c) => ({
                 valor: String(c.id), rotulo: `${c.planta} · ${c.nome}`,
               })),
-            }]} />
-          </Suspense>
-        )}
+            }] : []),
+            {
+              nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
+              opcoes: [anoAtual - 1, anoAtual, anoAtual + 1, anoAtual + 2].map((a) => ({
+                valor: String(a), rotulo: String(a),
+              })),
+            },
+          ]} />
+        </Suspense>
       </div>
 
       <div className="painel">
@@ -94,13 +115,28 @@ export default async function Page({ searchParams }) {
           ficaria sem regime e sumiria do cálculo em silêncio, porque o motor
           exige o vínculo. Mude os recursos de regime antes.
         </p>
+
+        <Importar plantas={plantas} origens={lista} />
       </div>
 
       {cal && (
-        <div className="painel">
-          <h2>Dias de {cal.nome} · {cal.planta}</h2>
-          <Regras key={cal.id} calendarioId={cal.id} turnos={turnos} inicial={inicial} />
-        </div>
+        <>
+          <div className="painel">
+            <h2>Dias de {cal.nome} · {cal.planta}</h2>
+            <Regras key={cal.id} calendarioId={cal.id} turnos={turnos} inicial={inicial} />
+          </div>
+
+          <div className="painel">
+            <h2>Peso do dia útil · {cal.nome}</h2>
+            <DiasUteis
+              key={`${cal.id}:${ano}`}
+              calendarioId={cal.id}
+              contagem={contagem}
+              pesos={pesos}
+              ano={ano}
+            />
+          </div>
+        </>
       )}
     </>
   );

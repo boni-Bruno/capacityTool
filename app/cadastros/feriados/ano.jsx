@@ -12,7 +12,7 @@ const INICIAIS = ['d', 's', 't', 'q', 'q', 's', 's'];
 
 const dd = (n) => String(n).padStart(2, '0');
 
-export default function Ano({ ano, excecoes, selecionada, href }) {
+export default function Ano({ ano, excecoes, selecionada, href, uteis }) {
   // data ISO -> exceção, para achar em O(1) na hora de pintar o dia.
   const porData = new Map(excecoes.map((e) => [e.data, e]));
 
@@ -25,7 +25,14 @@ export default function Ano({ ano, excecoes, selecionada, href }) {
 
         return (
           <div key={mes} className="mes-caixa">
-            <p className="mes-nome">{rotulo}</p>
+            <p className="mes-nome">
+              {rotulo}
+              {uteis && (
+                <span className="mes-uteis" title="dias úteis trabalhados no mês">
+                  {' — '}{uteis[mes]}
+                </span>
+              )}
+            </p>
             <div className="mes-grade">
               {INICIAIS.map((s, n) => (
                 <span key={`c${n}`} className="mes-cab">{s}</span>

@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { plantasParaEscolha } from '../../../lib/estrutura';
 import { excecoesDoAno, calendariosDaPlanta, TIPOS } from '../../../lib/excecao';
+import { pesosDoCalendario, diasTrabalhadosPorMes } from '../../../lib/calendario';
+import { diasUteisPorMes, formataDiasUteis } from '../../../lib/dia-util';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Ano from './ano';
@@ -41,6 +43,22 @@ export default async function Page({ searchParams }) {
     calendariosDaPlanta(planta.id),
   ]);
 
+  // Dias úteis dependem do calendário: rodízio trabalha domingo, padrão não.
+  // Por isso a grade pede um calendário de referência para a contagem.
+  const calRef = calendarios.find((c) => c.id === Number(searchParams?.calendario))
+              ?? calendarios[0] ?? null;
+
+  const [pesos, contagem] = calRef
+    ? await Promise.all([
+        pesosDoCalendario(calRef.id),
+        diasTrabalhadosPorMes(calRef.id, ano),
+      ])
+    : [[], []];
+
+  const uteis = calRef
+    ? diasUteisPorMes(contagem, pesos).map(formataDiasUteis)
+    : null;
+
   // Data escolhida na grade. Só aceita do ano aberto.
   const pedida = String(searchParams?.data ?? '');
   const data = /^\d{4}-\d{2}-\d{2}$/.test(pedida) && pedida.startsWith(`${ano}-`)
@@ -51,6 +69,7 @@ export default async function Page({ searchParams }) {
     const p = new URLSearchParams();
     p.set('planta', String(planta.id));
     p.set('ano', String(ano));
+    if (calRef) p.set('calendario', String(calRef.id));
     if (d) p.set('data', d);
     return '?' + p.toString();
   };
@@ -74,6 +93,13 @@ export default async function Page({ searchParams }) {
                 valor: String(a), rotulo: String(a),
               })),
             },
+            ...(calendarios.length > 1 ? [{
+              nome: 'calendario', rotulo: 'Dias úteis de', tipo: 'select',
+              valor: String(calRef?.id ?? ''),
+              opcoes: calendarios.map((c) => ({
+                valor: String(c.id), rotulo: c.nome,
+              })),
+            }] : []),
           ]} />
         </Suspense>
       </div>
@@ -96,7 +122,8 @@ export default async function Page({ searchParams }) {
               </span>
             </div>
 
-            <Ano ano={ano} excecoes={excecoes} selecionada={data} href={url} />
+            <Ano ano={ano} excecoes={excecoes} selecionada={data} href={url}
+                 uteis={uteis} />
 
             <p className="legenda">
               <span className="pino-leg dia-feriado" /> feriado

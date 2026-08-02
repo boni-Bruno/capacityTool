@@ -346,3 +346,12 @@ td.acoes { white-space: nowrap; }
   cursor: pointer; background: var(--card);
 }
 .caixa input { width: auto; cursor: pointer; }
+
+/* ---- peso de dia util ---- */
+.pesos {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 110px));
+  gap: 10px; justify-content: start;
+}
+.pesos input { width: 100%; text-align: right; }
+input.invalido { border-color: #a32d2d; }
+.mes-uteis { color: var(--accent); font-weight: 600; }
