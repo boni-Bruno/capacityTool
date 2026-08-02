@@ -47,6 +47,12 @@ const CADASTRAR = [
            'da semana. Turno novo nasce com a semana zerada.',
   },
   {
+    href: '/cadastros/oee',
+    titulo: 'OEE',
+    texto: 'O rendimento que transforma capacidade planejada em disponível, ' +
+           'mês a mês. Setup já está embutido aqui.',
+  },
+  {
     href: '/cadastros/paradas',
     titulo: 'Paradas planejadas',
     texto: 'Preventiva, preditiva, férias coletivas, obra e inventário. ' +

@@ -293,3 +293,14 @@ td.acoes { white-space: nowrap; }
 
 /* Marca o vínculo obrigatório (planta da área, área do recurso). */
 .obrigatorio { color: #a32d2d; }
+
+/* ---- OEE ---- */
+.tabela-oee { max-width: 420px; }
+.tabela-oee td { padding: 6px 8px; }
+
+.campo-pct { position: relative; display: inline-flex; align-items: center; }
+.campo-pct input { width: 110px; padding-right: 26px; text-align: right; }
+.campo-pct .sufixo {
+  position: absolute; right: 9px; font-size: 13px; color: var(--muted);
+  pointer-events: none;
+}
