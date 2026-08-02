@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
-import Link from 'next/link';
 import { ultimaExecucao, areas, totais, porMes, porRecurso } from '../lib/db';
 import Grafico from './grafico';
 import Filtros from './filtros';
+import NavTopo from './nav-topo';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +18,7 @@ export default async function Page({ searchParams }) {
   } catch (e) {
     return (
       <div className="wrap">
+        <NavTopo />
         <h1 className="titulo">Capacidade</h1>
         <div className="aviso">
           <strong>Não consegui falar com o banco.</strong>
@@ -33,6 +34,7 @@ export default async function Page({ searchParams }) {
   if (!exec) {
     return (
       <div className="wrap">
+        <NavTopo />
         <h1 className="titulo">Capacidade</h1>
         <div className="aviso">
           <strong>Nenhum cálculo foi rodado ainda.</strong>
@@ -62,6 +64,7 @@ export default async function Page({ searchParams }) {
 
   return (
     <div className="wrap">
+      <NavTopo />
       <div className="topo">
         <h1 className="titulo">Capacidade</h1>
         <Suspense>
@@ -128,8 +131,6 @@ export default async function Page({ searchParams }) {
         <p className="rodape">
           Rodada {exec.id} · cenário {exec.cenario} · calculada em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}
-          {' · '}
-          <Link className="link-cadastros" href="/cadastros/turnos">Cadastros</Link>
         </p>
       </div>
     </div>

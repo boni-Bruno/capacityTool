@@ -131,9 +131,6 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .nav a:hover { color: var(--accent); }
 .nav-sep { flex: 0 0 1px; height: 16px; background: var(--border); }
 
-.link-cadastros { font-size: 14px; color: var(--muted); text-decoration: none; }
-.link-cadastros:hover { color: var(--accent); }
-
 .campo { display: flex; flex-direction: column; gap: 4px; }
 .campo-rot { font-size: 12px; color: var(--muted); }
 .campo-check { flex-direction: row; align-items: center; gap: 8px; align-self: end; }
