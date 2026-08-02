@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import {
-  turnos, plantas, horariosDoTurno, intervalosDoTurno,
+  turnosParaCadastro, plantas, horariosDoTurno, intervalosDoTurno,
 } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Turnos from './turnos';
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function Page({ searchParams }) {
   let lista, listaPlantas;
   try {
-    [lista, listaPlantas] = await Promise.all([turnos(), plantas()]);
+    [lista, listaPlantas] = await Promise.all([turnosParaCadastro(), plantas()]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }
@@ -46,12 +46,10 @@ export default async function Page({ searchParams }) {
           <Turnos lista={lista} plantas={listaPlantas} selecionado={turno?.id ?? null} />
         </Suspense>
 
-        {/* Quantas linhas a consulta devolveu, direto do servidor. Se aqui
-            disser 3 e o banco tiver 4, o problema é consulta ou conexão; se
-            disser 4 e a tabela acima mostrar 3, é a tela. */}
         <p className="rodape">
-          {lista.length} turno{lista.length === 1 ? '' : 's'} ativo
-          {lista.length === 1 ? '' : 's'} vindos do banco nesta requisição.
+          {lista.length} turno{lista.length === 1 ? '' : 's'} no banco
+          {lista.some((t) => !t.ativo) &&
+            ` · ${lista.filter((t) => !t.ativo).length} desativado(s)`}
         </p>
       </div>
 

@@ -74,13 +74,16 @@ export default function Turnos({ lista, plantas, selecionado }) {
   const salvarNome = (id) =>
     chamar('PATCH', { id, ...rascunho }, () => setEditando(null));
 
+  const reativar = (id) => chamar('PUT', { id });
+
   const excluir = (id) =>
     chamar('DELETE', { id }, (j) => {
       setConfirmando(null);
       if (j.desativado) {
         setAviso(
           `Turno desativado em vez de apagado: já é usado em ${j.onde.join(', ')}. ` +
-          `Apagar arrancaria a referência de números que já foram calculados.`
+          `Apagar arrancaria a referência de números que já foram calculados. ` +
+          `Ele continua na lista, em cinza, e dá para reativar quando quiser.`
         );
       }
     });
@@ -101,7 +104,12 @@ export default function Turnos({ lista, plantas, selecionado }) {
             const edit = editando === t.id;
 
             return (
-              <tr key={t.id} className={ativo ? 'linha-edit' : ''}>
+              <tr
+                key={t.id}
+                className={
+                  t.ativo === false ? 'linha-vazia' : ativo ? 'linha-edit' : ''
+                }
+              >
                 {edit ? (
                   <>
                     <td>
@@ -134,7 +142,12 @@ export default function Turnos({ lista, plantas, selecionado }) {
                       <button className="link-linha" onClick={() => escolher(t.id)}>
                         {t.nome}
                       </button>
-                      {ativo && <span className="selo rodizio" style={{ marginLeft: 8 }}>editando</span>}
+                      {t.ativo === false && (
+                        <span className="selo padrao" style={{ marginLeft: 8 }}>desativado</span>
+                      )}
+                      {ativo && t.ativo !== false && (
+                        <span className="selo rodizio" style={{ marginLeft: 8 }}>editando</span>
+                      )}
                     </td>
                     <td className="acoes">
                       {confirmando === t.id ? (
@@ -149,6 +162,14 @@ export default function Turnos({ lista, plantas, selecionado }) {
                             Cancelar
                           </button>
                         </>
+                      ) : t.ativo === false ? (
+                        // Desativado só volta pela reativação: apagar de vez
+                        // não é opção, é justamente por estar em uso que ele
+                        // foi desativado em vez de apagado.
+                        <button className="btn btn-mini btn-primario" disabled={ocupado}
+                                onClick={() => reativar(t.id)}>
+                          {ocupado ? '…' : 'Reativar'}
+                        </button>
                       ) : (
                         <>
                           <button

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { criarTurno, renomearTurno, excluirTurno } from '../../../../lib/cadastro';
+import {
+  criarTurno, renomearTurno, excluirTurno, reativarTurno,
+} from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeSessao } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
@@ -28,6 +30,21 @@ export async function PATCH(req) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('[turno PATCH]', e);
+    return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },
+                             { status: e.status ?? 400 });
+  }
+}
+
+// Volta a ativar um turno desativado.
+export async function PUT(req) {
+  try {
+    await exigeSessao();
+    const { id } = await req.json();
+    await reativarTurno(id);
+    revalidarCadastros();
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error('[turno PUT]', e);
     return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },
                              { status: e.status ?? 400 });
   }
