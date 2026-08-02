@@ -58,7 +58,10 @@ export default async function Page({ searchParams }) {
           <h2>
             Horário de <code>{turno.codigo}</code> · {turno.nome}
           </h2>
-          <EditorHorario turnoId={turno.id} horarios={horarios} />
+          {/* key: trocar de turno tem que fechar a linha que estava aberta
+              para edição, senão ela segue aberta com o horário do turno
+              anterior. */}
+          <EditorHorario key={turno.id} turnoId={turno.id} horarios={horarios} />
 
           {intervalos.length > 0 && (
             <p className="rodape">

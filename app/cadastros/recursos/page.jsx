@@ -95,7 +95,13 @@ export default async function Page({ searchParams }) {
           </span>
         </h2>
 
+        {/* A key força o React a remontar a matriz ao trocar de recurso ou de
+            ano. Sem ela o componente é reaproveitado na mesma posição da
+            árvore e o useState(inicial) mantém os checkboxes do recurso
+            anterior — a tela mostrava a configuração da máquina errada e ainda
+            oferecia Salvar, o que gravaria a config de um recurso no outro. */}
         <Matriz
+          key={`${recurso.id}:${ano}`}
           recursoId={recurso.id}
           ano={ano}
           turnos={turnos}

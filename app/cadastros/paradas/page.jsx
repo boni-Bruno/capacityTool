@@ -52,7 +52,10 @@ export default async function Page({ searchParams }) {
         </Suspense>
       </div>
 
+      {/* key: o formulário guarda recurso_id. Trocar de área sem limpar
+          deixaria selecionado um recurso que não é mais da área mostrada. */}
       <EditorParadas
+        key={`${areaId}:${ano}`}
         recursos={listaRecursos}
         tipos={tipos}
         turnos={listaTurnos}
