@@ -1,29 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 // Tabela + formulário para planta, área e recurso.
 //
 // Os três têm a mesma mecânica — listar, criar, editar em linha, excluir e
 // reativar — e mudam só nos campos. Escrever três vezes seria três chances de
-// o comportamento divergir sem ninguém notar, então a diferença vira dado:
-// `campos` descreve o que aparece, o resto é igual.
+// o comportamento divergir sem ninguém notar, então a diferença vira dado.
+//
+// Campo com `soCriacao` é o vínculo (planta da área, área do recurso): entra no
+// formulário como escolha obrigatória e aparece na tabela como texto. Não é
+// editável em linha porque mudar a planta de uma área move junto tudo que pende
+// dela — é uma operação diferente de corrigir um nome.
 export default function Cadastro({
-  rota,            // endpoint da API
+  rota,
   itens,
-  campos,          // [{ nome, rot, tipo, opcoes, placeholder, larg }]
-  extras = {},     // enviado junto no criar (ex.: planta_id)
-  paramSelecao,    // parâmetro da URL que esta lista alimenta
-  selecionado = null,
+  campos,          // [{ nome, rot, tipo, opcoes, placeholder, col, soCriacao, padrao }]
   podeReativar = false,
-  rotuloNovo = 'Novo',
+  rotuloNovo = 'Criar',
   vazio = 'Nada cadastrado ainda.',
 }) {
   const router = useRouter();
-  const params = useSearchParams();
 
-  const limpo = Object.fromEntries(campos.map((c) => [c.nome, c.padrao ?? '']));
+  // Coluna de contagem (quantas áreas, quantos recursos) aparece na tabela e
+  // não entra no formulário — é resultado, não cadastro.
+  const camposForm = campos.filter((c) => !c.soLeitura);
+  const limpo = Object.fromEntries(camposForm.map((c) => [c.nome, c.padrao ?? '']));
   const [novo, setNovo] = useState(limpo);
   const [editando, setEditando] = useState(null);
   const [rascunho, setRascunho] = useState({});
@@ -31,15 +34,6 @@ export default function Cadastro({
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState(null);
   const [aviso, setAviso] = useState(null);
-
-  function selecionar(id) {
-    if (!paramSelecao) return;
-    const p = new URLSearchParams(params.toString());
-    p.set(paramSelecao, String(id));
-    // Trocar de nível de cima invalida a escolha dos de baixo.
-    for (const abaixo of DEPENDENTES[paramSelecao] ?? []) p.delete(abaixo);
-    router.push('?' + p.toString());
-  }
 
   async function chamar(metodo, corpo, aoTerminar) {
     setOcupado(true);
@@ -62,8 +56,7 @@ export default function Cadastro({
     }
   }
 
-  const criar = () =>
-    chamar('POST', { ...extras, ...novo }, () => setNovo(limpo));
+  const criar = () => chamar('POST', novo, () => setNovo(limpo));
 
   const salvar = (id) =>
     chamar('PATCH', { id, ...rascunho }, () => setEditando(null));
@@ -77,14 +70,17 @@ export default function Cadastro({
       }
     });
 
-  const podeCriar = campos
+  const podeCriar = camposForm
     .filter((c) => c.obrigatorio !== false)
     .every((c) => String(novo[c.nome] ?? '').trim());
 
-  function celula(c, valor, onChange) {
+  function entrada(c, valor, onChange) {
     if (c.tipo === 'select') {
       return (
         <select value={valor ?? ''} onChange={onChange}>
+          {/* Sem padrão, a primeira opção é vazia: a escolha tem que ser
+              deliberada, e o botão de criar fica travado até acontecer. */}
+          {c.padrao === undefined && <option value="">selecione…</option>}
           {c.opcoes.map((o) => (
             <option key={o.valor} value={o.valor}>{o.rotulo}</option>
           ))}
@@ -95,6 +91,16 @@ export default function Cadastro({
       <input type="text" value={valor ?? ''} onChange={onChange}
              placeholder={c.placeholder ?? ''} />
     );
+  }
+
+  // Na tabela, o vínculo mostra o nome (`col`), não o id que vai no formulário.
+  function texto(c, item) {
+    if (c.col) return item[c.col];
+    if (c.tipo === 'select') {
+      return c.opcoes.find((o) => String(o.valor) === String(item[c.nome]))?.rotulo
+             ?? item[c.nome];
+    }
+    return item[c.nome];
   }
 
   return (
@@ -116,33 +122,20 @@ export default function Cadastro({
                 const inativo = it.ativo === false;
 
                 return (
-                  <tr key={it.id}
-                      className={inativo ? 'linha-vazia'
-                                 : it.id === selecionado ? 'linha-edit' : ''}>
-                    {edit ? (
-                      campos.map((c) => (
-                        <td key={c.nome}>
-                          {celula(c, rascunho[c.nome], (e) =>
-                            setRascunho({ ...rascunho, [c.nome]: e.target.value }))}
-                        </td>
-                      ))
-                    ) : (
-                      campos.map((c, i) => (
-                        <td key={c.nome}>
-                          {i === 0 && paramSelecao ? (
-                            <button className="link-linha"
-                                    onClick={() => selecionar(it.id)}>
-                              {mostra(c, it)}
-                            </button>
-                          ) : mostra(c, it)}
-                          {i === 0 && inativo && (
-                            <span className="selo padrao" style={{ marginLeft: 8 }}>
-                              desativado
-                            </span>
-                          )}
-                        </td>
-                      ))
-                    )}
+                  <tr key={it.id} className={inativo ? 'linha-vazia' : ''}>
+                    {campos.map((c, i) => (
+                      <td key={c.nome}>
+                        {edit && !c.soCriacao && !c.soLeitura
+                          ? entrada(c, rascunho[c.nome], (e) =>
+                              setRascunho({ ...rascunho, [c.nome]: e.target.value }))
+                          : texto(c, it)}
+                        {i === 0 && inativo && (
+                          <span className="selo padrao" style={{ marginLeft: 8 }}>
+                            desativado
+                          </span>
+                        )}
+                      </td>
+                    ))}
 
                     <td className="acoes">
                       {edit ? (
@@ -193,10 +186,13 @@ export default function Cadastro({
       )}
 
       <div className="form-grade" style={{ marginTop: 16 }}>
-        {campos.map((c) => (
-          <label key={c.nome} className={'campo' + (c.larg === 'longo' ? ' campo-largo' : '')}>
-            <span className="campo-rot">{c.rot}</span>
-            {celula(c, novo[c.nome], (e) =>
+        {camposForm.map((c) => (
+          <label key={c.nome} className="campo">
+            <span className="campo-rot">
+              {c.rot}
+              {c.soCriacao && <strong className="obrigatorio"> *</strong>}
+            </span>
+            {entrada(c, novo[c.nome], (e) =>
               setNovo({ ...novo, [c.nome]: e.target.value }))}
           </label>
         ))}
@@ -212,18 +208,4 @@ export default function Cadastro({
       {aviso && <div className="aviso" style={{ marginTop: 12 }}>{aviso}</div>}
     </>
   );
-}
-
-// Escolher uma planta diferente invalida a área escolhida, e assim por diante.
-const DEPENDENTES = {
-  planta: ['area', 'recurso'],
-  area: ['recurso'],
-};
-
-function mostra(campo, item) {
-  const v = item[campo.nome];
-  if (campo.tipo === 'select') {
-    return campo.opcoes.find((o) => String(o.valor) === String(v))?.rotulo ?? v;
-  }
-  return v;
 }

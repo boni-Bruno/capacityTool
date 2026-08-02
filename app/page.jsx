@@ -13,18 +13,32 @@ const CONSULTAR = [
   },
 ];
 
-const CADASTRAR = [
+const ESTRUTURA = [
   {
-    href: '/cadastros/estrutura',
-    titulo: 'Planta, área e recurso',
-    texto: 'A estrutura física. Cada área pertence a uma planta, cada recurso ' +
-           'a uma área. CC, CT e Patrimônio identificam a máquina.',
+    href: '/cadastros/plantas',
+    titulo: 'Plantas',
+    texto: 'As unidades fabris. Toda área pertence a uma planta.',
+  },
+  {
+    href: '/cadastros/areas',
+    titulo: 'Áreas',
+    texto: 'Os setores de cada planta. A planta é escolhida na criação e não ' +
+           'muda depois.',
   },
   {
     href: '/cadastros/recursos',
+    titulo: 'Recursos',
+    texto: 'As máquinas e postos. CC, CT e Patrimônio identificam o ' +
+           'equipamento na controladoria.',
+  },
+];
+
+const CADASTRAR = [
+  {
+    href: '/cadastros/turnos-do-recurso',
     titulo: 'Turnos do recurso',
-    texto: 'Quais turnos cada recurso roda, e a partir de quando. É o que o ' +
-           'gestor de área mexe com mais frequência.',
+    texto: 'Quais turnos cada recurso roda em cada mês, e o regime de dias ' +
+           '(rodízio ou padrão).',
   },
   {
     href: '/cadastros/turnos',
@@ -62,7 +76,12 @@ export default function Menu() {
         {CONSULTAR.map((c) => <Cartao key={c.href} {...c} />)}
       </div>
 
-      <h2 className="menu-secao">Cadastrar</h2>
+      <h2 className="menu-secao">Estrutura</h2>
+      <div className="menu-grade">
+        {ESTRUTURA.map((c) => <Cartao key={c.href} {...c} />)}
+      </div>
+
+      <h2 className="menu-secao">Planejamento</h2>
       <div className="menu-grade">
         {CADASTRAR.map((c) => <Cartao key={c.href} {...c} />)}
       </div>

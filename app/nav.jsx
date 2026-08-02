@@ -6,11 +6,13 @@ import Link from 'next/link';
 // rodapé do painel. Duas listas de link significam duas chances de uma tela
 // nova entrar em uma e faltar na outra.
 const TELAS = [
-  { href: '/painel',              rotulo: 'Painel' },
-  { href: '/cadastros/estrutura', rotulo: 'Planta, área e recurso' },
-  { href: '/cadastros/turnos',    rotulo: 'Turnos' },
-  { href: '/cadastros/recursos', rotulo: 'Turnos do recurso' },
-  { href: '/cadastros/paradas',  rotulo: 'Paradas planejadas' },
+  { href: '/painel',                       rotulo: 'Painel' },
+  { href: '/cadastros/plantas',            rotulo: 'Plantas' },
+  { href: '/cadastros/areas',              rotulo: 'Áreas' },
+  { href: '/cadastros/recursos',           rotulo: 'Recursos' },
+  { href: '/cadastros/turnos',             rotulo: 'Turnos' },
+  { href: '/cadastros/turnos-do-recurso',  rotulo: 'Turnos do recurso' },
+  { href: '/cadastros/paradas',            rotulo: 'Paradas' },
 ];
 
 // Qual commit está de fato rodando. O Vercel preenche VERCEL_GIT_COMMIT_SHA

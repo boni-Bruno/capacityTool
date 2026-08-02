@@ -290,3 +290,6 @@ td.acoes { white-space: nowrap; }
   display: inline-block; width: 8px; height: 8px; border-radius: 50%;
   margin-right: 6px; vertical-align: middle;
 }
+
+/* Marca o vínculo obrigatório (planta da área, área do recurso). */
+.obrigatorio { color: #a32d2d; }
