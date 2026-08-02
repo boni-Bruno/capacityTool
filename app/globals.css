@@ -328,7 +328,8 @@ td.acoes { white-space: nowrap; }
   color: var(--text); text-decoration: none; border: 1px solid transparent;
 }
 .dia:hover { border-color: var(--accent); }
-.dia-domingo { background: var(--gray-bg); color: var(--muted); }
+/* Dia sem turno no dia da semana — parado pelo padrao, nao por excecao. */
+.dia-parado { background: var(--gray-bg); color: var(--muted); }
 .dia-feriado { background: #fbe0e0; color: #8c2626; font-weight: 600; }
 .dia-parada_coletiva { background: #fde8d4; color: #8a4b0d; font-weight: 600; }
 .dia-extra { background: var(--teal-bg); color: var(--teal-fg); font-weight: 600; }

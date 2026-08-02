@@ -1,16 +1,20 @@
 import { Suspense } from 'react';
 import {
   calendariosCadastro, regrasDoCalendario,
-  pesosDoCalendario, diasTrabalhadosPorMes,
+  pesosDoCalendario, diasTrabalhadosPorMes, diasDoAno,
 } from '../../../lib/calendario';
+import { excecoesDoAno, TIPOS } from '../../../lib/excecao';
 import { plantasParaEscolha } from '../../../lib/estrutura';
 import { DIAS } from '../../../lib/dias';
+import { diasUteisPorMes, formataDiasUteis } from '../../../lib/dia-util';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Cadastro from '../cadastro';
 import Regras from './regras';
 import DiasUteis from './dias-uteis';
 import Importar from './importar';
+import Ano from './ano';
+import EditorExcecao from './excecao';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,22 +51,22 @@ export default async function Page({ searchParams }) {
     );
   }
 
-  // A lista já traz os dias resumidos; a tabela mostra texto, não o cru.
-  const itens = lista.map((c) => ({ ...c, resumo: descreveDias(c.dias) }));
-
   const anoAtual = new Date().getFullYear();
   const ano = Number(searchParams?.ano ?? anoAtual);
+  const itens = lista.map((c) => ({ ...c, resumo: descreveDias(c.dias) }));
 
   const pedido = Number(searchParams?.calendario);
   const cal = lista.find((c) => c.id === pedido) ?? lista[0] ?? null;
 
-  const [turnos, pesos, contagem] = cal
+  const [turnos, pesos, contagem, dias, excecoes] = cal
     ? await Promise.all([
         regrasDoCalendario(cal.id),
         pesosDoCalendario(cal.id),
         diasTrabalhadosPorMes(cal.id, ano),
+        diasDoAno(cal.id, ano),
+        excecoesDoAno(cal.planta_id, ano),
       ])
-    : [[], [], []];
+    : [[], [], [], [], []];
 
   const inicial = {};
   for (const t of turnos) {
@@ -71,6 +75,27 @@ export default async function Page({ searchParams }) {
     }
   }
 
+  const uteis = cal ? diasUteisPorMes(contagem, pesos).map(formataDiasUteis) : null;
+
+  // Data clicada na grade. A exceção vem do nível da PLANTA, não do calendário:
+  // é preciso enxergar um feriado que existe e que este calendário não observa,
+  // senão não haveria como passar a observá-lo.
+  const pedida = String(searchParams?.data ?? '');
+  const data = /^\d{4}-\d{2}-\d{2}$/.test(pedida) && pedida.startsWith(`${ano}-`)
+    ? pedida : null;
+  const excecao = data ? excecoes.find((e) => e.data === data) ?? null : null;
+
+  // Calendários irmãos: a exceção é da planta e cada um decide se observa.
+  const daPlanta = cal ? lista.filter((c) => c.planta_id === cal.planta_id) : [];
+
+  const url = (d) => {
+    const p = new URLSearchParams();
+    if (cal) p.set('calendario', String(cal.id));
+    p.set('ano', String(ano));
+    if (d) p.set('data', d);
+    return '?' + p.toString();
+  };
+
   return (
     <>
       <div className="topo">
@@ -78,7 +103,7 @@ export default async function Page({ searchParams }) {
         <Suspense>
           <Seletor campos={[
             ...(lista.length > 1 ? [{
-              nome: 'calendario', rotulo: 'Editando', tipo: 'select',
+              nome: 'calendario', rotulo: 'Calendário', tipo: 'select',
               valor: String(cal?.id ?? ''),
               opcoes: lista.map((c) => ({
                 valor: String(c.id), rotulo: `${c.planta} · ${c.nome}`,
@@ -94,7 +119,69 @@ export default async function Page({ searchParams }) {
         </Suspense>
       </div>
 
+      {cal && (
+        <>
+          <div className="painel">
+            <div className="painel-topo">
+              <h2>{cal.nome} · {cal.planta} · {ano}</h2>
+              <span className="muted" style={{ fontSize: 12 }}>
+                clique num dia para cadastrar feriado ou parada
+              </span>
+            </div>
+
+            <Ano ano={ano} dias={dias} selecionada={data} href={url} uteis={uteis} />
+
+            <p className="legenda">
+              <span className="pino-leg dia-feriado" /> feriado
+              <span className="pino-leg dia-parada_coletiva" /> parada coletiva
+              <span className="pino-leg dia-extra" /> trabalha extraordinariamente
+              <span className="pino-leg dia-parado" /> sem turno no dia da semana
+            </p>
+
+            <p className="rodape">
+              Pintado é dia em que <strong>esta linha não produz</strong>. A mesma
+              data aparece diferente em outro calendário — o rodízio trabalha
+              domingo e pode trabalhar num feriado que o padrão observa.
+            </p>
+          </div>
+
+          {data && (
+            <div className="painel">
+              <h2>
+                {data.split('-').reverse().join('/')}
+                {excecao && <span className="foco"> · já cadastrado na planta</span>}
+              </h2>
+              <EditorExcecao
+                key={`${data}:${excecao?.id ?? 'novo'}`}
+                plantaId={cal.planta_id}
+                data={data}
+                excecao={excecao}
+                tipos={TIPOS}
+                calendarios={daPlanta}
+              />
+            </div>
+          )}
+
+          <div className="painel">
+            <h2>Turnos por dia da semana</h2>
+            <Regras key={cal.id} calendarioId={cal.id} turnos={turnos} inicial={inicial} />
+          </div>
+
+          <div className="painel">
+            <h2>Peso do dia útil</h2>
+            <DiasUteis
+              key={`${cal.id}:${ano}`}
+              calendarioId={cal.id}
+              contagem={contagem}
+              pesos={pesos}
+              ano={ano}
+            />
+          </div>
+        </>
+      )}
+
       <div className="painel">
+        <h2>Todos os calendários</h2>
         <Cadastro
           rota="/api/cadastro/calendario"
           itens={itens}
@@ -118,26 +205,6 @@ export default async function Page({ searchParams }) {
 
         <Importar plantas={plantas} origens={lista} />
       </div>
-
-      {cal && (
-        <>
-          <div className="painel">
-            <h2>Dias de {cal.nome} · {cal.planta}</h2>
-            <Regras key={cal.id} calendarioId={cal.id} turnos={turnos} inicial={inicial} />
-          </div>
-
-          <div className="painel">
-            <h2>Peso do dia útil · {cal.nome}</h2>
-            <DiasUteis
-              key={`${cal.id}:${ano}`}
-              calendarioId={cal.id}
-              contagem={contagem}
-              pesos={pesos}
-              ano={ano}
-            />
-          </div>
-        </>
-      )}
     </>
   );
 }

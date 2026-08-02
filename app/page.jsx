@@ -34,14 +34,8 @@ const ESTRUTURA = [
   {
     href: '/cadastros/calendarios',
     titulo: 'Calendários',
-    texto: 'O regime de dias: em que dia da semana cada turno roda. Rodízio ' +
-           'trabalha domingo, padrão não.',
-  },
-  {
-    href: '/cadastros/feriados',
-    titulo: 'Feriados e exceções',
-    texto: 'O ano inteiro em doze grades. Feriado é por planta — cidades ' +
-           'diferentes, feriados diferentes.',
+    texto: 'Os dias em que cada linha trabalha: turnos por dia da semana, ' +
+           'feriados e paradas, e a contagem de dias úteis do ano.',
   },
 ];
 
@@ -105,8 +99,8 @@ export default function Menu() {
       </div>
 
       <p className="rodape">
-        Ainda não têm tela: calendários, OEE e feriados — hoje são cadastrados
-        direto no banco. Usuários com perfil e escopo por área entram quando a
+        Ainda não têm tela: tipos de parada e conversão de minutos para
+        peças ou metros. Usuários com perfil e escopo por área entram quando a
         segunda pessoa começar a mexer.
       </p>
     </div>
