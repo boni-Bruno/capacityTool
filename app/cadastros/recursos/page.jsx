@@ -1,9 +1,12 @@
 import { Suspense } from 'react';
 import { areas } from '../../../lib/db';
-import { recursos, matrizTurnosDoAno } from '../../../lib/cadastro';
+import {
+  recursos, matrizTurnosDoAno, calendariosDoRecurso,
+} from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Matriz from './matriz';
+import Calendario from './calendario';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +51,10 @@ export default async function Page({ searchParams }) {
   const pedido = Number(searchParams?.recurso);
   const recurso = listaRecursos.find((r) => r.id === pedido) ?? listaRecursos[0];
 
-  const celulas = await matrizTurnosDoAno(recurso.id, ano);
+  const [celulas, regimes] = await Promise.all([
+    matrizTurnosDoAno(recurso.id, ano),
+    calendariosDoRecurso(recurso.id),
+  ]);
 
   // A consulta vem esparramada em turno x mês; aqui vira a lista de turnos
   // (colunas) e dois mapas indexados por "turnoId:mes".
@@ -89,11 +95,16 @@ export default async function Page({ searchParams }) {
 
       <div className="painel">
         <h2>
-          {recurso.nome} · {ano}
+          {recurso.nome}
           <span className="selo padrao" style={{ marginLeft: 8 }}>
             {recurso.tipo_recurso.toLowerCase()}
           </span>
         </h2>
+        <Calendario key={recurso.id} recursoId={recurso.id} opcoes={regimes} />
+      </div>
+
+      <div className="painel">
+        <h2>Turnos em {ano}</h2>
 
         {/* A key força o React a remontar a matriz ao trocar de recurso ou de
             ano. Sem ela o componente é reaproveitado na mesma posição da

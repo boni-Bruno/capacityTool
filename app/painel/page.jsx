@@ -10,10 +10,9 @@ const h = (min) => Math.round(Number(min) / 60).toLocaleString('pt-BR');
 const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).toFixed(1) + '%');
 
 export default async function Page({ searchParams }) {
-  let exec, listaAreas;
+  let listaAreas;
 
   try {
-    exec = await ultimaExecucao();
     listaAreas = await areas();
   } catch (e) {
     return (
@@ -31,26 +30,41 @@ export default async function Page({ searchParams }) {
     );
   }
 
+  // Área e ano vêm antes da execução: a rodada é por área, então só dá para
+  // saber qual delas mostrar depois de saber o que o usuário está olhando.
+  const anoAtual = new Date().getFullYear();
+  const areaId = Number(searchParams?.area ?? listaAreas[0]?.id);
+  const ano = Number(searchParams?.ano ?? anoAtual);
+  const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
+  const area = listaAreas.find((a) => a.id === areaId);
+
+  const exec = await ultimaExecucao(areaId, ano);
+
+  // Sem rodada para esta área e ano, os filtros e o Recalcular continuam na
+  // tela. Antes a página saía cedo e mandava rodar SQL no Neon — sem cálculo
+  // não havia botão para criar o primeiro, o que é um beco sem saída.
   if (!exec) {
     return (
       <div className="wrap">
         <Nav />
-        <h1 className="titulo">Capacidade</h1>
+        <div className="topo">
+          <h1 className="titulo">Capacidade</h1>
+          <Suspense>
+            <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos} />
+          </Suspense>
+        </div>
         <div className="aviso">
-          <strong>Nenhum cálculo foi rodado ainda.</strong>
+          <strong>
+            Nenhum cálculo rodado para {area?.nome ?? 'esta área'} em {ano}.
+          </strong>
           <p style={{ margin: '8px 0 0' }}>
-            No SQL Editor do Neon, rode <code>fn_calcular_capacidade(...)</code> e
-            recarregue esta página.
+            Clique em <strong>Recalcular</strong> aí em cima. O motor roda por
+            área e por ano — cadastrar turno ou parada não recalcula sozinho.
           </p>
         </div>
       </div>
     );
   }
-
-  const anoExec = new Date(exec.periodo_inicio).getFullYear();
-  const ano = Number(searchParams?.ano ?? anoExec);
-  const areaId = Number(searchParams?.area ?? listaAreas[0]?.id);
-  const anos = [anoExec - 1, anoExec, anoExec + 1];
 
   const [tot, meses, recursos] = await Promise.all([
     totais(exec.id, areaId, ano),
@@ -130,7 +144,9 @@ export default async function Page({ searchParams }) {
 
         <p className="rodape">
           Rodada {exec.id} · cenário {exec.cenario} · calculada em{' '}
-          {new Date(exec.concluido_em).toLocaleString('pt-BR')}
+          {new Date(exec.concluido_em).toLocaleString('pt-BR')}.
+          {' '}Cadastro alterado depois disso só entra na conta ao
+          {' '}<strong>Recalcular</strong>.
         </p>
       </div>
     </div>
