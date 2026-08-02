@@ -100,9 +100,9 @@ export default function Matriz({ recursoId, ano, turnos, inicial, parciais }) {
                   <button
                     className="matriz-cab"
                     onClick={() => alternaTurno(t.turno_id)}
-                    title={`${t.nome} — marcar ou desmarcar o ano todo`}
+                    title={`Código ${t.codigo} — marcar ou desmarcar o ano todo`}
                   >
-                    {t.codigo}
+                    {t.nome}
                   </button>
                 </th>
               ))}

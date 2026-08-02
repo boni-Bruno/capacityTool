@@ -7,7 +7,7 @@ import Link from 'next/link';
 // nova entrar em uma e faltar na outra.
 const TELAS = [
   { href: '/painel',             rotulo: 'Painel' },
-  { href: '/cadastros/turnos',   rotulo: 'Horários dos turnos' },
+  { href: '/cadastros/turnos',   rotulo: 'Turnos' },
   { href: '/cadastros/recursos', rotulo: 'Turnos do recurso' },
   { href: '/cadastros/paradas',  rotulo: 'Paradas planejadas' },
 ];

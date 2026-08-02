@@ -6,10 +6,16 @@ import { DIAS } from '../../../lib/dias';
 
 const hhmm = (t) => (t ? String(t).slice(0, 5) : '');
 
-export default function EditorHorario({ turnoId, horarios, data }) {
+// Horário do turno por dia da semana. Sem data em lugar nenhum: o cadastro
+// guarda a configuração atual, não uma linha do tempo.
+//
+// Os minutos que o motor enxerga (máquina e pessoa) ficam na mesma tabela em
+// vez de num painel separado — a diferença entre as duas colunas é o intervalo
+// de refeição, e é a pergunta que sempre aparece olhando esta tela.
+export default function EditorHorario({ turnoId, horarios }) {
   const router = useRouter();
-  const [aberto, setAberto] = useState(null);   // dia_semana em edição
-  const [form, setForm] = useState({});
+  const [aberto, setAberto] = useState(null);
+  const [form, setForm] = useState({ hora_inicio: '', hora_fim: '' });
   const [erro, setErro] = useState(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -19,7 +25,6 @@ export default function EditorHorario({ turnoId, horarios, data }) {
     setForm({
       hora_inicio: hhmm(h.hora_inicio) || '06:00',
       hora_fim: hhmm(h.hora_fim) || '14:00',
-      a_partir_de: data,
     });
   }
 
@@ -43,11 +48,7 @@ export default function EditorHorario({ turnoId, horarios, data }) {
     }
   }
 
-  const salvar = (dia) =>
-    chamar('POST', { turno_id: turnoId, dia_semana: dia, ...form });
-
-  const encerrar = (dia) =>
-    chamar('DELETE', { turno_id: turnoId, dia_semana: dia, em: data });
+  const set = (c) => (e) => setForm((f) => ({ ...f, [c]: e.target.value }));
 
   return (
     <>
@@ -58,85 +59,80 @@ export default function EditorHorario({ turnoId, horarios, data }) {
             <th>Início</th>
             <th>Fim</th>
             <th className="num">Bruto</th>
-            <th>Vigente desde</th>
+            <th className="num">Máquina</th>
+            <th className="num">Pessoa</th>
             <th />
           </tr>
         </thead>
         <tbody>
-          {horarios.map((h) => (
-            <Linha
-              key={h.dia_semana}
-              h={h}
-              aberto={aberto === h.dia_semana}
-              form={form}
-              setForm={setForm}
-              salvando={salvando}
-              onAbrir={() => abrir(h)}
-              onCancelar={() => { setAberto(null); setErro(null); }}
-              onSalvar={() => salvar(h.dia_semana)}
-              onEncerrar={() => encerrar(h.dia_semana)}
-            />
-          ))}
+          {horarios.map((h) => {
+            const existe = h.horario_id !== null;
+
+            if (aberto === h.dia_semana) {
+              return (
+                <tr key={h.dia_semana} className="linha-edit">
+                  <td>{DIAS[h.dia_semana]}</td>
+                  <td><input type="time" value={form.hora_inicio} onChange={set('hora_inicio')} /></td>
+                  <td><input type="time" value={form.hora_fim} onChange={set('hora_fim')} /></td>
+                  <td className="num muted" colSpan={3}>calculado pelo banco</td>
+                  <td className="acoes">
+                    <button
+                      className="btn btn-primario btn-mini" disabled={salvando}
+                      onClick={() => chamar('POST', {
+                        turno_id: turnoId, dia_semana: h.dia_semana, ...form,
+                      })}
+                    >
+                      {salvando ? '…' : 'Salvar'}
+                    </button>
+                    <button className="btn btn-mini" disabled={salvando}
+                            onClick={() => { setAberto(null); setErro(null); }}>
+                      Cancelar
+                    </button>
+                  </td>
+                </tr>
+              );
+            }
+
+            return (
+              <tr key={h.dia_semana} className={existe ? '' : 'linha-vazia'}>
+                <td>{DIAS[h.dia_semana]}</td>
+                <td>{existe ? hhmm(h.hora_inicio) : <span className="muted">não roda</span>}</td>
+                <td>
+                  {existe ? hhmm(h.hora_fim) : ''}
+                  {h.cruza_meia_noite && <span className="selo vira">vira o dia</span>}
+                </td>
+                <td className="num">{existe ? h.min_bruto : ''}</td>
+                <td className="num">{existe ? h.min_maquina : ''}</td>
+                <td className="num">{existe ? h.min_pessoa : ''}</td>
+                <td className="acoes">
+                  <button className="btn btn-mini" onClick={() => abrir(h)}>
+                    {existe ? 'Alterar' : 'Definir'}
+                  </button>
+                  {existe && (
+                    <button
+                      className="btn btn-mini" disabled={salvando}
+                      onClick={() => chamar('DELETE', {
+                        turno_id: turnoId, dia_semana: h.dia_semana,
+                      })}
+                    >
+                      Não roda
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
       {erro && <p className="erro">{erro}</p>}
 
       <p className="rodape">
-        Salvar não altera a linha atual: fecha a vigência dela na data escolhida
-        e abre outra. O número de qualquer data anterior continua o mesmo.
+        Máquina e pessoa diferem pelo intervalo de refeição: máquina não para
+        para almoçar. Quem decide é o <code>tipo_recurso</code> do recurso, não
+        o turno. Turno que vira a meia-noite (22:00 às 05:00) é normal — o
+        banco recusa só duração fora de 1 a 1440 minutos.
       </p>
     </>
-  );
-}
-
-function Linha({ h, aberto, form, setForm, salvando,
-                 onAbrir, onCancelar, onSalvar, onEncerrar }) {
-  const existe = h.horario_id !== null;
-  const set = (c) => (e) => setForm((f) => ({ ...f, [c]: e.target.value }));
-
-  if (aberto) {
-    return (
-      <tr className="linha-edit">
-        <td>{DIAS[h.dia_semana]}</td>
-        <td><input type="time" value={form.hora_inicio} onChange={set('hora_inicio')} /></td>
-        <td><input type="time" value={form.hora_fim} onChange={set('hora_fim')} /></td>
-        <td className="num muted">calculado</td>
-        <td>
-          <input type="date" value={form.a_partir_de} onChange={set('a_partir_de')} />
-        </td>
-        <td className="acoes">
-          <button className="btn btn-primario" onClick={onSalvar} disabled={salvando}>
-            {salvando ? 'Salvando…' : 'Salvar'}
-          </button>
-          <button className="btn" onClick={onCancelar} disabled={salvando}>
-            Cancelar
-          </button>
-        </td>
-      </tr>
-    );
-  }
-
-  return (
-    <tr className={existe ? '' : 'linha-vazia'}>
-      <td>{DIAS[h.dia_semana]}</td>
-      <td>{existe ? hhmm(h.hora_inicio) : <span className="muted">não roda</span>}</td>
-      <td>
-        {existe ? hhmm(h.hora_fim) : ''}
-        {h.cruza_meia_noite && <span className="selo vira"> vira o dia</span>}
-      </td>
-      <td className="num">{existe ? `${h.min_bruto} min` : ''}</td>
-      <td className="muted">{h.vigente_desde ?? ''}</td>
-      <td className="acoes">
-        <button className="btn btn-mini" onClick={onAbrir}>
-          {existe ? 'Alterar' : 'Definir'}
-        </button>
-        {existe && (
-          <button className="btn btn-mini" onClick={onEncerrar} disabled={salvando}>
-            Encerrar
-          </button>
-        )}
-      </td>
-    </tr>
   );
 }

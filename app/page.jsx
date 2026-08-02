@@ -22,9 +22,9 @@ const CADASTRAR = [
   },
   {
     href: '/cadastros/turnos',
-    titulo: 'Horários dos turnos',
-    texto: 'Início e fim de cada turno por dia da semana, com os intervalos e ' +
-           'os minutos que o motor de fato enxerga.',
+    titulo: 'Turnos',
+    texto: 'Criar e excluir turnos, e definir início e fim de cada um por dia ' +
+           'da semana. Turno novo nasce com a semana zerada.',
   },
   {
     href: '/cadastros/paradas',

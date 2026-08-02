@@ -121,6 +121,16 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .btn-primario:hover:not(:disabled) { background: #2569bd; }
 .btn-mini { height: 30px; padding: 0 10px; font-size: 13px; }
 
+.btn-perigo { background: #a32d2d; border-color: #a32d2d; color: #fff; }
+.btn-perigo:hover:not(:disabled) { background: #8c2626; }
+
+/* Nome do turno na tabela: escolhe qual turno está sendo editado abaixo. */
+.link-linha {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; color: var(--accent); text-align: left;
+}
+.link-linha:hover { text-decoration: underline; }
+
 /* ---- telas de cadastro ---- */
 .nav {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
