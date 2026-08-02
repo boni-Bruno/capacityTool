@@ -12,6 +12,11 @@ const TELAS = [
   { href: '/cadastros/paradas',  rotulo: 'Paradas planejadas' },
 ];
 
+// Qual commit está de fato rodando. O Vercel preenche VERCEL_GIT_COMMIT_SHA
+// no build; quando um build falha ele continua servindo o deploy anterior, e
+// sem isso não há como saber daqui se a correção chegou a subir.
+const versao = (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7);
+
 export default function Nav() {
   return (
     <nav className="nav">
@@ -20,6 +25,7 @@ export default function Nav() {
       {TELAS.map((t) => (
         <Link key={t.href} href={t.href}>{t.rotulo}</Link>
       ))}
+      <span className="nav-versao" title="Commit que está rodando">{versao}</span>
     </nav>
   );
 }
