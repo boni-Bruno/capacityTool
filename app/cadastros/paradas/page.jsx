@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { areas } from '../../../lib/db';
 import { recursos, tiposParada, paradas, turnos } from '../../../lib/cadastro';
+import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorParadas from './editor';
@@ -39,7 +40,7 @@ export default async function Page({ searchParams }) {
             campos={[
               {
                 nome: 'area', rotulo: 'Área', tipo: 'select', valor: String(areaId),
-                opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: a.nome })),
+                opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: rotuloArea(a) })),
               },
               {
                 nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),

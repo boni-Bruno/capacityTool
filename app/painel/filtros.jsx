@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { rotuloArea } from '../../lib/dias';
 
 export default function Filtros({ areas, areaId, ano, anos }) {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function Filtros({ areas, areaId, ano, anos }) {
     <div className="filtros">
       <select value={areaId} onChange={(e) => muda('area', e.target.value)}>
         {areas.map((a) => (
-          <option key={a.id} value={a.id}>{a.nome}</option>
+          <option key={a.id} value={a.id}>{rotuloArea(a)}</option>
         ))}
       </select>
 

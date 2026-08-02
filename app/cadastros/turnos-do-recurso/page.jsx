@@ -7,6 +7,7 @@ import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Matriz from './matriz';
 import Calendario from './calendario';
+import { rotuloArea } from '../../../lib/dias';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export default async function Page({ searchParams }) {
   const campos = [
     {
       nome: 'area', rotulo: 'Área', tipo: 'select', valor: String(areaId),
-      opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: a.nome })),
+      opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: rotuloArea(a) })),
     },
   ];
 

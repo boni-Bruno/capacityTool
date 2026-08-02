@@ -10,6 +10,7 @@ const TELAS = [
   { href: '/cadastros/plantas',            rotulo: 'Plantas' },
   { href: '/cadastros/areas',              rotulo: 'Áreas' },
   { href: '/cadastros/recursos',           rotulo: 'Recursos' },
+  { href: '/cadastros/calendarios',        rotulo: 'Calendários' },
   { href: '/cadastros/turnos',             rotulo: 'Turnos' },
   { href: '/cadastros/turnos-do-recurso',  rotulo: 'Turnos do recurso' },
   { href: '/cadastros/oee',                rotulo: 'OEE' },

@@ -31,6 +31,12 @@ const ESTRUTURA = [
     texto: 'As máquinas e postos. CC, CT e Patrimônio identificam o ' +
            'equipamento na controladoria.',
   },
+  {
+    href: '/cadastros/calendarios',
+    titulo: 'Calendários',
+    texto: 'O regime de dias: em que dia da semana cada turno roda. Rodízio ' +
+           'trabalha domingo, padrão não.',
+  },
 ];
 
 const CADASTRAR = [
