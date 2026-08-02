@@ -8,9 +8,17 @@ import { useRouter } from 'next/navigation';
 export default function EditorTurnos({ recursoId, turnos, data }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(null);   // turno_id em edição
-  const [aPartirDe, setAPartirDe] = useState(data);
+  const [de, setDe] = useState(data);
+  const [ate, setAte] = useState('');
   const [erro, setErro] = useState(null);
   const [salvando, setSalvando] = useState(false);
+
+  function abrir(turnoId) {
+    setAberto(turnoId);
+    setDe(data);
+    setAte('');
+    setErro(null);
+  }
 
   async function chamar(metodo, corpo) {
     setSalvando(true);
@@ -60,19 +68,28 @@ export default function EditorTurnos({ recursoId, turnos, data }) {
                 <td className="acoes">
                   {editando ? (
                     <>
-                      <input
-                        type="date"
-                        value={aPartirDe}
-                        onChange={(e) => setAPartirDe(e.target.value)}
-                      />
+                      <label className="campo-inline">
+                        <span className="campo-rot">{ligado ? 'encerrar em' : 'de'}</span>
+                        <input type="date" value={de} onChange={(e) => setDe(e.target.value)} />
+                      </label>
+
+                      {/* Fim só faz sentido ao ligar: encerrar já é o fim. */}
+                      {!ligado && (
+                        <label className="campo-inline">
+                          <span className="campo-rot">até (opcional)</span>
+                          <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
+                        </label>
+                      )}
+
                       <button
                         className="btn btn-primario btn-mini"
                         disabled={salvando}
                         onClick={() =>
                           chamar(ligado ? 'DELETE' : 'POST',
                             ligado
-                              ? { recurso_id: recursoId, turno_id: t.turno_id, em: aPartirDe }
-                              : { recurso_id: recursoId, turno_id: t.turno_id, a_partir_de: aPartirDe })
+                              ? { recurso_id: recursoId, turno_id: t.turno_id, em: de }
+                              : { recurso_id: recursoId, turno_id: t.turno_id,
+                                  a_partir_de: de, ate: ate || null })
                         }
                       >
                         {salvando ? '…' : 'Confirmar'}
@@ -86,10 +103,7 @@ export default function EditorTurnos({ recursoId, turnos, data }) {
                       </button>
                     </>
                   ) : (
-                    <button
-                      className="btn btn-mini"
-                      onClick={() => { setAberto(t.turno_id); setAPartirDe(data); setErro(null); }}
-                    >
+                    <button className="btn btn-mini" onClick={() => abrir(t.turno_id)}>
                       {ligado ? 'Encerrar' : 'Vincular'}
                     </button>
                   )}
@@ -103,8 +117,10 @@ export default function EditorTurnos({ recursoId, turnos, data }) {
       {erro && <p className="erro">{erro}</p>}
 
       <p className="rodape">
-        A data é a partir de quando a mudança vale. O que já foi calculado
-        antes dela não muda.
+        Deixar <strong>até</strong> em branco liga o turno por tempo
+        indeterminado. Preencher cria um período fechado — útil quando o turno
+        roda só alguns meses do ano. O que já foi calculado antes da data de
+        início não muda.
       </p>
     </>
   );

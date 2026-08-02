@@ -16,7 +16,10 @@ export async function POST(req) {
       {
         escala_id: b.escala_id ? Number(b.escala_id) : null,
         escala_data_referencia: b.escala_data_referencia || null,
-      }
+      },
+      // Fim opcional: turno que roda só num período do ano, em vez de
+      // ficar ligado até alguém lembrar de encerrar.
+      b.ate || null
     );
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {
