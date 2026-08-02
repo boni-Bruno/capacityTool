@@ -1,10 +1,26 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { ultimaExecucao, areas, totais, porMes, porRecurso } from '../../lib/db';
 import Grafico from './grafico';
 import Filtros from './filtros';
+import TabelaMes from './tabela-mes';
 import Nav from '../nav';
 
 export const dynamic = 'force-dynamic';
+
+// O gráfico pula mês sem resultado e a tabela ficaria fora do passo com ele.
+// Completar os 12 aqui, uma vez, mantém os dois lendo a mesma coisa.
+function dozeMeses(linhas) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const achado = linhas.find((l) => Number(l.mes) === i + 1);
+    return {
+      mes: i + 1,
+      instalada: Number(achado?.instalada ?? 0),
+      planejada: Number(achado?.planejada ?? 0),
+      disponivel: Number(achado?.disponivel ?? 0),
+    };
+  });
+}
 
 const h = (min) => Math.round(Number(min) / 60).toLocaleString('pt-BR');
 const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).toFixed(1) + '%');
@@ -66,11 +82,31 @@ export default async function Page({ searchParams }) {
     );
   }
 
-  const [tot, meses, recursos] = await Promise.all([
-    totais(exec.id, areaId, ano),
-    porMes(exec.id, areaId, ano),
-    porRecurso(exec.id, areaId, ano),
+  // Clicar num recurso da tabela filtra os KPIs, o gráfico e a tabela mensal.
+  // Sem recurso na URL, tudo mostra a área inteira.
+  //
+  // A lista de recursos vem antes do resto para validar o que veio na URL:
+  // recurso de outra área faria as consultas voltarem vazias e a tela mostraria
+  // zero em tudo, parecendo cálculo errado em vez de filtro inválido.
+  const recursos = await porRecurso(exec.id, areaId, ano);
+  const pedido = searchParams?.recurso ? Number(searchParams.recurso) : null;
+  const foco = recursos.find((r) => Number(r.id) === pedido) ?? null;
+  const recursoId = foco ? Number(foco.id) : null;
+
+  const [tot, linhasMes] = await Promise.all([
+    totais(exec.id, areaId, ano, recursoId),
+    porMes(exec.id, areaId, ano, recursoId),
   ]);
+
+  const meses = dozeMeses(linhasMes);
+
+  const comRecurso = (id) => {
+    const p = new URLSearchParams();
+    p.set('area', String(areaId));
+    p.set('ano', String(ano));
+    if (id !== null) p.set('recurso', String(id));
+    return '?' + p.toString();
+  };
 
   const oeeMedio = Number(tot.min_planejada) === 0
     ? null
@@ -105,12 +141,29 @@ export default async function Page({ searchParams }) {
       </div>
 
       <div className="painel">
-        <h2>Mês a mês</h2>
+        <div className="painel-topo">
+          <h2>
+            Mês a mês
+            {foco && <span className="foco"> · {foco.nome}</span>}
+          </h2>
+          {foco && (
+            <Link className="btn btn-mini" href={comRecurso(null)}>
+              Ver a área toda
+            </Link>
+          )}
+        </div>
+
         <Grafico dados={meses} />
+        <TabelaMes meses={meses} />
       </div>
 
       <div className="painel">
-        <h2>Por recurso</h2>
+        <div className="painel-topo">
+          <h2>Por recurso</h2>
+          <span className="muted" style={{ fontSize: 12 }}>
+            clique num recurso para filtrar o gráfico
+          </span>
+        </div>
         <table>
           <thead>
             <tr>
@@ -124,8 +177,12 @@ export default async function Page({ searchParams }) {
           </thead>
           <tbody>
             {recursos.map((r) => (
-              <tr key={r.codigo}>
-                <td>{r.nome}</td>
+              <tr key={r.codigo} className={foco?.id === r.id ? 'linha-edit' : ''}>
+                <td>
+                  <Link className="link-linha" href={comRecurso(r.id)}>
+                    {r.nome}
+                  </Link>
+                </td>
                 <td>
                   <span className={'selo ' + (r.calendario === 'RODIZIO' ? 'rodizio' : 'padrao')}>
                     {r.calendario ? r.calendario.toLowerCase() : '—'}

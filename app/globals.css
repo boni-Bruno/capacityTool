@@ -189,6 +189,28 @@ input:disabled { background: var(--gray-bg); color: var(--muted); }
   gap: 12px;
 }
 
+/* ---- tabela mes a mes ---- */
+.painel-topo {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.painel-topo h2 { margin: 0; }
+.foco { color: var(--accent); font-weight: 500; }
+
+.tabela-mes { width: auto; min-width: 100%; font-size: 13px; }
+.tabela-mes th, .tabela-mes td { padding: 7px 9px; white-space: nowrap; }
+.tabela-mes tbody tr:hover td { background: #f7f6f3; }
+.tabela-mes .forte { font-weight: 600; }
+
+/* Mesmas cores das barras do gráfico, para ligar linha e barra. */
+.ponto-med {
+  display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+  margin-right: 7px; vertical-align: middle;
+}
+.med-inst { background: #c9c7c0; }
+.med-plan { background: #2a78d6; }
+.med-disp { background: #1baf7a; }
+
 /* ---- regime de dias (calendario) ---- */
 .regimes { display: flex; gap: 10px; flex-wrap: wrap; }
 .regime {
