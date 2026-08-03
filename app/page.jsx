@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Shell from './shell';
 
 // Menu. É a porta de entrada do app, então não consulta o banco de propósito:
 // se a DATABASE_URL cair, esta tela ainda abre e explica onde ir. Uma landing
@@ -77,7 +78,7 @@ function Cartao({ href, titulo, texto }) {
 
 export default function Menu() {
   return (
-    <div className="wrap">
+    <Shell>
       <header className="menu-topo">
         <h1 className="menu-marca">Capacidade</h1>
         <p className="menu-sub">Planejamento de capacidade fabril</p>
@@ -103,6 +104,6 @@ export default function Menu() {
         peças ou metros. Usuários com perfil e escopo por área entram quando a
         segunda pessoa começar a mexer.
       </p>
-    </div>
+    </Shell>
   );
 }

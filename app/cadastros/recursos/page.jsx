@@ -55,6 +55,10 @@ export default async function Page() {
               })) },
             { nome: 'codigo', rot: 'Código', placeholder: 'ex.: TEXPA-01' },
             { nome: 'nome',   rot: 'Nome',   placeholder: 'ex.: Texturizadeira 01' },
+            // Texto solto, sem tabela: serve para agrupar na leitura, não tem
+            // regra própria. Opcional.
+            { nome: 'sub_area', rot: 'Sub-área', obrigatorio: false,
+              placeholder: 'opcional' },
             { nome: 'tipo_recurso', rot: 'Tipo', tipo: 'select',
               opcoes: TIPOS, padrao: 'MAQUINA' },
             { nome: 'cc',         rot: 'CC',         placeholder: 'centro de custo' },
@@ -89,6 +93,8 @@ export default async function Page() {
           dividindo a mesma máquina.
           {' '}<strong>Tipo</strong> decide o intervalo de refeição: máquina não
           para para almoçar, pessoa para.
+          {' '}<strong>Sub-área</strong> é texto livre e opcional — serve para
+          agrupar na leitura e não tem cadastro nem regra própria.
         </p>
       </div>
     </>

@@ -5,7 +5,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
 } from 'recharts';
-import { emHoras, horas, horasEMinutos } from '../../lib/formato';
+import {
+  emUnidade, formataUnidade, horasEMinutos, sufixoUnidade, eMinuto,
+} from '../../lib/formato';
 
 // Um gráfico para os três níveis do drill-down: mês, dia e turno.
 //
@@ -15,18 +17,21 @@ import { emHoras, horas, horasEMinutos } from '../../lib/formato';
 //
 // `mostrarInstalada` é falso no nível de turno: instalada é grão dia, e
 // repeti-la em cada barra de turno era o que inflava o total no Qlik antigo.
-export default function Grafico({ dados, mostrarInstalada = true }) {
+export default function Grafico({ dados, mostrarInstalada = true, unidade = 'h' }) {
   const router = useRouter();
 
   // Os dados chegam em minutos, que é a moeda base do projeto. A barra precisa
-  // de número, então vira hora fracionária aqui — sem arredondar, para o
-  // tooltip poder reconstruir o minuto exato.
+  // de número, então converte aqui — sem arredondar, para o tooltip poder
+  // reconstruir o minuto exato.
+  const emMin = eMinuto(unidade);
+  const paraMin = (v) => (emMin ? Number(v) : Number(v) * 60);
+
   const d = dados.map((x) => ({
     rotulo: x.rotulo,
     href: x.href ?? null,
-    ...(mostrarInstalada ? { Instalada: emHoras(x.instalada) } : {}),
-    Planejada: emHoras(x.planejada),
-    Disponível: emHoras(x.disponivel),
+    ...(mostrarInstalada ? { Instalada: emUnidade(x.instalada, unidade) } : {}),
+    Planejada: emUnidade(x.planejada, unidade),
+    Disponível: emUnidade(x.disponivel, unidade),
   }));
 
   const clicavel = d.some((x) => x.href);
@@ -51,12 +56,14 @@ export default function Grafico({ dados, mostrarInstalada = true }) {
                width={54}
                tickFormatter={(v) =>
                  v >= 1000
-                   ? (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k h'
-                   : horas(v * 60) + ' h'} />
+                   ? (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+                     + 'k ' + sufixoUnidade(unidade)
+                   : formataUnidade(paraMin(v), unidade) + ' ' + sufixoUnidade(unidade)} />
         <Tooltip
           cursor={{ fill: 'rgba(42,120,214,.06)' }}
           formatter={(v, n) => [
-            `${horas(v * 60)} h  (${horasEMinutos(v * 60)})`, n,
+            `${formataUnidade(paraMin(v), unidade)} ${sufixoUnidade(unidade)}` +
+            `  (${horasEMinutos(paraMin(v))})`, n,
           ]}
           contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e3dd' }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />

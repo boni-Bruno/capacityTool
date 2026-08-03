@@ -22,13 +22,73 @@ body {
   line-height: 1.5;
 }
 
-/* Largura total da janela. Esta é uma ferramenta de tabela e gráfico — coluna
-   estreita centralizada sobrava margem dos dois lados e apertava justamente a
-   grade de 12 meses e a matriz mês x turno, que é onde a largura serve. */
-.wrap { width: 100%; margin: 0; padding: 1.5rem 2rem 4rem; }
+/* Menu à esquerda, conteúdo ocupando o resto. Largura total da janela: esta é
+   uma ferramenta de tabela e gráfico, e coluna estreita centralizada apertava
+   justamente a grade de 12 meses e a matriz mês x turno. */
+.app { display: flex; align-items: stretch; min-height: 100vh; }
 
-@media (max-width: 640px) {
-  .wrap { padding: 1.25rem 1rem 3rem; }
+.conteudo { flex: 1; min-width: 0; padding: 1.5rem 2rem 4rem; }
+
+/* ---- menu lateral ---- */
+.lado {
+  flex: 0 0 208px; background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 1.25rem .75rem 1rem;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.lado-marca {
+  font-size: 15px; font-weight: 600; margin: 0 0 1rem; padding: 0 .5rem;
+  letter-spacing: -0.3px;
+}
+
+.lado-item {
+  display: block; padding: 7px 10px; border-radius: 7px;
+  font-size: 14px; color: var(--muted); text-decoration: none;
+}
+.lado-item:hover { background: var(--gray-bg); color: var(--text); }
+.lado-ativo { background: var(--teal-bg); color: var(--teal-fg); font-weight: 500; }
+.lado-iniciar { color: var(--text); }
+
+.lado-grupo { margin-top: .6rem; }
+.lado-cab {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 6px 10px; border: none; background: none; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; border-radius: 7px;
+}
+.lado-cab:hover { background: var(--gray-bg); }
+.lado-seta { display: inline-block; font-size: 10px; transition: transform .12s; }
+.lado-seta-baixo { transform: rotate(90deg); }
+.lado-filhos { display: flex; flex-direction: column; gap: 2px; }
+.lado-filhos .lado-item { padding-left: 22px; }
+
+.lado-versao {
+  margin-top: auto; padding: .75rem .6rem 0; font-size: 11px; color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; cursor: help;
+}
+
+/* A gaveta e o botão só existem no celular. */
+.lado-abrir { display: none; }
+.lado-fundo { display: none; }
+
+@media (max-width: 860px) {
+  .conteudo { padding: 3.25rem 1rem 3rem; }
+
+  .lado-abrir {
+    display: block; position: fixed; top: 10px; left: 10px; z-index: 30;
+    width: 36px; height: 36px; font-size: 16px; cursor: pointer;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .lado {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 40;
+    transform: translateX(-100%); transition: transform .16s;
+  }
+  .lado-visivel { transform: translateX(0); }
+  .lado-fundo {
+    display: block; position: fixed; inset: 0; z-index: 35;
+    background: rgba(0, 0, 0, .35);
+  }
 }
 
 .topo {
@@ -139,20 +199,6 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   font: inherit; color: var(--accent); text-align: left;
 }
 .link-linha:hover { text-decoration: underline; }
-
-/* ---- telas de cadastro ---- */
-.nav {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  font-size: 14px; margin-bottom: 1.5rem;
-  padding-bottom: .9rem; border-bottom: 1px solid var(--border);
-}
-.nav a { color: var(--muted); text-decoration: none; }
-.nav a:hover { color: var(--accent); }
-.nav-sep { flex: 0 0 1px; height: 16px; background: var(--border); }
-.nav-versao {
-  margin-left: auto; font-size: 11px; color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; cursor: help;
-}
 
 /* ---- menu ---- */
 .menu-topo { margin: 1rem 0 2rem; }

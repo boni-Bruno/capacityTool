@@ -4,11 +4,13 @@ import {
   ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
 } from '../../lib/db';
 import { MESES, DIAS, DIAS_CURTO } from '../../lib/dias';
-import { horas, horasEMinutos } from '../../lib/formato';
+import {
+  formataUnidade, horasEMinutos, sufixoUnidade, UNIDADES,
+} from '../../lib/formato';
 import Grafico from './grafico';
 import Filtros from './filtros';
 import TabelaMes from './tabela-mes';
-import Nav from '../nav';
+import Shell from '../shell';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,8 +37,7 @@ export default async function Page({ searchParams }) {
     listaAreas = await areas();
   } catch (e) {
     return (
-      <div className="wrap">
-        <Nav />
+      <Shell>
         <h1 className="titulo">Capacidade</h1>
         <div className="aviso">
           <strong>Não consegui falar com o banco.</strong>
@@ -45,7 +46,7 @@ export default async function Page({ searchParams }) {
             com a connection string do Neon.
           </p>
         </div>
-      </div>
+      </Shell>
     );
   }
 
@@ -55,6 +56,8 @@ export default async function Page({ searchParams }) {
   const areaId = Number(searchParams?.area ?? listaAreas[0]?.id);
   const ano = Number(searchParams?.ano ?? anoAtual);
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
+  const unidade = UNIDADES.some((u) => u.valor === searchParams?.unidade)
+    ? searchParams.unidade : 'h';
   const area = listaAreas.find((a) => a.id === areaId);
 
   const exec = await ultimaExecucao(areaId, ano);
@@ -64,12 +67,12 @@ export default async function Page({ searchParams }) {
   // não havia botão para criar o primeiro, o que é um beco sem saída.
   if (!exec) {
     return (
-      <div className="wrap">
-        <Nav />
+      <Shell>
         <div className="topo">
           <h1 className="titulo">Capacidade</h1>
           <Suspense>
-            <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos} />
+            <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos}
+                     unidade={unidade} />
           </Suspense>
         </div>
         <div className="aviso">
@@ -81,7 +84,7 @@ export default async function Page({ searchParams }) {
             área e por ano — cadastrar turno ou parada não recalcula sozinho.
           </p>
         </div>
-      </div>
+      </Shell>
     );
   }
 
@@ -102,6 +105,7 @@ export default async function Page({ searchParams }) {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
     p.set('ano', String(ano));
+    p.set('unidade', unidade);
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
     if (m !== null && m !== undefined) p.set('mes', String(m));
     if (d !== null && d !== undefined) p.set('dia', String(d));
@@ -177,12 +181,12 @@ export default async function Page({ searchParams }) {
     : (tot.disponivel * 100 / tot.planejada).toFixed(0);
 
   return (
-    <div className="wrap">
-      <Nav />
+    <Shell>
       <div className="topo">
         <h1 className="titulo">Capacidade</h1>
         <Suspense>
-          <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos} />
+          <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos}
+                     unidade={unidade} />
         </Suspense>
       </div>
 
@@ -190,7 +194,7 @@ export default async function Page({ searchParams }) {
         <div className="kpi">
           <p className="rot">Instalada</p>
           <p className="val" title={horasEMinutos(tot.instalada)}>
-            {horas(tot.instalada)} h
+            {formataUnidade(tot.instalada, unidade)} {sufixoUnidade(unidade)}
           </p>
           <p className="sub">
             {mostrarInstalada ? 'teto físico 24/7' : 'teto do dia (não se reparte por turno)'}
@@ -199,14 +203,14 @@ export default async function Page({ searchParams }) {
         <div className="kpi">
           <p className="rot">Planejada</p>
           <p className="val" title={horasEMinutos(tot.planejada)}>
-            {horas(tot.planejada)} h
+            {formataUnidade(tot.planejada, unidade)} {sufixoUnidade(unidade)}
           </p>
           <p className="sub">{pct(tot.planejada, tot.instalada)} do teto</p>
         </div>
         <div className="kpi">
           <p className="rot">Disponível</p>
           <p className="val" title={horasEMinutos(tot.disponivel)}>
-            {horas(tot.disponivel)} h
+            {formataUnidade(tot.disponivel, unidade)} {sufixoUnidade(unidade)}
           </p>
           <p className="sub">{oeeMedio ? `com OEE ${oeeMedio}%` : '—'}</p>
         </div>
@@ -247,12 +251,13 @@ export default async function Page({ searchParams }) {
           </nav>
         </div>
 
-        <Grafico dados={dados} mostrarInstalada={mostrarInstalada} />
-        <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada} />
+        <Grafico dados={dados} mostrarInstalada={mostrarInstalada} unidade={unidade} />
+        <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada} unidade={unidade} />
 
         <p className="rodape">
           {dataISO
-            ? `Teto do dia: ${horas(teto)} h. Instalada é grão dia — 24 h por dia, ` +
+            ? `Teto do dia: ${formataUnidade(teto, unidade)} ${sufixoUnidade(unidade)}. ` +
+              `Instalada é grão dia — 24 h por dia, ` +
               `todo dia — e por isso não aparece repartida entre os turnos. ` +
               `Turno que vira a meia-noite conta no dia em que termina: o da ` +
               `noite anterior aparece aqui, inteiro.`
@@ -272,9 +277,9 @@ export default async function Page({ searchParams }) {
             <tr>
               <th>Recurso</th>
               <th>Calendário</th>
-              <th className="num">Instalada (h)</th>
-              <th className="num">Planejada (h)</th>
-              <th className="num">Disponível (h)</th>
+              <th className="num">Instalada ({sufixoUnidade(unidade)})</th>
+              <th className="num">Planejada ({sufixoUnidade(unidade)})</th>
+              <th className="num">Disponível ({sufixoUnidade(unidade)})</th>
               <th className="num">% do teto</th>
             </tr>
           </thead>
@@ -292,9 +297,9 @@ export default async function Page({ searchParams }) {
                     {r.calendario ? r.calendario.toLowerCase() : '—'}
                   </span>
                 </td>
-                <td className="num" title={horasEMinutos(r.instalada)}>{horas(r.instalada)}</td>
-                <td className="num" title={horasEMinutos(r.planejada)}>{horas(r.planejada)}</td>
-                <td className="num" title={horasEMinutos(r.disponivel)}>{horas(r.disponivel)}</td>
+                <td className="num" title={horasEMinutos(r.instalada)}>{formataUnidade(r.instalada, unidade)}</td>
+                <td className="num" title={horasEMinutos(r.planejada)}>{formataUnidade(r.planejada, unidade)}</td>
+                <td className="num" title={horasEMinutos(r.disponivel)}>{formataUnidade(r.disponivel, unidade)}</td>
                 <td className="num">
                   {r.pct_teto === null ? '—' : Number(r.pct_teto).toFixed(1) + '%'}
                 </td>
@@ -310,6 +315,6 @@ export default async function Page({ searchParams }) {
           {' '}<strong>Recalcular</strong>.
         </p>
       </div>
-    </div>
+    </Shell>
   );
 }

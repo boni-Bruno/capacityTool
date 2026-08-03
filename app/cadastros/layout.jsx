@@ -1,10 +1,5 @@
-import Nav from '../nav';
+import Shell from '../shell';
 
 export default function CadastrosLayout({ children }) {
-  return (
-    <div className="wrap">
-      <Nav />
-      {children}
-    </div>
-  );
+  return <Shell>{children}</Shell>;
 }

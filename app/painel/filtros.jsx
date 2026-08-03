@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { rotuloArea } from '../../lib/dias';
+import { UNIDADES } from '../../lib/formato';
 
-export default function Filtros({ areas, areaId, ano, anos }) {
+export default function Filtros({ areas, areaId, ano, anos, unidade }) {
   const router = useRouter();
   const params = useSearchParams();
   const [rodando, setRodando] = useState(false);
@@ -45,6 +46,13 @@ export default function Filtros({ areas, areaId, ano, anos }) {
 
       <select value={ano} onChange={(e) => muda('ano', e.target.value)}>
         {anos.map((a) => <option key={a} value={a}>{a}</option>)}
+      </select>
+
+      {/* A unidade muda só a leitura: o dado trafega sempre em minutos. */}
+      <select value={unidade} onChange={(e) => muda('unidade', e.target.value)}>
+        {UNIDADES.map((u) => (
+          <option key={u.valor} value={u.valor}>{u.rotulo}</option>
+        ))}
       </select>
 
       <button className="btn" onClick={recalcular} disabled={rodando}>
