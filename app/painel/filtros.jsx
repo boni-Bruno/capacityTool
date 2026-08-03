@@ -5,26 +5,39 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { rotuloArea } from '../../lib/dias';
 import { UNIDADES } from '../../lib/formato';
 
-export default function Filtros({
-  areas, areaId, ano, anos, unidade, subAreas = [], sub = null, tipo = null,
-}) {
+// Os filtros do painel moram em dois lugares.
+//
+// No topo fica o que define QUAL cálculo se está olhando: a área, porque a
+// rodada é por área, e o botão que dispara uma nova.
+//
+// Os de recorte — ano, sub-área, tipo e unidade — ficam junto da tabela por
+// recurso, que é onde se escolhe o que olhar. Todos vivem na URL, então
+// continuam valendo para os indicadores e o gráfico lá em cima.
+
+// Um lugar só mexe na URL: campo vazio some do endereço em vez de virar
+// "sub=", e trocar de recorte derruba o que dependia do recorte antigo.
+function useMuda() {
   const router = useRouter();
   const params = useSearchParams();
-  const [rodando, setRodando] = useState(false);
-  const [erro, setErro] = useState(null);
 
-  function muda(campo, valor) {
+  return function muda(campo, valor) {
     const p = new URLSearchParams(params.toString());
     if (valor === '') p.delete(campo); else p.set(campo, valor);
 
-    // Trocar de filtro invalida o recurso clicado e o nível do drill-down:
-    // o recurso pode não estar mais na seleção, e o dia aberto era do
-    // conjunto antigo.
+    // O recurso clicado pode não estar mais na seleção, e o dia aberto era do
+    // conjunto antigo — manter mostraria número de um recorte que sumiu.
     if (campo === 'sub' || campo === 'tipo' || campo === 'area') {
       p.delete('recurso'); p.delete('mes'); p.delete('dia');
     }
     router.push('?' + p.toString());
-  }
+  };
+}
+
+export function FiltrosTopo({ areas, areaId, ano }) {
+  const router = useRouter();
+  const muda = useMuda();
+  const [rodando, setRodando] = useState(false);
+  const [erro, setErro] = useState(null);
 
   async function recalcular() {
     setRodando(true);
@@ -53,6 +66,24 @@ export default function Filtros({
         ))}
       </select>
 
+      <button className="btn" onClick={recalcular} disabled={rodando}>
+        {rodando ? 'Calculando…' : 'Recalcular'}
+      </button>
+
+      {erro && (
+        <span style={{ fontSize: 13, color: '#a32d2d', alignSelf: 'center' }}>
+          {erro}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function FiltrosRecurso({ ano, anos, unidade, subAreas = [], sub = null, tipo = null }) {
+  const muda = useMuda();
+
+  return (
+    <div className="filtros">
       <select value={ano} onChange={(e) => muda('ano', e.target.value)}>
         {anos.map((a) => <option key={a} value={a}>{a}</option>)}
       </select>
@@ -76,16 +107,6 @@ export default function Filtros({
           <option key={u.valor} value={u.valor}>{u.rotulo}</option>
         ))}
       </select>
-
-      <button className="btn" onClick={recalcular} disabled={rodando}>
-        {rodando ? 'Calculando…' : 'Recalcular'}
-      </button>
-
-      {erro && (
-        <span style={{ fontSize: 13, color: '#a32d2d', alignSelf: 'center' }}>
-          {erro}
-        </span>
-      )}
     </div>
   );
 }

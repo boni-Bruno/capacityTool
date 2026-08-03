@@ -8,7 +8,7 @@ import {
   formataUnidade, horasEMinutos, sufixoUnidade, UNIDADES,
 } from '../../lib/formato';
 import Grafico from './grafico';
-import Filtros from './filtros';
+import { FiltrosTopo, FiltrosRecurso } from './filtros';
 import TabelaMes from './tabela-mes';
 import Shell from '../shell';
 
@@ -71,18 +71,20 @@ export default async function Page({ searchParams }) {
         <div className="topo">
           <h1 className="titulo">Capacidade</h1>
           <Suspense>
-            <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos}
-                     unidade={unidade} subAreas={[]} sub={null} tipo={null} />
+            <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} />
           </Suspense>
         </div>
         <div className="aviso">
           <strong>
             Nenhum cálculo rodado para {area?.nome ?? 'esta área'} em {ano}.
           </strong>
-          <p style={{ margin: '8px 0 0' }}>
+          <p style={{ margin: '8px 0 12px' }}>
             Clique em <strong>Recalcular</strong> aí em cima. O motor roda por
             área e por ano — cadastrar turno ou parada não recalcula sozinho.
           </p>
+          <Suspense>
+            <FiltrosRecurso ano={ano} anos={anos} unidade={unidade} />
+          </Suspense>
         </div>
       </Shell>
     );
@@ -208,8 +210,7 @@ export default async function Page({ searchParams }) {
       <div className="topo">
         <h1 className="titulo">Capacidade</h1>
         <Suspense>
-          <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos}
-                   unidade={unidade} subAreas={subAreas} sub={sub} tipo={tipo} />
+          <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} />
         </Suspense>
       </div>
 
@@ -291,10 +292,15 @@ export default async function Page({ searchParams }) {
       <div className="painel">
         <div className="painel-topo">
           <h2>Por recurso</h2>
-          <span className="muted" style={{ fontSize: 12 }}>
-            clique num recurso para filtrar o gráfico
-          </span>
+          <Suspense>
+            <FiltrosRecurso ano={ano} anos={anos} unidade={unidade}
+                            subAreas={subAreas} sub={sub} tipo={tipo} />
+          </Suspense>
         </div>
+        <p className="rodape" style={{ margin: '0 0 1rem' }}>
+          Estes filtros valem para os indicadores e o gráfico acima também.
+          Clique num recurso para estreitar ainda mais.
+        </p>
         <table>
           <thead>
             <tr>
