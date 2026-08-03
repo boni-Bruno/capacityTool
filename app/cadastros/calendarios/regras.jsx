@@ -4,47 +4,28 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { DIAS } from '../../../lib/dias';
 
-// Matriz dia da semana x turno. É literalmente o que o motor pergunta: neste
-// calendário, neste dia, roda este turno?
+// Em que dias da semana esta linha trabalha.
 //
-// Mesma forma da matriz de turnos do recurso — dias em linha, turnos em coluna,
-// marca e salva — para não ter duas gramáticas diferentes na mesma ferramenta.
-
-const chave = (turnoId, dia) => `${turnoId}:${dia}`;
-
-export default function Regras({ calendarioId, turnos, inicial }) {
+// Era uma matriz dia x turno. A coluna do turno duplicava o turno_horario — se
+// o turno não tem horário no dia, ele já não roda — e a duplicação fazia turno
+// novo produzir zero em silêncio. Agora são sete caixas: o calendário diz o
+// dia, o turno diz a hora, o recurso diz quais turnos faz.
+export default function Regras({ calendarioId, dias }) {
   const router = useRouter();
-  const [marcado, setMarcado] = useState(inicial);
+  const [marcados, setMarcados] = useState(() => new Set(dias));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
   const [ok, setOk] = useState(null);
 
   const sujo = useMemo(() => {
-    const a = Object.keys(marcado).filter((k) => marcado[k]).sort();
-    const b = Object.keys(inicial).filter((k) => inicial[k]).sort();
-    return a.length !== b.length || a.some((k, i) => k !== b[i]);
-  }, [marcado, inicial]);
+    if (marcados.size !== dias.length) return true;
+    return dias.some((d) => !marcados.has(d));
+  }, [marcados, dias]);
 
-  const alterna = (turnoId, dia) => {
-    setMarcado((m) => ({ ...m, [chave(turnoId, dia)]: !m[chave(turnoId, dia)] }));
-    setOk(null);
-  };
-
-  function alternaDia(dia) {
-    const todos = turnos.every((t) => marcado[chave(t.turno_id, dia)]);
-    setMarcado((m) => {
-      const novo = { ...m };
-      for (const t of turnos) novo[chave(t.turno_id, dia)] = !todos;
-      return novo;
-    });
-    setOk(null);
-  }
-
-  function alternaTurno(turnoId) {
-    const todos = DIAS.every((_, d) => marcado[chave(turnoId, d)]);
-    setMarcado((m) => {
-      const novo = { ...m };
-      for (let d = 0; d < 7; d++) novo[chave(turnoId, d)] = !todos;
+  function alterna(d) {
+    setMarcados((s) => {
+      const novo = new Set(s);
+      if (novo.has(d)) novo.delete(d); else novo.add(d);
       return novo;
     });
     setOk(null);
@@ -55,23 +36,17 @@ export default function Regras({ calendarioId, turnos, inicial }) {
     setErro(null);
     setOk(null);
     try {
-      const marcados = {};
-      for (const t of turnos) {
-        const dias = [];
-        for (let d = 0; d < 7; d++) if (marcado[chave(t.turno_id, d)]) dias.push(d);
-        marcados[t.turno_id] = dias;
-      }
-
       const r = await fetch('/api/cadastro/calendario-regra', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ calendario_id: calendarioId, marcados }),
+        body: JSON.stringify({
+          calendario_id: calendarioId,
+          dias: [...marcados].sort((a, b) => a - b),
+        }),
       });
       const j = await r.json();
       if (!j.ok) throw new Error(j.erro);
-
-      setOk(j.turnosAlterados === 0 ? 'Nada mudou.'
-        : `${j.turnosAlterados} turno(s) atualizado(s).`);
+      setOk(`${j.dias} dia(s) por semana.`);
       router.refresh();
     } catch (e) {
       setErro(e.message ?? 'Falhou');
@@ -80,57 +55,18 @@ export default function Regras({ calendarioId, turnos, inicial }) {
     }
   }
 
-  if (!turnos.length) {
-    return (
-      <p className="muted">
-        Nenhum turno ativo nesta planta. Cadastre os turnos antes de montar o
-        calendário.
-      </p>
-    );
-  }
-
   return (
     <>
-      <div className="grade-rolagem">
-        <table className="matriz">
-          <thead>
-            <tr>
-              <th>Dia</th>
-              {turnos.map((t) => (
-                <th key={t.turno_id} className="matriz-turno">
-                  <button className="matriz-cab" onClick={() => alternaTurno(t.turno_id)}
-                          title={`${t.codigo} — marcar ou desmarcar a semana toda`}>
-                    {t.nome}
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {DIAS.map((rotulo, dia) => (
-              <tr key={dia}>
-                <td className="matriz-mes">
-                  <button className="matriz-cab" onClick={() => alternaDia(dia)}
-                          title="Marcar ou desmarcar todos os turnos deste dia">
-                    {rotulo}
-                  </button>
-                </td>
-                {turnos.map((t) => (
-                  <td key={t.turno_id} className="matriz-cel">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(marcado[chave(t.turno_id, dia)])}
-                      onChange={() => alterna(t.turno_id, dia)}
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="acoes">
+        {DIAS.map((rotulo, d) => (
+          <label key={d} className={'caixa' + (marcados.has(d) ? ' caixa-on' : '')}>
+            <input type="checkbox" checked={marcados.has(d)} onChange={() => alterna(d)} />
+            <span>{rotulo}</span>
+          </label>
+        ))}
       </div>
 
-      <div className="acoes" style={{ marginTop: 16 }}>
+      <div className="acoes" style={{ marginTop: 14 }}>
         <button className="btn btn-primario" onClick={salvar} disabled={!sujo || salvando}>
           {salvando ? 'Salvando…' : 'Salvar'}
         </button>
@@ -140,10 +76,10 @@ export default function Regras({ calendarioId, turnos, inicial }) {
       </div>
 
       <p className="rodape">
-        Dia desmarcado para um turno significa que o turno não roda naquele dia
-        neste calendário — a capacidade sai zero, mesmo com o turno marcado no
-        recurso. Clique no nome do dia ou do turno para marcar a linha ou a
-        coluna inteira.
+        Dia desmarcado não produz capacidade nenhuma nesta linha, em nenhum
+        turno. Quais turnos rodam nos dias marcados vem do horário do turno
+        (turno sem horário na terça não roda na terça) cruzado com os turnos que
+        cada recurso faz.
       </p>
     </>
   );

@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
-import { definirRegras } from '../../../../lib/calendario';
+import { definirDias } from '../../../../lib/calendario';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeSessao } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
-// Matriz dia da semana x turno de um calendário.
-// Corpo: { calendario_id, marcados: { turnoId: [dias] } }
+// Dias da semana em que a linha trabalha.
+// Corpo: { calendario_id, dias: [0..6] }
 export async function POST(req) {
   try {
     await exigeSessao();
     const b = await req.json();
-    const r = await definirRegras(b.calendario_id, b.marcados ?? {});
+    const r = await definirDias(b.calendario_id, b.dias ?? []);
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {

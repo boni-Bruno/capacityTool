@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import {
-  calendariosCadastro, regrasDoCalendario,
+  calendariosCadastro, diasDoCalendario,
   pesosDoCalendario, diasTrabalhadosPorMes, diasDoAno,
 } from '../../../lib/calendario';
 import { excecoesDoAno, TIPOS } from '../../../lib/excecao';
@@ -58,22 +58,15 @@ export default async function Page({ searchParams }) {
   const pedido = Number(searchParams?.calendario);
   const cal = lista.find((c) => c.id === pedido) ?? lista[0] ?? null;
 
-  const [turnos, pesos, contagem, dias, excecoes] = cal
+  const [diasSemana, pesos, contagem, dias, excecoes] = cal
     ? await Promise.all([
-        regrasDoCalendario(cal.id),
+        diasDoCalendario(cal.id),
         pesosDoCalendario(cal.id),
         diasTrabalhadosPorMes(cal.id, ano),
         diasDoAno(cal.id, ano),
         excecoesDoAno(cal.planta_id, ano),
       ])
     : [[], [], [], [], []];
-
-  const inicial = {};
-  for (const t of turnos) {
-    for (const d of (t.dias ?? '').split(',').filter(Boolean)) {
-      inicial[`${t.turno_id}:${Number(d)}`] = true;
-    }
-  }
 
   const uteis = cal ? diasUteisPorMes(contagem, pesos).map(formataDiasUteis) : null;
 
@@ -163,8 +156,8 @@ export default async function Page({ searchParams }) {
           )}
 
           <div className="painel">
-            <h2>Turnos por dia da semana</h2>
-            <Regras key={cal.id} calendarioId={cal.id} turnos={turnos} inicial={inicial} />
+            <h2>Dias da semana em que trabalha</h2>
+            <Regras key={cal.id} calendarioId={cal.id} dias={diasSemana} />
           </div>
 
           <div className="painel">

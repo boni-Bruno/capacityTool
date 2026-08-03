@@ -4,8 +4,8 @@ import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeSessao } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
-// Importa um calendário de outra planta, com regras, turnos que faltarem e os
-// pesos de dia útil.
+// Importa um calendário de outra planta: os dias e os pesos de dia útil.
+// Opcionalmente copia junto os turnos que faltarem no destino.
 export async function POST(req) {
   try {
     await exigeSessao();

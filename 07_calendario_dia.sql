@@ -1,19 +1,49 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 07. CALENDÁRIO PASSA A GUARDAR SÓ DIAS
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee
+-- calendario_regra guardava calendário x dia x turno. A coluna turno_id
+-- duplicava o que turno_horario já diz: se o turno não tem horário naquele dia
+-- da semana, ele não roda, ponto. A única coisa que a coluna comprava era
+-- "domingo roda só o 1º turno" — caso que não existe nesta operação.
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- O custo da duplicação não era teórico: turno criado depois do seed nascia
+-- fora dos calendários e produzia zero em silêncio, mesmo com horário
+-- cadastrado e marcado no recurso.
+--
+-- Agora o calendário responde só "esta linha trabalha neste dia da semana?".
+-- Quais turnos rodam vem de turno_horario (o turno tem horário nesse dia?)
+-- cruzado com recurso_turno (a máquina faz esse turno?).
+--
+-- IMPACTO NOS NÚMEROS: nenhum. A consulta de impacto — combinações em que o
+-- calendário trabalha o dia, o turno tem horário e a regra o excluía — voltou
+-- zero linhas antes desta migração.
+--
+-- ORDEM: rode este arquivo ANTES do deploy do código novo. calendario_regra
+-- continua existindo aqui, então a versão que está no ar segue funcionando
+-- enquanto o deploy não sobe.
+-- =============================================================================
+
+create table if not exists calendario_dia (
+    calendario_id int      not null references calendario(id) on delete cascade,
+    dia_semana    smallint not null check (dia_semana between 0 and 6),
+    primary key (calendario_id, dia_semana)
+);
+
+comment on table calendario_dia is
+    'Em que dias da semana a linha trabalha. Quais turnos rodam vem de turno_horario.';
+
+-- Herda o que já estava configurado: dia com qualquer turno marcado vira dia
+-- trabalhado.
+insert into calendario_dia (calendario_id, dia_semana)
+select distinct calendario_id, dia_semana from calendario_regra
+on conflict do nothing;
+
+
+-- =============================================================================
+-- MOTOR
+-- Só o terceiro nível do coalesce muda: em vez de perguntar se aquele turno
+-- está marcado naquele dia, pergunta se o calendário trabalha naquele dia.
+-- O resto da função é idêntico.
 -- =============================================================================
 
 create or replace function fn_calcular_capacidade(
@@ -181,76 +211,10 @@ begin
 end;
 $$;
 
--- =============================================================================
--- COMO RODAR
--- =============================================================================
--- Ano de 2026 para a Confecção:
-/*
-select fn_calcular_capacidade(
-    (select id from cenario where codigo = 'BASELINE'),
-    date '2026-01-01',
-    date '2026-12-31',
-    (select id from area where codigo = 'CONFECCAO')
-);
-*/
--- Devolve o "execucao_id" daquela rodada. Cada execução cria um conjunto novo;
--- nada é sobrescrito, então dá para comparar antes e depois de uma mudança.
 
-
--- =============================================================================
--- CONSULTAS DE CONFERÊNCIA
--- Troque <ID> pelo número devolvido acima.
--- =============================================================================
-
--- (A) Resumo do ano por recurso, em horas
-/*
-select r.nome as recurso,
-       cal.codigo as calendario,
-       round(i.h_inst, 0) as h_instalada,
-       round(f.h_plan, 0) as h_planejada,
-       round(f.h_disp, 0) as h_disponivel,
-       round(f.h_plan / i.h_inst * 100, 1) as pct_do_teto
-from recurso r
-join recurso_calendario rc on rc.recurso_id = r.id
-join calendario cal        on cal.id = rc.calendario_id
-join lateral (select sum(min_instalada)/60.0 as h_inst
-                from capacidade_instalada_dia where recurso_id = r.id
-                 and execucao_id = <ID>) i on true
-join lateral (select sum(min_planejada)/60.0  as h_plan,
-                     sum(min_disponivel)/60.0 as h_disp
-                from capacidade_fato where recurso_id = r.id
-                 and execucao_id = <ID>) f on true
-order by r.nome;
-*/
-
--- (B) TESTE-CHAVE: em dia útil sem parada, os 3 turnos somam 1440 min.
---     Se der diferente, há erro de cadastro.
-/*
-select f.data,
-       to_char(f.data, 'Dy') as dia,
-       sum(f.min_planejada)  as planejada_dia,
-       max(i.min_instalada)  as instalada_dia
-from capacidade_fato f
-join capacidade_instalada_dia i on i.recurso_id  = f.recurso_id
-                               and i.data        = f.data
-                               and i.execucao_id = f.execucao_id
-where f.execucao_id = <ID>
-  and f.recurso_id  = (select id from recurso where codigo = 'TEXPA-01')
-  and f.data between date '2026-07-01' and date '2026-07-14'
-group by f.data order by f.data;
-*/
-
--- (C) Onde os dois calendários divergem no ano
-/*
-select f.data, to_char(f.data,'Dy') as dia,
-       sum(case when r.codigo = 'TEXPA-01' then f.min_planejada end) as rodizio,
-       sum(case when r.codigo = 'TEXPA-02' then f.min_planejada end) as padrao
-from capacidade_fato f
-join recurso r on r.id = f.recurso_id
-where f.execucao_id = <ID>
-  and r.codigo in ('TEXPA-01','TEXPA-02')
-group by f.data
-having sum(case when r.codigo = 'TEXPA-01' then f.min_planejada end)
-    <> sum(case when r.codigo = 'TEXPA-02' then f.min_planejada end)
-order by f.data;
-*/
+-- -----------------------------------------------------------------------------
+-- DEPOIS — só quando o deploy do código novo estiver no ar e conferido.
+-- Enquanto calendario_regra existir, nada quebra; ela apenas deixa de ser lida.
+--
+--     drop table calendario_regra;
+-- -----------------------------------------------------------------------------

@@ -356,3 +356,6 @@ td.acoes { white-space: nowrap; }
 .pesos input { width: 100%; text-align: right; }
 input.invalido { border-color: #a32d2d; }
 .mes-uteis { color: var(--accent); font-weight: 600; }
+
+/* Caixa marcada dos dias da semana do calendário. */
+.caixa-on { border-color: var(--teal-fg); background: var(--teal-bg); color: var(--teal-fg); }

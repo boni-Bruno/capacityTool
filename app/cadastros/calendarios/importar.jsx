@@ -15,6 +15,7 @@ export default function Importar({ plantas, origens }) {
   const [destino, setDestino] = useState('');
   const [codigo, setCodigo] = useState('');
   const [nome, setNome] = useState('');
+  const [copiarTurnos, setCopiarTurnos] = useState(true);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState(null);
   const [feito, setFeito] = useState(null);
@@ -31,17 +32,18 @@ export default function Importar({ plantas, origens }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           origem_id: origem, planta_destino_id: destino, codigo, nome,
+          copiar_turnos: copiarTurnos,
         }),
       });
       const j = await r.json();
       if (!j.ok) throw new Error(j.erro);
 
       setFeito(
-        `Calendário criado com ${j.regras} regra(s).` +
+        `Calendário criado, trabalhando ${j.dias} dia(s) por semana.` +
         (j.turnosCriados.length
-          ? ` Turnos criados na planta de destino: ${j.turnosCriados.join(', ')} — ` +
-            `com os horários e intervalos da origem.`
-          : ' Todos os turnos já existiam no destino.')
+          ? ` Turnos criados no destino: ${j.turnosCriados.join(', ')} — com os ` +
+            `horários e intervalos da origem.`
+          : '')
       );
       setOrigem(''); setDestino(''); setCodigo(''); setNome('');
       router.refresh();
@@ -108,12 +110,18 @@ export default function Importar({ plantas, origens }) {
         </label>
       </div>
 
+      <label className="caixa" style={{ marginTop: 4 }}>
+        <input type="checkbox" checked={copiarTurnos}
+               onChange={(e) => setCopiarTurnos(e.target.checked)} />
+        <span>Copiar também os turnos que faltarem no destino</span>
+      </label>
+
       <p className="rodape">
-        Turno é por planta, então as regras são casadas pelo <strong>código</strong>{' '}
-        do turno. O que não existir no destino é criado com os horários e
-        intervalos da origem — sem isso o calendário importado nasceria sem
-        produzir capacidade nenhuma. Os feriados <strong>não</strong> vêm junto:
-        eles são o que muda de cidade para cidade.
+        O calendário leva os dias da semana e os pesos de dia útil. Turno é por
+        planta e o calendário não o referencia mais — copiar junto é
+        conveniência para planta nova, casando pelo <strong>código</strong> e
+        levando horários e intervalos. Os feriados <strong>não</strong> vêm:
+        são justamente o que muda de cidade para cidade.
       </p>
 
       <div className="acoes" style={{ marginTop: 12 }}>
