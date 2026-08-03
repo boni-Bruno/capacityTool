@@ -3,7 +3,7 @@ import {
   calendariosCadastro, diasDoCalendario,
   pesosDoCalendario, diasTrabalhadosPorMes, diasDoAno,
 } from '../../../lib/calendario';
-import { excecoesDoAno, TIPOS } from '../../../lib/excecao';
+import { excecoesDoAno, areasDaPlanta, TIPOS } from '../../../lib/excecao';
 import { plantasParaEscolha } from '../../../lib/estrutura';
 import { DIAS } from '../../../lib/dias';
 import { diasUteisPorMes, formataDiasUteis } from '../../../lib/dia-util';
@@ -58,15 +58,16 @@ export default async function Page({ searchParams }) {
   const pedido = Number(searchParams?.calendario);
   const cal = lista.find((c) => c.id === pedido) ?? lista[0] ?? null;
 
-  const [diasSemana, pesos, contagem, dias, excecoes] = cal
+  const [diasSemana, pesos, contagem, dias, excecoes, areasPlanta] = cal
     ? await Promise.all([
         diasDoCalendario(cal.id),
         pesosDoCalendario(cal.id),
         diasTrabalhadosPorMes(cal.id, ano),
         diasDoAno(cal.id, ano),
         excecoesDoAno(cal.planta_id, ano),
+        areasDaPlanta(cal.planta_id),
       ])
-    : [[], [], [], [], []];
+    : [[], [], [], [], [], []];
 
   const uteis = cal ? diasUteisPorMes(contagem, pesos).map(formataDiasUteis) : null;
 
@@ -77,6 +78,11 @@ export default async function Page({ searchParams }) {
   const data = /^\d{4}-\d{2}-\d{2}$/.test(pedida) && pedida.startsWith(`${ano}-`)
     ? pedida : null;
   const excecao = data ? excecoes.find((e) => e.data === data) ?? null : null;
+
+  // Exceção precisa das duas marcações para valer. Sem uma delas ela está
+  // cadastrada, aparece na grade e não muda nada no cálculo — o tipo de coisa
+  // que só se descobre conferindo número.
+  const semAlcance = excecoes.filter((e) => !e.calendario_ids || !e.area_ids);
 
   // Calendários irmãos: a exceção é da planta e cada um decide se observa.
   const daPlanta = cal ? lista.filter((c) => c.planta_id === cal.planta_id) : [];
@@ -136,6 +142,22 @@ export default async function Page({ searchParams }) {
               data aparece diferente em outro calendário — o rodízio trabalha
               domingo e pode trabalhar num feriado que o padrão observa.
             </p>
+
+            {semAlcance.length > 0 && (
+              <div className="aviso" style={{ marginTop: 12 }}>
+                <strong>
+                  {semAlcance.length} exceção(ões) de {cal.planta} em {ano} não
+                  alcançam ninguém.
+                </strong>
+                <p style={{ margin: '6px 0 0' }}>
+                  Datas:{' '}
+                  {semAlcance.map((e) => e.data.split('-').reverse().join('/')).join(', ')}.
+                  {' '}O motor exige as duas marcações — a área do recurso e o
+                  calendário dele. Faltando uma, a data está cadastrada e não
+                  muda nada no cálculo. Clique no dia para completar.
+                </p>
+              </div>
+            )}
           </div>
 
           {data && (
@@ -151,6 +173,7 @@ export default async function Page({ searchParams }) {
                 excecao={excecao}
                 tipos={TIPOS}
                 calendarios={daPlanta}
+                areas={areasPlanta}
               />
             </div>
           )}

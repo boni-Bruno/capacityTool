@@ -1,19 +1,51 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 09. EXCEÇÃO POR ÁREA
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee
+-- A exceção passa a ter dois filtros, que respondem coisas diferentes:
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+--   ÁREA       onde o feriado vale — a Confecção para, a Tecelagem não
+--   CALENDÁRIO qual regime para    — o padrão para, o rodízio trabalha
+--
+-- O segundo já existia e continua: o contexto.txt lista como decisão
+-- deliberada que "um feriado que a linha de rodízio trabalha e a linha padrão
+-- para é uma data com uma marcação". O primeiro é novo.
+--
+-- Não existe herança de "área usa o calendário da planta": no cadastro todas
+-- as áreas vêm marcadas. Área marcada segue a planta; desmarcar é o que a
+-- torna diferente. Herança seria uma tabela a mais para dizer o que o padrão
+-- já diz.
+--
+-- IMPACTO NOS NÚMEROS: nenhum, por construção — o backfill liga cada exceção
+-- a TODAS as áreas da planta dela, que é exatamente o alcance de hoje.
+--
+-- Antes de rodar, confira que a consulta de impacto volta zero linhas: ela
+-- acha exceção marcada num calendário de OUTRA planta, caso que hoje vale
+-- (o motor não confere planta) e depois desta mudança deixaria de valer.
+--
+-- ORDEM: rode ANTES do deploy do código novo.
+-- =============================================================================
+
+create table if not exists excecao_area (
+    excecao_id int not null references excecao(id) on delete cascade,
+    area_id    int not null references area(id)    on delete cascade,
+    primary key (excecao_id, area_id)
+);
+
+comment on table excecao_area is
+    'Em que areas a excecao vale. Sem linha nenhuma, a excecao nao alcanca ninguem.';
+
+-- Backfill: o que já existe passa a valer em todas as áreas da planta dele.
+insert into excecao_area (excecao_id, area_id)
+select e.id, a.id
+  from excecao e
+  join area a on a.planta_id = e.planta_id
+on conflict do nothing;
+
+
+-- =============================================================================
+-- MOTOR
+-- Os dois níveis de exceção ganham a mesma condição de área. O resto da função
+-- é idêntico.
 -- =============================================================================
 
 create or replace function fn_calcular_capacidade(
@@ -82,10 +114,6 @@ begin
                -- A exceção só vale quando as DUAS marcações batem: a área do
                -- recurso está na lista, e o calendário dele também. Uma diz
                -- onde o feriado vale, a outra qual regime para.
-               --
-               -- O nível 3 não olha turno: quais turnos rodam já está decidido
-               -- por turno_horario (sem horário no dia, a linha nem é gerada)
-               -- e por recurso_turno (a máquina faz aquele turno?).
                coalesce(
                    (select ex.dia_util
                       from excecao ex
@@ -187,77 +215,3 @@ begin
     return v_execucao_id;
 end;
 $$;
-
--- =============================================================================
--- COMO RODAR
--- =============================================================================
--- Ano de 2026 para a Confecção:
-/*
-select fn_calcular_capacidade(
-    (select id from cenario where codigo = 'BASELINE'),
-    date '2026-01-01',
-    date '2026-12-31',
-    (select id from area where codigo = 'CONFECCAO')
-);
-*/
--- Devolve o "execucao_id" daquela rodada. Cada execução cria um conjunto novo;
--- nada é sobrescrito, então dá para comparar antes e depois de uma mudança.
-
-
--- =============================================================================
--- CONSULTAS DE CONFERÊNCIA
--- Troque <ID> pelo número devolvido acima.
--- =============================================================================
-
--- (A) Resumo do ano por recurso, em horas
-/*
-select r.nome as recurso,
-       cal.codigo as calendario,
-       round(i.h_inst, 0) as h_instalada,
-       round(f.h_plan, 0) as h_planejada,
-       round(f.h_disp, 0) as h_disponivel,
-       round(f.h_plan / i.h_inst * 100, 1) as pct_do_teto
-from recurso r
-join recurso_calendario rc on rc.recurso_id = r.id
-join calendario cal        on cal.id = rc.calendario_id
-join lateral (select sum(min_instalada)/60.0 as h_inst
-                from capacidade_instalada_dia where recurso_id = r.id
-                 and execucao_id = <ID>) i on true
-join lateral (select sum(min_planejada)/60.0  as h_plan,
-                     sum(min_disponivel)/60.0 as h_disp
-                from capacidade_fato where recurso_id = r.id
-                 and execucao_id = <ID>) f on true
-order by r.nome;
-*/
-
--- (B) TESTE-CHAVE: em dia útil sem parada, os 3 turnos somam 1440 min.
---     Se der diferente, há erro de cadastro.
-/*
-select f.data,
-       to_char(f.data, 'Dy') as dia,
-       sum(f.min_planejada)  as planejada_dia,
-       max(i.min_instalada)  as instalada_dia
-from capacidade_fato f
-join capacidade_instalada_dia i on i.recurso_id  = f.recurso_id
-                               and i.data        = f.data
-                               and i.execucao_id = f.execucao_id
-where f.execucao_id = <ID>
-  and f.recurso_id  = (select id from recurso where codigo = 'TEXPA-01')
-  and f.data between date '2026-07-01' and date '2026-07-14'
-group by f.data order by f.data;
-*/
-
--- (C) Onde os dois calendários divergem no ano
-/*
-select f.data, to_char(f.data,'Dy') as dia,
-       sum(case when r.codigo = 'TEXPA-01' then f.min_planejada end) as rodizio,
-       sum(case when r.codigo = 'TEXPA-02' then f.min_planejada end) as padrao
-from capacidade_fato f
-join recurso r on r.id = f.recurso_id
-where f.execucao_id = <ID>
-  and r.codigo in ('TEXPA-01','TEXPA-02')
-group by f.data
-having sum(case when r.codigo = 'TEXPA-01' then f.min_planejada end)
-    <> sum(case when r.codigo = 'TEXPA-02' then f.min_planejada end)
-order by f.data;
-*/
