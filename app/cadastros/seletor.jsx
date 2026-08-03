@@ -10,7 +10,9 @@ export default function Seletor({ campos }) {
 
   function muda(nome, valor) {
     const p = new URLSearchParams(params.toString());
-    p.set(nome, valor);
+    // Opção vazia ("todas as áreas") some da URL em vez de virar "area=":
+    // parâmetro pendurado engana quem lê o endereço e quem depura.
+    if (valor === '') p.delete(nome); else p.set(nome, valor);
     // Trocar de turno/recurso invalida a linha aberta para edição.
     router.push('?' + p.toString());
   }

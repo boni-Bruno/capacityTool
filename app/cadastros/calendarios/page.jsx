@@ -58,16 +58,24 @@ export default async function Page({ searchParams }) {
   const pedido = Number(searchParams?.calendario);
   const cal = lista.find((c) => c.id === pedido) ?? lista[0] ?? null;
 
-  const [diasSemana, pesos, contagem, dias, excecoes, areasPlanta] = cal
+  const areasPlanta = cal ? await areasDaPlanta(cal.planta_id) : [];
+
+  // Sem área escolhida a grade mostra todas ao mesmo tempo, como sempre foi.
+  // Com uma área, só o que alcança ela — depois que a exceção passou a valer
+  // por área, mostrar tudo junto dizia que um feriado da Confecção parava a
+  // planta inteira.
+  const areaPedida = Number(searchParams?.area);
+  const area = areasPlanta.find((a) => a.id === areaPedida) ?? null;
+
+  const [diasSemana, pesos, contagem, dias, excecoes] = cal
     ? await Promise.all([
         diasDoCalendario(cal.id),
         pesosDoCalendario(cal.id),
-        diasTrabalhadosPorMes(cal.id, ano),
-        diasDoAno(cal.id, ano),
+        diasTrabalhadosPorMes(cal.id, ano, area?.id ?? null),
+        diasDoAno(cal.id, ano, area?.id ?? null),
         excecoesDoAno(cal.planta_id, ano),
-        areasDaPlanta(cal.planta_id),
       ])
-    : [[], [], [], [], [], []];
+    : [[], [], [], [], []];
 
   const uteis = cal ? diasUteisPorMes(contagem, pesos).map(formataDiasUteis) : null;
 
@@ -91,6 +99,7 @@ export default async function Page({ searchParams }) {
     const p = new URLSearchParams();
     if (cal) p.set('calendario', String(cal.id));
     p.set('ano', String(ano));
+    if (area) p.set('area', String(area.id));
     if (d) p.set('data', d);
     return '?' + p.toString();
   };
@@ -108,6 +117,14 @@ export default async function Page({ searchParams }) {
                 valor: String(c.id), rotulo: `${c.planta} · ${c.nome}`,
               })),
             }] : []),
+            ...(areasPlanta.length > 0 ? [{
+              nome: 'area', rotulo: 'Área', tipo: 'select',
+              valor: String(area?.id ?? ''),
+              opcoes: [
+                { valor: '', rotulo: 'todas as áreas' },
+                ...areasPlanta.map((a) => ({ valor: String(a.id), rotulo: a.nome })),
+              ],
+            }] : []),
             {
               nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
               opcoes: [anoAtual - 1, anoAtual, anoAtual + 1, anoAtual + 2].map((a) => ({
@@ -122,7 +139,10 @@ export default async function Page({ searchParams }) {
         <>
           <div className="painel">
             <div className="painel-topo">
-              <h2>{cal.nome} · {cal.planta} · {ano}</h2>
+              <h2>
+                {cal.nome} · {cal.planta} · {ano}
+                {area && <span className="foco"> · {area.nome}</span>}
+              </h2>
               <span className="muted" style={{ fontSize: 12 }}>
                 clique num dia para cadastrar feriado ou parada
               </span>
@@ -141,6 +161,12 @@ export default async function Page({ searchParams }) {
               Pintado é dia em que <strong>esta linha não produz</strong>. A mesma
               data aparece diferente em outro calendário — o rodízio trabalha
               domingo e pode trabalhar num feriado que o padrão observa.
+              {area
+                ? ` Mostrando só o que alcança ${area.nome}: feriado marcado ` +
+                  `para outra área não aparece aqui, e não entra na contagem ` +
+                  `de dias úteis abaixo.`
+                : ' Sem área escolhida, aparece tudo que este calendário observa,' +
+                  ' em qualquer área.'}
             </p>
 
             {semAlcance.length > 0 && (
@@ -184,7 +210,10 @@ export default async function Page({ searchParams }) {
           </div>
 
           <div className="painel">
-            <h2>Peso do dia útil · {cal.nome}</h2>
+            <h2>
+              Peso do dia útil · {cal.nome}
+              {area && <span className="foco"> · {area.nome}</span>}
+            </h2>
             <DiasUteis
               key={`${cal.id}:${ano}`}
               calendarioId={cal.id}
