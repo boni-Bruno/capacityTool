@@ -20,6 +20,10 @@ export default function Cadastro({
   podeReativar = false,
   rotuloNovo = 'Criar',
   vazio = 'Nada cadastrado ainda.',
+  // Ligados onde a lista cresce. Em tela de duas linhas, esconder o
+  // formulário atrás de um botão e pôr filtro por coluna só atrapalha.
+  formularioSobDemanda = false,
+  filtrarColunas = false,
 }) {
   const router = useRouter();
 
@@ -28,6 +32,8 @@ export default function Cadastro({
   const camposForm = campos.filter((c) => !c.soLeitura);
   const limpo = Object.fromEntries(camposForm.map((c) => [c.nome, c.padrao ?? '']));
   const [novo, setNovo] = useState(limpo);
+  const [criando, setCriando] = useState(false);
+  const [filtros, setFiltros] = useState({});
   const [editando, setEditando] = useState(null);
   const [rascunho, setRascunho] = useState({});
   const [confirmando, setConfirmando] = useState(null);
@@ -56,7 +62,10 @@ export default function Cadastro({
     }
   }
 
-  const criar = () => chamar('POST', novo, () => setNovo(limpo));
+  const criar = () => chamar('POST', novo, () => {
+    setNovo(limpo);
+    setCriando(false);
+  });
 
   const salvar = (id) =>
     chamar('PATCH', { id, ...rascunho }, () => setEditando(null));
@@ -103,6 +112,24 @@ export default function Cadastro({
     return item[c.nome];
   }
 
+  // Filtra pelo que está NA TELA, não pelo valor cru: quem digita "Confecção"
+  // espera casar com o que lê, e a coluna de vínculo mostra o nome enquanto o
+  // dado é um id. Sem acento e sem caixa, porque ninguém acerta "Confecção"
+  // de primeira num campo de busca.
+  const achata = (v) => String(v ?? '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+  const visiveis = !filtrarColunas ? itens : itens.filter((it) =>
+    campos.every((c) => {
+      const busca = filtros[c.nome];
+      if (!busca) return true;
+      // Coluna de escolha casa exato: "só máquina" não pode trazer pessoa.
+      if (c.tipo === 'select') return String(it[c.nome]) === String(busca);
+      return achata(texto(c, it)).includes(achata(busca));
+    }));
+
+  const filtrando = Object.values(filtros).some(Boolean);
+
   return (
     <>
       {itens.length === 0 ? (
@@ -115,9 +142,39 @@ export default function Cadastro({
                 {campos.map((c) => <th key={c.nome}>{c.rot}</th>)}
                 <th />
               </tr>
+              {filtrarColunas && (
+                <tr className="linha-filtro">
+                  {campos.map((c) => (
+                    <th key={c.nome}>
+                      {c.tipo === 'select' ? (
+                        <select value={filtros[c.nome] ?? ''}
+                                onChange={(e) => setFiltros(
+                                  { ...filtros, [c.nome]: e.target.value })}>
+                          <option value="">todos</option>
+                          {c.opcoes.map((o) => (
+                            <option key={o.valor} value={o.valor}>{o.rotulo}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input type="text" placeholder="filtrar"
+                               value={filtros[c.nome] ?? ''}
+                               onChange={(e) => setFiltros(
+                                 { ...filtros, [c.nome]: e.target.value })} />
+                      )}
+                    </th>
+                  ))}
+                  <th className="acoes">
+                    {filtrando && (
+                      <button className="btn btn-mini" onClick={() => setFiltros({})}>
+                        Limpar
+                      </button>
+                    )}
+                  </th>
+                </tr>
+              )}
             </thead>
             <tbody>
-              {itens.map((it) => {
+              {visiveis.map((it) => {
                 const edit = editando === it.id;
                 const inativo = it.ativo === false;
 
@@ -182,9 +239,27 @@ export default function Cadastro({
               })}
             </tbody>
           </table>
+
+          {visiveis.length === 0 && (
+            <p className="muted" style={{ marginTop: 12 }}>
+              Nenhuma linha casa o filtro.{' '}
+              <button className="link-linha" onClick={() => setFiltros({})}>
+                Limpar filtros
+              </button>
+            </p>
+          )}
         </div>
       )}
 
+      {formularioSobDemanda && !criando && (
+        <div className="acoes" style={{ marginTop: 16 }}>
+          <button className="btn btn-primario" onClick={() => setCriando(true)}>
+            {rotuloNovo}
+          </button>
+        </div>
+      )}
+
+      {(!formularioSobDemanda || criando) && (
       <div className="form-grade" style={{ marginTop: 16 }}>
         {camposForm.map((c) => (
           <label key={c.nome} className="campo">
@@ -201,8 +276,15 @@ export default function Cadastro({
                   onClick={criar}>
             {ocupado ? 'Salvando…' : rotuloNovo}
           </button>
+          {formularioSobDemanda && (
+            <button className="btn" disabled={ocupado}
+                    onClick={() => { setCriando(false); setNovo(limpo); setErro(null); }}>
+              Cancelar
+            </button>
+          )}
         </div>
       </div>
+      )}
 
       {erro && <p className="erro">{erro}</p>}
       {aviso && <div className="aviso" style={{ marginTop: 12 }}>{aviso}</div>}

@@ -43,8 +43,10 @@ export default async function Page() {
         <Cadastro
           rota="/api/cadastro/recurso"
           itens={recursos}
-          rotuloNovo="Criar recurso"
+          rotuloNovo="Adicionar recurso"
           vazio="Nenhum recurso cadastrado. Crie o primeiro abaixo."
+          formularioSobDemanda
+          filtrarColunas
           campos={[
             { nome: 'area_id', rot: 'Área', tipo: 'select', col: 'area',
               soCriacao: true,
