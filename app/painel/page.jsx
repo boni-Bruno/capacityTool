@@ -72,7 +72,7 @@ export default async function Page({ searchParams }) {
           <h1 className="titulo">Capacidade</h1>
           <Suspense>
             <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos}
-                     unidade={unidade} />
+                     unidade={unidade} subAreas={[]} sub={null} tipo={null} />
           </Suspense>
         </div>
         <div className="aviso">
@@ -94,18 +94,41 @@ export default async function Page({ searchParams }) {
   // A lista de recursos vem antes do resto para validar o que veio na URL:
   // recurso de outra área faria as consultas voltarem vazias e a tela mostraria
   // zero em tudo, parecendo cálculo errado em vez de filtro inválido.
-  const recursos = await porRecurso(exec.id, areaId, ano);
+  const todos = await porRecurso(exec.id, areaId, ano);
+
+  // Os filtros do cabeçalho são atributos do recurso, e a lista de opções sai
+  // do que existe nesta área — sem cadastro à parte de sub-área.
+  const subAreas = [...new Set(todos.map((r) => r.sub_area).filter(Boolean))].sort();
+  const sub = subAreas.includes(searchParams?.sub) ? searchParams.sub : null;
+  const tipo = ['MAQUINA', 'PESSOA'].includes(searchParams?.tipo)
+    ? searchParams.tipo : null;
+
+  // Um lugar só decide quem entra: a tabela mostra exatamente os recursos que
+  // alimentaram os indicadores e o gráfico.
+  const recursos = todos.filter((r) =>
+    (sub === null || r.sub_area === sub) &&
+    (tipo === null || r.tipo_recurso === tipo));
+
   const pedido = searchParams?.recurso ? Number(searchParams.recurso) : null;
   const foco = recursos.find((r) => Number(r.id) === pedido) ?? null;
-  const recursoId = foco ? Number(foco.id) : null;
+
+  // Clicar num recurso estreita ainda mais; sem clique, valem os filtros.
+  const visiveis = foco ? [foco] : recursos;
+  const filtrado = sub !== null || tipo !== null || foco !== null;
+  // '0' quando nada casa o filtro: nenhum recurso tem id 0, então as consultas
+  // voltam zeradas. String vazia estouraria no cast de string_to_array.
+  const listaIds = !filtrado ? null
+    : (visiveis.length ? visiveis.map((r) => r.id).join(',') : '0');
 
   // Monta a URL preservando o que não está mudando. Passar null num campo o
   // remove — é assim que se sobe um nível do drill-down.
-  const url = ({ recurso = recursoId, mes: m, dia: d } = {}) => {
+  const url = ({ recurso = foco?.id ?? null, mes: m, dia: d } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
     p.set('ano', String(ano));
     p.set('unidade', unidade);
+    if (sub !== null) p.set('sub', sub);
+    if (tipo !== null) p.set('tipo', tipo);
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
     if (m !== null && m !== undefined) p.set('mes', String(m));
     if (d !== null && d !== undefined) p.set('dia', String(d));
@@ -130,8 +153,8 @@ export default async function Page({ searchParams }) {
     // Turno: sem instalada nas barras. Ela é grão dia — repetir o teto em cada
     // turno era o que inflava o total no Qlik antigo. Vem separado, uma vez.
     const [linhas, tetoDia] = await Promise.all([
-      porTurnoDoDia(exec.id, areaId, dataISO, recursoId),
-      tetoDoDia(exec.id, areaId, dataISO, recursoId),
+      porTurnoDoDia(exec.id, areaId, dataISO, listaIds),
+      tetoDoDia(exec.id, areaId, dataISO, listaIds),
     ]);
     dados = linhas.map((l) => ({
       rotulo: l.nome,
@@ -141,7 +164,7 @@ export default async function Page({ searchParams }) {
     mostrarInstalada = false;
     teto = tetoDia;
   } else if (mes) {
-    const linhas = await porDia(exec.id, areaId, ano, mes, recursoId);
+    const linhas = await porDia(exec.id, areaId, ano, mes, listaIds);
     dados = Array.from({ length: diasNoMes }, (_, i) => {
       const achado = linhas.find((l) => Number(l.dia) === i + 1);
       // O dia da semana antes do número: é o que explica de bate-pronto por
@@ -157,7 +180,7 @@ export default async function Page({ searchParams }) {
       };
     });
   } else {
-    const linhas = await porMes(exec.id, areaId, ano, recursoId);
+    const linhas = await porMes(exec.id, areaId, ano, listaIds);
     dados = dozeMeses(linhas).map((m) => ({
       rotulo: MESES[m.mes],
       instalada: m.instalada,
@@ -186,7 +209,7 @@ export default async function Page({ searchParams }) {
         <h1 className="titulo">Capacidade</h1>
         <Suspense>
           <Filtros areas={listaAreas} areaId={areaId} ano={ano} anos={anos}
-                     unidade={unidade} />
+                   unidade={unidade} subAreas={subAreas} sub={sub} tipo={tipo} />
         </Suspense>
       </div>
 
@@ -276,6 +299,7 @@ export default async function Page({ searchParams }) {
           <thead>
             <tr>
               <th>Recurso</th>
+              <th>Sub-área</th>
               <th>Calendário</th>
               <th className="num">Instalada ({sufixoUnidade(unidade)})</th>
               <th className="num">Planejada ({sufixoUnidade(unidade)})</th>
@@ -284,7 +308,7 @@ export default async function Page({ searchParams }) {
             </tr>
           </thead>
           <tbody>
-            {recursos.map((r) => (
+            {visiveis.map((r) => (
               <tr key={r.codigo} className={foco?.id === r.id ? 'linha-edit' : ''}>
                 <td>
                   <Link className="link-linha"
@@ -292,6 +316,7 @@ export default async function Page({ searchParams }) {
                     {r.nome}
                   </Link>
                 </td>
+                <td className={r.sub_area ? '' : 'muted'}>{r.sub_area || '—'}</td>
                 <td>
                   <span className={'selo ' + (r.calendario === 'RODIZIO' ? 'rodizio' : 'padrao')}>
                     {r.calendario ? r.calendario.toLowerCase() : '—'}

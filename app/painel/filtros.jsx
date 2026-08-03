@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { rotuloArea } from '../../lib/dias';
 import { UNIDADES } from '../../lib/formato';
 
-export default function Filtros({ areas, areaId, ano, anos, unidade }) {
+export default function Filtros({
+  areas, areaId, ano, anos, unidade, subAreas = [], sub = null, tipo = null,
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const [rodando, setRodando] = useState(false);
@@ -13,7 +15,14 @@ export default function Filtros({ areas, areaId, ano, anos, unidade }) {
 
   function muda(campo, valor) {
     const p = new URLSearchParams(params.toString());
-    p.set(campo, valor);
+    if (valor === '') p.delete(campo); else p.set(campo, valor);
+
+    // Trocar de filtro invalida o recurso clicado e o nível do drill-down:
+    // o recurso pode não estar mais na seleção, e o dia aberto era do
+    // conjunto antigo.
+    if (campo === 'sub' || campo === 'tipo' || campo === 'area') {
+      p.delete('recurso'); p.delete('mes'); p.delete('dia');
+    }
     router.push('?' + p.toString());
   }
 
@@ -46,6 +55,19 @@ export default function Filtros({ areas, areaId, ano, anos, unidade }) {
 
       <select value={ano} onChange={(e) => muda('ano', e.target.value)}>
         {anos.map((a) => <option key={a} value={a}>{a}</option>)}
+      </select>
+
+      {subAreas.length > 0 && (
+        <select value={sub ?? ''} onChange={(e) => muda('sub', e.target.value)}>
+          <option value="">todas as sub-áreas</option>
+          {subAreas.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      )}
+
+      <select value={tipo ?? ''} onChange={(e) => muda('tipo', e.target.value)}>
+        <option value="">máquina e pessoa</option>
+        <option value="MAQUINA">só máquina</option>
+        <option value="PESSOA">só pessoa</option>
       </select>
 
       {/* A unidade muda só a leitura: o dado trafega sempre em minutos. */}

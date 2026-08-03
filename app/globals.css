@@ -36,10 +36,26 @@ body {
   padding: 1.25rem .75rem 1rem;
   display: flex; flex-direction: column; gap: 2px;
 }
-.lado-marca {
-  font-size: 15px; font-weight: 600; margin: 0 0 1rem; padding: 0 .5rem;
-  letter-spacing: -0.3px;
+.lado-topo {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 4px; margin-bottom: 1rem; min-height: 28px;
 }
+.lado-marca {
+  font-size: 15px; font-weight: 600; margin: 0; padding: 0 .5rem;
+  letter-spacing: -0.3px; white-space: nowrap; overflow: hidden;
+}
+.lado-retrair {
+  flex: 0 0 auto; width: 26px; height: 26px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); color: var(--muted); font: inherit; font-size: 13px;
+  line-height: 1;
+}
+.lado-retrair:hover { background: var(--gray-bg); color: var(--text); }
+
+/* Recolhido: sobram os dois atalhos, centralizados. */
+.lado-estreito { flex-basis: 56px; padding-left: .4rem; padding-right: .4rem; }
+.lado-estreito .lado-topo { justify-content: center; }
+.lado-estreito .lado-item { text-align: center; padding: 8px 0; font-size: 15px; }
 
 .lado-item {
   display: block; padding: 7px 10px; border-radius: 7px;
