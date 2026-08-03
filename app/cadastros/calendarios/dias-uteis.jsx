@@ -10,7 +10,9 @@ import { PESO_PADRAO, diasUteisPorMes, formataDiasUteis, lePeso } from '../../..
 // A contagem crua vem do servidor (quantos sábados o calendário trabalha em
 // março, etc.) e o peso é aplicado aqui, ao vivo: mexer no peso do sábado
 // mostra o efeito nos doze meses antes de salvar.
-export default function DiasUteis({ calendarioId, contagem, pesos, ano }) {
+export default function DiasUteis({
+  calendarioId, contagem, pesos, ano, nome, diasTrabalhados = [],
+}) {
   const router = useRouter();
   const [valores, setValores] = useState(() =>
     Object.fromEntries(pesos.map((p, d) => [d, String(p).replace('.', ',')])));
@@ -30,6 +32,11 @@ export default function DiasUteis({ calendarioId, contagem, pesos, ano }) {
   const total = meses.reduce((s, v) => s + v, 0);
 
   const sujo = pesos.some((p, d) => (lePeso(valores[d]) ?? 0) !== p);
+
+  // Dia que este calendário trabalha mas pesa zero não entra na contagem — o
+  // caso clássico é o rodízio, que trabalha domingo enquanto o peso padrão do
+  // domingo é 0. O número sairia menor sem nada explicar.
+  const trabalhaSemPesar = diasTrabalhados.filter((d) => (lidos[d] ?? 0) === 0);
 
   async function salvar() {
     setSalvando(true);
@@ -115,11 +122,26 @@ export default function DiasUteis({ calendarioId, contagem, pesos, ano }) {
         </table>
       </div>
 
+      {trabalhaSemPesar.length > 0 && (
+        <div className="aviso" style={{ marginTop: 14 }}>
+          <strong>
+            {nome} trabalha {trabalhaSemPesar.map((d) => DIAS[d]).join(', ')},
+            mas o peso desse dia é zero.
+          </strong>
+          <p style={{ margin: '6px 0 0' }}>
+            O dia produz capacidade e não entra na contagem de dias úteis. Se
+            for de propósito, ignore; senão, dê peso a ele aí em cima.
+          </p>
+        </div>
+      )}
+
       <p className="rodape">
-        O peso só conta nos dias que este calendário trabalha: sábado sem turno
-        na grade acima vale zero, não 0,5. Feriado cadastrado já sai da conta.
-        Isto é indicador de leitura — a capacidade continua sendo calculada em
-        minutos e não usa estes pesos.
+        Os pesos são <strong>deste calendário</strong>: rodízio e padrão contam
+        o dia de formas diferentes, e mexer aqui não afeta o outro. O peso só
+        conta nos dias que este calendário trabalha — sábado sem turno na grade
+        acima vale zero, não 0,5 — e feriado cadastrado já sai da conta.
+        {' '}Isto é indicador de leitura: a capacidade continua sendo calculada
+        em minutos e não usa estes pesos.
       </p>
     </>
   );

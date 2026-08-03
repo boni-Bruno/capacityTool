@@ -161,13 +161,15 @@ export default async function Page({ searchParams }) {
           </div>
 
           <div className="painel">
-            <h2>Peso do dia útil</h2>
+            <h2>Peso do dia útil · {cal.nome}</h2>
             <DiasUteis
               key={`${cal.id}:${ano}`}
               calendarioId={cal.id}
               contagem={contagem}
               pesos={pesos}
               ano={ano}
+              nome={cal.nome}
+              diasTrabalhados={diasSemana}
             />
           </div>
         </>

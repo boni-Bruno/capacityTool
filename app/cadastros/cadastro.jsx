@@ -130,8 +130,52 @@ export default function Cadastro({
 
   const filtrando = Object.values(filtros).some(Boolean);
 
+  // O formulário fica ACIMA da tabela quando entra sob demanda: com a lista
+  // grande, um botão no rodapé desce junto e some da tela.
+  const formulario = (
+    <>
+      {formularioSobDemanda && !criando && (
+        <div className="acoes" style={{ marginBottom: 16 }}>
+          <button className="btn btn-primario" onClick={() => setCriando(true)}>
+            {rotuloNovo}
+          </button>
+        </div>
+      )}
+
+      {(!formularioSobDemanda || criando) && (
+      <div className="form-grade"
+           style={formularioSobDemanda ? { marginBottom: 20 } : { marginTop: 16 }}>
+        {camposForm.map((c) => (
+          <label key={c.nome} className="campo">
+            <span className="campo-rot">
+              {c.rot}
+              {c.soCriacao && <strong className="obrigatorio"> *</strong>}
+            </span>
+            {entrada(c, novo[c.nome], (e) =>
+              setNovo({ ...novo, [c.nome]: e.target.value }))}
+          </label>
+        ))}
+        <div className="campo campo-check">
+          <button className="btn btn-primario" disabled={ocupado || !podeCriar}
+                  onClick={criar}>
+            {ocupado ? 'Salvando…' : rotuloNovo}
+          </button>
+          {formularioSobDemanda && (
+            <button className="btn" disabled={ocupado}
+                    onClick={() => { setCriando(false); setNovo(limpo); setErro(null); }}>
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+      )}
+    </>
+  );
+
   return (
     <>
+      {formularioSobDemanda && formulario}
+
       {itens.length === 0 ? (
         <p className="muted">{vazio}</p>
       ) : (
@@ -251,40 +295,7 @@ export default function Cadastro({
         </div>
       )}
 
-      {formularioSobDemanda && !criando && (
-        <div className="acoes" style={{ marginTop: 16 }}>
-          <button className="btn btn-primario" onClick={() => setCriando(true)}>
-            {rotuloNovo}
-          </button>
-        </div>
-      )}
-
-      {(!formularioSobDemanda || criando) && (
-      <div className="form-grade" style={{ marginTop: 16 }}>
-        {camposForm.map((c) => (
-          <label key={c.nome} className="campo">
-            <span className="campo-rot">
-              {c.rot}
-              {c.soCriacao && <strong className="obrigatorio"> *</strong>}
-            </span>
-            {entrada(c, novo[c.nome], (e) =>
-              setNovo({ ...novo, [c.nome]: e.target.value }))}
-          </label>
-        ))}
-        <div className="campo campo-check">
-          <button className="btn btn-primario" disabled={ocupado || !podeCriar}
-                  onClick={criar}>
-            {ocupado ? 'Salvando…' : rotuloNovo}
-          </button>
-          {formularioSobDemanda && (
-            <button className="btn" disabled={ocupado}
-                    onClick={() => { setCriando(false); setNovo(limpo); setErro(null); }}>
-              Cancelar
-            </button>
-          )}
-        </div>
-      </div>
-      )}
+      {!formularioSobDemanda && formulario}
 
       {erro && <p className="erro">{erro}</p>}
       {aviso && <div className="aviso" style={{ marginTop: 12 }}>{aviso}</div>}
