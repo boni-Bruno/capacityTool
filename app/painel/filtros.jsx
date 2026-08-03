@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { rotuloArea } from '../../lib/dias';
 import { UNIDADES } from '../../lib/formato';
+import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 
 // Os filtros do painel moram em dois lugares.
 //
-// No topo fica o que define QUAL cálculo se está olhando: a área, porque a
-// rodada é por área, e o botão que dispara uma nova.
+// No topo fica o que define QUAL cálculo se está olhando: a área e a origem
+// do OEE, porque a rodada é por área e por origem, e o botão que dispara uma
+// nova. Trocar de origem troca de rodada — não recalcula nada.
 //
 // Os de recorte — ano, sub-área, tipo e unidade — ficam junto da tabela por
 // recurso, que é onde se escolhe o que olhar. Todos vivem na URL, então
@@ -26,14 +28,15 @@ function useMuda() {
 
     // O recurso clicado pode não estar mais na seleção, e o dia aberto era do
     // conjunto antigo — manter mostraria número de um recorte que sumiu.
-    if (campo === 'sub' || campo === 'tipo' || campo === 'area') {
+    if (campo === 'sub' || campo === 'tipo' || campo === 'area'
+        || campo === 'origem') {
       p.delete('recurso'); p.delete('mes'); p.delete('dia');
     }
     router.push('?' + p.toString());
   };
 }
 
-export function FiltrosTopo({ areas, areaId, ano }) {
+export function FiltrosTopo({ areas, areaId, ano, origem }) {
   const router = useRouter();
   const muda = useMuda();
   const [rodando, setRodando] = useState(false);
@@ -46,7 +49,7 @@ export function FiltrosTopo({ areas, areaId, ano }) {
       const r = await fetch('/api/recalcular', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ areaId, ano }),
+        body: JSON.stringify({ areaId, ano, origem }),
       });
       const j = await r.json();
       if (!j.ok) throw new Error(j.erro);
@@ -66,7 +69,18 @@ export function FiltrosTopo({ areas, areaId, ano }) {
         ))}
       </select>
 
-      <button className="btn" onClick={recalcular} disabled={rodando}>
+      {/* Muda de rodada, não recalcula: META e SIMULADO já estão calculadas
+          e guardadas cada uma na sua. */}
+      <select value={origem} onChange={(e) => muda('origem', e.target.value)}>
+        {ORIGENS.map((o) => (
+          <option key={o} value={o}>
+            OEE {rotuloOrigem(o)}
+          </option>
+        ))}
+      </select>
+
+      <button className="btn" onClick={recalcular} disabled={rodando}
+              title={`Recalcular o OEE ${rotuloOrigem(origem)} deste ano`}>
         {rodando ? 'Calculando…' : 'Recalcular'}
       </button>
 

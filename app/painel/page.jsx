@@ -4,6 +4,7 @@ import {
   ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
 } from '../../lib/db';
 import { MESES, DIAS, DIAS_CURTO } from '../../lib/dias';
+import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
   formataUnidade, horasEMinutos, sufixoUnidade, UNIDADES,
 } from '../../lib/formato';
@@ -58,9 +59,12 @@ export default async function Page({ searchParams }) {
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
   const unidade = UNIDADES.some((u) => u.valor === searchParams?.unidade)
     ? searchParams.unidade : 'h';
+  // META e SIMULADO são rodadas distintas; trocar aqui troca de rodada, não
+  // recalcula. Default META, que é o cenário oficial.
+  const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
   const area = listaAreas.find((a) => a.id === areaId);
 
-  const exec = await ultimaExecucao(areaId, ano);
+  const exec = await ultimaExecucao(areaId, ano, origem);
 
   // Sem rodada para esta área e ano, os filtros e o Recalcular continuam na
   // tela. Antes a página saía cedo e mandava rodar SQL no Neon — sem cálculo
@@ -71,16 +75,18 @@ export default async function Page({ searchParams }) {
         <div className="topo">
           <h1 className="titulo">Capacidade</h1>
           <Suspense>
-            <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} />
+            <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} origem={origem} />
           </Suspense>
         </div>
         <div className="aviso">
           <strong>
-            Nenhum cálculo rodado para {area?.nome ?? 'esta área'} em {ano}.
+            Nenhum cálculo do OEE {rotuloOrigem(origem)} para{' '}
+            {area?.nome ?? 'esta área'} em {ano}.
           </strong>
           <p style={{ margin: '8px 0 12px' }}>
             Clique em <strong>Recalcular</strong> aí em cima. O motor roda por
-            área e por ano — cadastrar turno ou parada não recalcula sozinho.
+            área, ano e origem de OEE — cadastrar turno ou parada não recalcula
+            sozinho, e a outra origem tem a rodada dela.
           </p>
           <Suspense>
             <FiltrosRecurso ano={ano} anos={anos} unidade={unidade} />
@@ -129,6 +135,7 @@ export default async function Page({ searchParams }) {
     p.set('area', String(areaId));
     p.set('ano', String(ano));
     p.set('unidade', unidade);
+    p.set('origem', origem);
     if (sub !== null) p.set('sub', sub);
     if (tipo !== null) p.set('tipo', tipo);
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
@@ -210,7 +217,7 @@ export default async function Page({ searchParams }) {
       <div className="topo">
         <h1 className="titulo">Capacidade</h1>
         <Suspense>
-          <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} />
+          <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} origem={origem} />
         </Suspense>
       </div>
 
@@ -340,7 +347,8 @@ export default async function Page({ searchParams }) {
         </table>
 
         <p className="rodape">
-          Rodada {exec.id} · cenário {exec.cenario} · calculada em{' '}
+          Rodada {exec.id} · OEE {rotuloOrigem(exec.origem)} · cenário{' '}
+          {exec.cenario} · calculada em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}.
           {' '}Cadastro alterado depois disso só entra na conta ao
           {' '}<strong>Recalcular</strong>.

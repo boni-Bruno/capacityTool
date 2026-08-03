@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
 import { areas } from '../../../lib/db';
 import { recursos } from '../../../lib/cadastro';
-import { faixasOee, origensDoAno, ORIGENS } from '../../../lib/oee';
+import { faixasOee, origensDoAno } from '../../../lib/oee';
+import { ORIGENS, rotuloOrigem } from '../../../lib/origens';
 import { inicioDoMes } from '../../../lib/faixas';
 import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
@@ -77,7 +78,7 @@ export default async function Page({ searchParams }) {
     },
     {
       nome: 'origem', rotulo: 'Origem', tipo: 'select', valor: origem,
-      opcoes: ORIGENS.map((o) => ({ valor: o, rotulo: o.toLowerCase() })),
+      opcoes: ORIGENS.map((o) => ({ valor: o, rotulo: rotuloOrigem(o) })),
     },
     {
       nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
@@ -95,7 +96,7 @@ export default async function Page({ searchParams }) {
       </div>
 
       <div className="painel">
-        <h2>{recurso.nome} · {origem.toLowerCase()} · {ano}</h2>
+        <h2>{recurso.nome} · OEE {rotuloOrigem(origem)} · {ano}</h2>
 
         <EditorOee
           key={`${recurso.id}:${origem}:${ano}`}
@@ -108,22 +109,24 @@ export default async function Page({ searchParams }) {
         {conflito.length > 0 && (
           <div className="aviso" style={{ marginTop: 14 }}>
             <strong>
-              Este recurso também tem OEE de origem{' '}
-              {conflito.map((o) => o.origem.toLowerCase()).join(' e ')} em {ano}.
+              Este recurso também tem OEE {conflito.map((o) => rotuloOrigem(o.origem)).join(' e ')}
+              {' '}em {ano}.
             </strong>
             <p style={{ margin: '6px 0 0' }}>
-              O motor escolhe o OEE por vigência e turno, sem olhar a origem — com
-              mais de uma valendo na mesma data, ele pega uma sem critério e o
-              número do cálculo passa a depender de sorte. Deixe só uma origem
-              cobrindo o período, ou apague a outra.
+              Isso é normal e é o ponto: cada origem gera a sua rodada de
+              cálculo, e no painel você troca entre elas para comparar. Uma não
+              interfere na outra.
             </p>
           </div>
         )}
 
         <p className="rodape">
-          O OEE multiplica a planejada para virar disponível. Setup não entra
-          como parada em lugar nenhum porque já está embutido aqui — descontar
-          de novo contaria a mesma perda duas vezes.
+          O OEE multiplica a planejada para virar disponível — instalada e
+          planejada são iguais nas duas origens, só a disponível muda. Mês em
+          branco faz o motor usar 100%, e a disponível sai igual à planejada:
+          rodar o cálculo de uma origem sem OEE cadastrado dá um número crível
+          e falso. Setup não entra como parada em lugar nenhum porque já está
+          embutido aqui.
         </p>
       </div>
     </>
