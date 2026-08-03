@@ -55,7 +55,7 @@ export default function EditorHorario({ turnoId, horarios }) {
       <table>
         <thead>
           <tr>
-            <th>Dia</th>
+            <th>Dia em que conta</th>
             <th>Início</th>
             <th>Fim</th>
             <th className="num">Bruto</th>
@@ -99,7 +99,11 @@ export default function EditorHorario({ turnoId, horarios }) {
                 <td>{existe ? hhmm(h.hora_inicio) : <span className="muted">não roda</span>}</td>
                 <td>
                   {existe ? hhmm(h.hora_fim) : ''}
-                  {h.cruza_meia_noite && <span className="selo vira">vira o dia</span>}
+                  {h.cruza_meia_noite && (
+                    <span className="selo vira" title="O turno entra na véspera e sai neste dia">
+                      começa no dia anterior
+                    </span>
+                  )}
                 </td>
                 <td className="num">{existe ? h.min_bruto : ''}</td>
                 <td className="num">{existe ? h.min_maquina : ''}</td>
@@ -127,11 +131,22 @@ export default function EditorHorario({ turnoId, horarios }) {
 
       {erro && <p className="erro">{erro}</p>}
 
+      <div className="aviso" style={{ marginTop: 14 }}>
+        <strong>O dia da linha é o dia em que o turno termina.</strong>
+        <p style={{ margin: '6px 0 0' }}>
+          Um turno de 22:00 às 05:00 cadastrado em <strong>terça</strong> entra
+          na segunda à noite e sai na terça de manhã — e os 420 minutos contam
+          na terça. É por isso que, com feriado na terça, ele não entra na
+          segunda 22:00: aquela noite é a folga do feriado.
+          {' '}Cadastre no dia em que o turno <strong>conta</strong>, não no dia
+          em que ele começa.
+        </p>
+      </div>
+
       <p className="rodape">
         Máquina e pessoa diferem pelo intervalo de refeição: máquina não para
         para almoçar. Quem decide é o <code>tipo_recurso</code> do recurso, não
-        o turno. Turno que vira a meia-noite (22:00 às 05:00) é normal — o
-        banco recusa só duração fora de 1 a 1440 minutos.
+        o turno. O banco recusa só duração fora de 1 a 1440 minutos.
       </p>
     </>
   );

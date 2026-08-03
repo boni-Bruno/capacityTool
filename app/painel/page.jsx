@@ -253,7 +253,9 @@ export default async function Page({ searchParams }) {
         <p className="rodape">
           {dataISO
             ? `Teto do dia: ${horas(teto)} h. Instalada é grão dia — 24 h por dia, ` +
-              `todo dia — e por isso não aparece repartida entre os turnos.`
+              `todo dia — e por isso não aparece repartida entre os turnos. ` +
+              `Turno que vira a meia-noite conta no dia em que termina: o da ` +
+              `noite anterior aparece aqui, inteiro.`
             : 'Clique numa coluna para descer um nível.'}
         </p>
       </div>

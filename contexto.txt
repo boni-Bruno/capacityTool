@@ -57,6 +57,40 @@ trigger converte para `interval` antes de somar. Já houve um bug aqui: o
 3º turno virou −1020 minutos e sumiu do cálculo em silêncio. Existe um
 check que agora recusa duração fora de 1..1440.
 
+### O dia da semana do turno é o dia em que ele TERMINA
+
+Regra da empresa, e a decisão mais fácil de quebrar sem perceber por não
+estar em lugar nenhum do banco.
+
+O 3º turno entra às 22:00 e sai às 05:00. Ele conta no dia em que
+**termina**: começou segunda 22:00 e saiu terça 05:00 → é o turno de
+**terça**, com os 420 minutos inteiros na terça.
+
+Consequência prática, e é assim que a fábrica opera: feriado na terça
+significa que o turno **não entra na segunda 22:00** — é a folga do
+feriado. Ele volta terça 22:00, contando como quarta.
+
+O motor já faz isso, mas por omissão e não por esperteza: ele nunca lê
+`hora_inicio` nem `hora_fim` para decidir a data. As horas servem só para o
+trigger calcular a duração; depois disso a `vw_turno_minutos` entrega só
+`dia_semana` e `minutos`. A atribuição sai de
+`vtm.dia_semana = d.dia_semana`, e o que aquela linha significa é convenção
+de cadastro.
+
+Por isso: **cadastre o horário no dia em que o turno conta, não no dia em
+que ele começa.** Um 3º turno que fisicamente roda na noite de segunda vai
+cadastrado em TERÇA, 22:00 → 05:00.
+
+Hoje isso não aparece porque todos os dias têm o mesmo horário. No dia em
+que existir um 3º turno rodando só algumas noites, a escolha do dia passa a
+mudar o número.
+
+**Não divida o turno da noite em dois** (22:00–00:00 e 00:00–05:00) para
+"corrigir" a atribuição. Isso jogaria 120 minutos na segunda e 300 na
+terça, quando a empresa conta os 420 na terça — trocaria um modelo certo
+por um errado. E dobraria o cadastro de horários e paradas, com o intervalo
+de refeição correndo o risco de ser descontado duas vezes.
+
 ### Intervalo de refeição depende do tipo de recurso
 
 `recurso.tipo_recurso` é MAQUINA ou PESSOA. `turno_intervalo.aplica_a`
