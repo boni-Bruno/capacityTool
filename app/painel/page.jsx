@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {
   ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
 } from '../../lib/db';
-import { MESES, DIAS } from '../../lib/dias';
+import { MESES, DIAS, DIAS_CURTO } from '../../lib/dias';
 import { horas, horasEMinutos } from '../../lib/formato';
 import Grafico from './grafico';
 import Filtros from './filtros';
@@ -130,7 +130,7 @@ export default async function Page({ searchParams }) {
       tetoDoDia(exec.id, areaId, dataISO, recursoId),
     ]);
     dados = linhas.map((l) => ({
-      rotulo: l.codigo,
+      rotulo: l.nome,
       planejada: Number(l.planejada),
       disponivel: Number(l.disponivel),
     }));
@@ -140,8 +140,12 @@ export default async function Page({ searchParams }) {
     const linhas = await porDia(exec.id, areaId, ano, mes, recursoId);
     dados = Array.from({ length: diasNoMes }, (_, i) => {
       const achado = linhas.find((l) => Number(l.dia) === i + 1);
+      // O dia da semana antes do número: é o que explica de bate-pronto por
+      // que uma barra caiu — domingo e sábado saltam à vista sem precisar
+      // conferir no calendário.
+      const semana = DIAS_CURTO[new Date(ano, mes - 1, i + 1).getDay()];
       return {
-        rotulo: dd(i + 1),
+        rotulo: `${semana} ${dd(i + 1)}`,
         instalada: Number(achado?.instalada ?? 0),
         planejada: Number(achado?.planejada ?? 0),
         disponivel: Number(achado?.disponivel ?? 0),
