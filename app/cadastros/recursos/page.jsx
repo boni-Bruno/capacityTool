@@ -1,6 +1,9 @@
-import { recursosCadastro, areasParaEscolha } from '../../../lib/estrutura';
+import {
+  recursosCadastro, areasParaEscolha, recursosDesativados,
+} from '../../../lib/estrutura';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
+import Definitivo from './definitivo';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +13,11 @@ const TIPOS = [
 ];
 
 export default async function Page() {
-  let recursos, areas;
+  let recursos, areas, desativados;
   try {
-    [recursos, areas] = await Promise.all([recursosCadastro(), areasParaEscolha()]);
+    [recursos, areas, desativados] = await Promise.all([
+      recursosCadastro(), areasParaEscolha(), recursosDesativados(),
+    ]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }
@@ -104,9 +109,12 @@ export default async function Page() {
           cálculo. O que já entrou é <strong>desativado</strong>: sai do
           planejamento a partir do próximo Recalcular e some das telas de
           turno, OEE e parada, mas as rodadas antigas continuam explicáveis.
-          Ele fica aqui em cinza, com Reativar.
+          Ele fica aqui em cinza, com Reativar — e se tiver sido criado por
+          engano, dá para apagar de vez no painel abaixo.
         </p>
       </div>
+
+      <Definitivo itens={desativados} />
     </>
   );
 }
