@@ -36,6 +36,9 @@ export default function Cadastro({
   const [criando, setCriando] = useState(false);
   const [filtros, setFiltros] = useState({});
   const [escolhidos, setEscolhidos] = useState(() => new Set());
+  // A coluna Ativo não vem de `campos` — ela é gerada pelo componente — então
+  // o filtro dela precisa de uma chave própria, fora do espaço dos campos.
+  const [soAtivos, setSoAtivos] = useState('');   // '' | 'sim' | 'nao'
   const [lote, setLote] = useState(null);
   const [editando, setEditando] = useState(null);
   const [rascunho, setRascunho] = useState({});
@@ -123,6 +126,9 @@ export default function Cadastro({
     .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
   const visiveis = !filtrarColunas ? itens : itens.filter((it) =>
+    (soAtivos === ''
+      || (soAtivos === 'sim' && it.ativo !== false)
+      || (soAtivos === 'nao' && it.ativo === false)) &&
     campos.every((c) => {
       const busca = filtros[c.nome];
       if (!busca) return true;
@@ -131,7 +137,7 @@ export default function Cadastro({
       return achata(texto(c, it)).includes(achata(busca));
     }));
 
-  const filtrando = Object.values(filtros).some(Boolean);
+  const filtrando = Object.values(filtros).some(Boolean) || soAtivos !== '';
 
   const marca = (id) => setEscolhidos((s) => {
     const novo = new Set(s);
@@ -284,7 +290,16 @@ export default function Cadastro({
               {filtrarColunas && (
                 <tr className="linha-filtro">
                   {selecaoMultipla && <th className="col-marca" />}
-                  {podeAtivar && <th className="col-marca" />}
+                  {podeAtivar && (
+                    <th className="col-ativo-filtro">
+                      <select value={soAtivos}
+                              onChange={(e) => setSoAtivos(e.target.value)}>
+                        <option value="">todos</option>
+                        <option value="sim">ativos</option>
+                        <option value="nao">inativos</option>
+                      </select>
+                    </th>
+                  )}
                   {campos.map((c) => (
                     <th key={c.nome}>
                       {c.tipo === 'select' ? (
@@ -306,7 +321,8 @@ export default function Cadastro({
                   ))}
                   <th className="acoes">
                     {filtrando && (
-                      <button className="btn btn-mini" onClick={() => setFiltros({})}>
+                      <button className="btn btn-mini"
+                              onClick={() => { setFiltros({}); setSoAtivos(''); }}>
                         Limpar
                       </button>
                     )}
@@ -399,7 +415,8 @@ export default function Cadastro({
           {visiveis.length === 0 && (
             <p className="muted" style={{ marginTop: 12 }}>
               Nenhuma linha casa o filtro.{' '}
-              <button className="link-linha" onClick={() => setFiltros({})}>
+              <button className="link-linha"
+                      onClick={() => { setFiltros({}); setSoAtivos(''); }}>
                 Limpar filtros
               </button>
             </p>
