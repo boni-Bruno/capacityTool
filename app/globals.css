@@ -428,3 +428,14 @@ input.invalido { border-color: #a32d2d; }
 .linha-filtro select {
   width: 100%; min-width: 80px; height: 30px; font-size: 13px;
 }
+
+/* ---- memorial do cálculo ---- */
+.memorias { display: flex; flex-direction: column; gap: 1.25rem; }
+.memoria-turno {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); margin: 0 0 .5rem;
+}
+.memoria table { font-size: 13px; }
+.memoria td, .memoria th { padding: 7px 8px; }
+.delta-mais { color: var(--teal-fg); }
+.delta-menos { color: #a32d2d; }

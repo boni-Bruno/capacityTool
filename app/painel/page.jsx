@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import {
   ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
+  memoriaDoDia,
 } from '../../lib/db';
 import { MESES, DIAS, DIAS_CURTO } from '../../lib/dias';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
@@ -11,6 +12,7 @@ import {
 import Grafico from './grafico';
 import { FiltrosTopo, FiltrosRecurso } from './filtros';
 import TabelaMes from './tabela-mes';
+import Memoria from './memoria';
 import Shell from '../shell';
 
 export const dynamic = 'force-dynamic';
@@ -157,6 +159,7 @@ export default async function Page({ searchParams }) {
   let dados;
   let mostrarInstalada = true;
   let teto = null;
+  let memoria = null;
 
   if (dataISO) {
     // Turno: sem instalada nas barras. Ela é grão dia — repetir o teto em cada
@@ -172,6 +175,10 @@ export default async function Page({ searchParams }) {
     }));
     mostrarInstalada = false;
     teto = tetoDia;
+
+    // O memorial é por recurso: com a área inteira somada, "de quanto para
+    // quanto" não teria sujeito. Só carrega quando há um recurso em foco.
+    if (foco) memoria = await memoriaDoDia(exec.id, foco.id, dataISO);
   } else if (mes) {
     const linhas = await porDia(exec.id, areaId, ano, mes, listaIds);
     dados = Array.from({ length: diasNoMes }, (_, i) => {
@@ -295,6 +302,28 @@ export default async function Page({ searchParams }) {
             : 'Clique numa coluna para descer um nível.'}
         </p>
       </div>
+
+      {dataISO && (
+        <div className="painel">
+          <div className="painel-topo">
+            <h2>
+              Por que deu esse número
+              {foco && <span className="foco"> · {foco.nome}</span>}
+            </h2>
+            <span className="muted" style={{ fontSize: 12 }}>
+              {foco
+                ? 'cada linha mostra de quanto para quanto foi, e por quê'
+                : 'escolha um recurso na tabela abaixo para ver o passo a passo'}
+            </span>
+          </div>
+          {foco
+            ? <Memoria linhas={memoria ?? []} unidade={unidade} />
+            : <p className="muted">
+                O memorial é por recurso — com a área inteira somada, "de quanto
+                para quanto" não teria sujeito.
+              </p>}
+        </div>
+      )}
 
       <div className="painel">
         <div className="painel-topo">

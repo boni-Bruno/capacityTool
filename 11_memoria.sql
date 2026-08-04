@@ -1,22 +1,32 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 11. MEMORIAL DO CÁLCULO
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee (da origem pedida)
+-- capacidade_memoria existe desde o 01_schema.sql e nunca recebeu insert.
+-- Ela responde "por que esse recurso deu X h?" — o passo a passo de onde cada
+-- minuto foi parar, por recurso, dia e turno.
 --
--- Cada passo da conta vai para capacidade_memoria, que responde "por que esse
--- recurso deu X h?". Só as etapas que mudaram algo, mais o ponto de partida.
+-- A cadeia, sempre nesta ordem:
+--   1 TURNO       0 -> duração bruta do turno
+--   2 INTERVALO   desconta refeição/pausa que se aplica ao tipo do recurso
+--   3 QUANTIDADE  multiplica por qt_recursos e equivalência
+--   4 CALENDARIO  zera quando o dia não é útil (regime ou feriado)
+--   5 PARADA_DIA  zera quando há parada de dia inteiro
+--   6 PARADA      desconta os minutos de parada planejada
+--     = min_planejada
+--   7 OEE         aplica o rendimento
+--     = min_disponivel
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- VOLUME: só entram as etapas que mudaram alguma coisa (delta <> 0), mais o
+-- ponto de partida. Uma máquina em dia normal gera 2 linhas; gravar as sete
+-- sempre daria dezenas de milhares por rodada sem dizer nada a mais.
+--
+-- A função passa a materializar o cálculo numa tabela temporária antes de
+-- gravar. Sem isso, o memorial precisaria repetir as CTEs inteiras num segundo
+-- comando — dois lugares calculando a mesma coisa, livres para divergir.
+--
+-- IMPACTO NOS NÚMEROS: nenhum. As contas são idênticas; muda só onde ficam.
+--
+-- ORDEM: rode ANTES do deploy do código novo.
 -- =============================================================================
 
 create or replace function fn_calcular_capacidade(
@@ -275,77 +285,3 @@ begin
     return v_execucao_id;
 end;
 $$;
-
--- =============================================================================
--- COMO RODAR
--- =============================================================================
--- Ano de 2026 para a Confecção:
-/*
-select fn_calcular_capacidade(
-    (select id from cenario where codigo = 'BASELINE'),
-    date '2026-01-01',
-    date '2026-12-31',
-    (select id from area where codigo = 'CONFECCAO')
-);
-*/
--- Devolve o "execucao_id" daquela rodada. Cada execução cria um conjunto novo;
--- nada é sobrescrito, então dá para comparar antes e depois de uma mudança.
-
-
--- =============================================================================
--- CONSULTAS DE CONFERÊNCIA
--- Troque <ID> pelo número devolvido acima.
--- =============================================================================
-
--- (A) Resumo do ano por recurso, em horas
-/*
-select r.nome as recurso,
-       cal.codigo as calendario,
-       round(i.h_inst, 0) as h_instalada,
-       round(f.h_plan, 0) as h_planejada,
-       round(f.h_disp, 0) as h_disponivel,
-       round(f.h_plan / i.h_inst * 100, 1) as pct_do_teto
-from recurso r
-join recurso_calendario rc on rc.recurso_id = r.id
-join calendario cal        on cal.id = rc.calendario_id
-join lateral (select sum(min_instalada)/60.0 as h_inst
-                from capacidade_instalada_dia where recurso_id = r.id
-                 and execucao_id = <ID>) i on true
-join lateral (select sum(min_planejada)/60.0  as h_plan,
-                     sum(min_disponivel)/60.0 as h_disp
-                from capacidade_fato where recurso_id = r.id
-                 and execucao_id = <ID>) f on true
-order by r.nome;
-*/
-
--- (B) TESTE-CHAVE: em dia útil sem parada, os 3 turnos somam 1440 min.
---     Se der diferente, há erro de cadastro.
-/*
-select f.data,
-       to_char(f.data, 'Dy') as dia,
-       sum(f.min_planejada)  as planejada_dia,
-       max(i.min_instalada)  as instalada_dia
-from capacidade_fato f
-join capacidade_instalada_dia i on i.recurso_id  = f.recurso_id
-                               and i.data        = f.data
-                               and i.execucao_id = f.execucao_id
-where f.execucao_id = <ID>
-  and f.recurso_id  = (select id from recurso where codigo = 'TEXPA-01')
-  and f.data between date '2026-07-01' and date '2026-07-14'
-group by f.data order by f.data;
-*/
-
--- (C) Onde os dois calendários divergem no ano
-/*
-select f.data, to_char(f.data,'Dy') as dia,
-       sum(case when r.codigo = 'TEXPA-01' then f.min_planejada end) as rodizio,
-       sum(case when r.codigo = 'TEXPA-02' then f.min_planejada end) as padrao
-from capacidade_fato f
-join recurso r on r.id = f.recurso_id
-where f.execucao_id = <ID>
-  and r.codigo in ('TEXPA-01','TEXPA-02')
-group by f.data
-having sum(case when r.codigo = 'TEXPA-01' then f.min_planejada end)
-    <> sum(case when r.codigo = 'TEXPA-02' then f.min_planejada end)
-order by f.data;
-*/
