@@ -34,10 +34,10 @@ const GRUPOS = [
 export default function Sidebar({ versao }) {
   const caminho = usePathname();
 
-  // O grupo da tela aberta nasce expandido; os outros, fechados.
-  const [abertos, setAbertos] = useState(() =>
-    new Set(GRUPOS.filter((g) => g.itens.some((i) => i.href === caminho))
-                  .map((g) => g.nome)));
+  // Todos os grupos nascem abertos: com dois grupos e oito telas, tudo cabe
+  // na altura da janela, e esconder metade só acrescentava um clique para
+  // chegar em qualquer lugar.
+  const [abertos, setAbertos] = useState(() => new Set(GRUPOS.map((g) => g.nome)));
   const [aberto, setAberto] = useState(false);   // gaveta no celular
 
   // Retraído x expandido.

@@ -43,8 +43,16 @@ export default function Matriz({ recursoId, ano, turnos, inicial, parciais }) {
     setOk(null);
   }
 
+  // Quantos meses do ano estão marcados para o turno — decide se a caixa do
+  // cabeçalho aparece cheia, vazia ou pela metade.
+  const contaDoTurno = (turnoId) => {
+    let n = 0;
+    for (let mes = 1; mes <= 12; mes++) if (marcado[chave(turnoId, mes)]) n++;
+    return n;
+  };
+
   function alternaTurno(turnoId) {
-    const todos = MESES.slice(1).every((_, i) => marcado[chave(turnoId, i + 1)]);
+    const todos = contaDoTurno(turnoId) === 12;
     setMarcado((m) => {
       const novo = { ...m };
       for (let mes = 1; mes <= 12; mes++) novo[chave(turnoId, mes)] = !todos;
@@ -97,13 +105,26 @@ export default function Matriz({ recursoId, ano, turnos, inicial, parciais }) {
               <th>Mês</th>
               {turnos.map((t) => (
                 <th key={t.turno_id} className="matriz-turno">
-                  <button
-                    className="matriz-cab"
-                    onClick={() => alternaTurno(t.turno_id)}
-                    title={`Código ${t.codigo} — marcar ou desmarcar o ano todo`}
-                  >
+                  <span className="matriz-nome" title={`Código ${t.codigo}`}>
                     {t.nome}
-                  </button>
+                  </span>
+                  {/* Marcar o ano inteiro num clique. Antes isso era o nome do
+                      turno sendo clicável — funcionava e ninguém descobria,
+                      porque cabeçalho não parece botão. */}
+                  <label className="matriz-ano">
+                    <input
+                      type="checkbox"
+                      checked={contaDoTurno(t.turno_id) === 12}
+                      ref={(el) => {
+                        if (el) {
+                          const n = contaDoTurno(t.turno_id);
+                          el.indeterminate = n > 0 && n < 12;
+                        }
+                      }}
+                      onChange={() => alternaTurno(t.turno_id)}
+                    />
+                    <span>ano todo</span>
+                  </label>
                 </th>
               ))}
             </tr>
@@ -158,9 +179,10 @@ export default function Matriz({ recursoId, ano, turnos, inicial, parciais }) {
       </div>
 
       <p className="rodape">
-        Clique no nome do mês ou do turno para marcar a linha ou a coluna
-        inteira. Salvar aplica o ano de {ano} — o que estiver configurado em
-        outros anos não é afetado.
+        <strong>ano todo</strong> marca ou desmarca os doze meses daquele turno
+        de uma vez; a caixa fica pela metade quando só parte do ano está
+        marcada. Clicar no nome do mês faz o mesmo com a linha. Salvar aplica o
+        ano de {ano} — o que estiver configurado em outros anos não é afetado.
       </p>
     </>
   );
