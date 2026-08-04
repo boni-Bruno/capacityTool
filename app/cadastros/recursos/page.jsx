@@ -44,6 +44,7 @@ export default async function Page() {
           rota="/api/cadastro/recurso"
           itens={recursos}
           rotuloNovo="Adicionar recurso"
+          podeReativar
           vazio="Nenhum recurso cadastrado. Crie o primeiro abaixo."
           formularioSobDemanda
           filtrarColunas
@@ -97,6 +98,13 @@ export default async function Page() {
           para para almoçar, pessoa para.
           {' '}<strong>Sub-área</strong> é texto livre e opcional — serve para
           agrupar na leitura e não tem cadastro nem regra própria.
+        </p>
+        <p className="rodape">
+          <strong>Excluir</strong> apaga de vez o recurso que nunca entrou num
+          cálculo. O que já entrou é <strong>desativado</strong>: sai do
+          planejamento a partir do próximo Recalcular e some das telas de
+          turno, OEE e parada, mas as rodadas antigas continuam explicáveis.
+          Ele fica aqui em cinza, com Reativar.
         </p>
       </div>
     </>
