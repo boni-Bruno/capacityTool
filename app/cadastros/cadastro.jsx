@@ -17,7 +17,7 @@ export default function Cadastro({
   rota,
   itens,
   campos,          // [{ nome, rot, tipo, opcoes, placeholder, col, soCriacao, padrao }]
-  podeReativar = false,
+  podeAtivar = false,
   rotuloNovo = 'Criar',
   vazio = 'Nada cadastrado ainda.',
   // Ligados onde a lista cresce. Em tela de duas linhas, esconder o
@@ -78,7 +78,7 @@ export default function Cadastro({
       setConfirmando(null);
       if (j.desativado) {
         setAviso(`Desativado em vez de apagado porque ${j.motivo}. ` +
-                 `Continua na lista, em cinza, e dá para reativar.`);
+                 `Continua na lista, em cinza — a coluna Ativo liga de volta.`);
       }
     });
 
@@ -278,11 +278,13 @@ export default function Cadastro({
                   </th>
                 )}
                 {campos.map((c) => <th key={c.nome}>{c.rot}</th>)}
+                {podeAtivar && <th className="col-marca">Ativo</th>}
                 <th />
               </tr>
               {filtrarColunas && (
                 <tr className="linha-filtro">
                   {selecaoMultipla && <th className="col-marca" />}
+                  {podeAtivar && <th className="col-marca" />}
                   {campos.map((c) => (
                     <th key={c.nome}>
                       {c.tipo === 'select' ? (
@@ -339,6 +341,20 @@ export default function Cadastro({
                       </td>
                     ))}
 
+                    {podeAtivar && (
+                      <td className="col-marca">
+                        <input
+                          type="checkbox"
+                          checked={!inativo}
+                          disabled={ocupado}
+                          title={inativo ? 'Inativo — clique para ativar'
+                                         : 'Ativo — clique para inativar'}
+                          onChange={() =>
+                            chamar('PUT', { id: it.id, ativo: inativo })}
+                        />
+                      </td>
+                    )}
+
                     <td className="acoes">
                       {edit ? (
                         <>
@@ -349,11 +365,6 @@ export default function Cadastro({
                           <button className="btn btn-mini" disabled={ocupado}
                                   onClick={() => setEditando(null)}>Cancelar</button>
                         </>
-                      ) : inativo && podeReativar ? (
-                        <button className="btn btn-mini btn-primario" disabled={ocupado}
-                                onClick={() => chamar('PUT', { id: it.id })}>
-                          {ocupado ? '…' : 'Reativar'}
-                        </button>
                       ) : confirmando === it.id ? (
                         <>
                           <span className="erro" style={{ margin: 0 }}>Excluir?</span>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  criarArea, alterarArea, excluirArea, reativarArea,
+  criarArea, alterarArea, excluirArea, definirAtivoArea,
 } from '../../../../lib/estrutura';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeSessao } from '../../../../lib/sessao';
@@ -34,8 +34,10 @@ export async function PATCH(req) {
 export async function PUT(req) {
   try {
     await exigeSessao();
-    const { id } = await req.json();
-    await reativarArea(id);
+    // Recebe o estado, não "reativa": a tela tem um interruptor, e mandar o
+    // valor desejado evita os dois lados discordarem sobre o que era antes.
+    const { id, ativo } = await req.json();
+    await definirAtivoArea(id, ativo);
     revalidarCadastros();
     return NextResponse.json({ ok: true });
   } catch (e) { return falha(e, 'PUT'); }

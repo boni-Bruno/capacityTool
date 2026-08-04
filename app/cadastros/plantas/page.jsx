@@ -22,7 +22,7 @@ export default async function Page() {
         <Cadastro
           rota="/api/cadastro/planta"
           itens={plantas}
-          podeReativar
+          podeAtivar
           rotuloNovo="Criar planta"
           selecaoMultipla
           vazio="Nenhuma planta cadastrada. Crie a primeira abaixo."
@@ -33,8 +33,11 @@ export default async function Page() {
           ]}
         />
         <p className="rodape">
-          Planta que já tem área é desativada em vez de apagada — apagar
-          arrancaria a referência de tudo que pende dela.
+          <strong>Ativo</strong> tira a planta de circulação sem apagar nada:
+          desligada, ela não aparece mais para receber área ou calendário novo.
+          {' '}<strong>Excluir</strong> apaga de vez a que não tem área nenhuma;
+          a que tem é apenas desativada, porque apagar arrancaria a referência
+          de tudo que pende dela.
         </p>
       </div>
     </>

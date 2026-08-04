@@ -50,7 +50,7 @@ export default async function Page() {
           itens={recursos}
           rotuloNovo="Adicionar recurso"
           selecaoMultipla
-          podeReativar
+          podeAtivar
           vazio="Nenhum recurso cadastrado. Crie o primeiro abaixo."
           formularioSobDemanda
           filtrarColunas
@@ -106,12 +106,14 @@ export default async function Page() {
           agrupar na leitura e não tem cadastro nem regra própria.
         </p>
         <p className="rodape">
-          <strong>Excluir</strong> apaga de vez o recurso que nunca entrou num
-          cálculo. O que já entrou é <strong>desativado</strong>: sai do
-          planejamento a partir do próximo Recalcular e some das telas de
-          turno, OEE e parada, mas as rodadas antigas continuam explicáveis.
-          Ele fica aqui em cinza, com Reativar — e se tiver sido criado por
-          engano, dá para apagar de vez no painel abaixo.
+          <strong>Ativo</strong> tira e devolve o recurso ao planejamento sem
+          apagar nada: desligado, ele para de gerar capacidade no próximo
+          Recalcular e some das telas de turno, OEE e parada — útil quando o
+          recurso existe e opera, mas não entra no plano do ano.
+          {' '}<strong>Excluir</strong> apaga de vez o que nunca entrou num
+          cálculo; o que já entrou é apenas desativado, porque as rodadas
+          antigas precisam continuar explicáveis. Se foi criado por engano, o
+          painel abaixo apaga de vez.
         </p>
       </div>
 

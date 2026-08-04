@@ -36,7 +36,7 @@ export default async function Page() {
         <Cadastro
           rota="/api/cadastro/area"
           itens={areas}
-          podeReativar
+          podeAtivar
           rotuloNovo="Criar área"
           selecaoMultipla
           vazio="Nenhuma área cadastrada. Crie a primeira abaixo."
@@ -54,8 +54,10 @@ export default async function Page() {
         />
         <p className="rodape">
           A planta é definida na criação e não muda depois — mover uma área de
-          planta levaria junto todos os recursos dela. Área que já tem recurso é
-          desativada em vez de apagada.
+          planta levaria junto todos os recursos dela.
+          {' '}<strong>Ativo</strong> tira a área de circulação sem apagar nada.
+          {' '}<strong>Excluir</strong> apaga de vez a que não tem recurso; a que
+          tem é apenas desativada.
         </p>
       </div>
     </>
