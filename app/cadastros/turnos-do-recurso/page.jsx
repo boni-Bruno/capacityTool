@@ -1,13 +1,13 @@
 import { Suspense } from 'react';
 import { areas } from '../../../lib/db';
 import {
-  recursos, matrizTurnosDoAno, calendariosDoRecurso,
+  recursos, matrizTurnosDoAno, calendariosDoRecurso, turnosSobrepostos,
 } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Matriz from './matriz';
 import Calendario from './calendario';
-import { rotuloArea } from '../../../lib/dias';
+import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,9 +52,10 @@ export default async function Page({ searchParams }) {
   const pedido = Number(searchParams?.recurso);
   const recurso = listaRecursos.find((r) => r.id === pedido) ?? listaRecursos[0];
 
-  const [celulas, regimes] = await Promise.all([
+  const [celulas, regimes, sobrepostos] = await Promise.all([
     matrizTurnosDoAno(recurso.id, ano),
     calendariosDoRecurso(recurso.id),
+    turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso),
   ]);
 
   // A consulta vem esparramada em turno x mês; aqui vira a lista de turnos
@@ -121,11 +122,39 @@ export default async function Page({ searchParams }) {
           parciais={parciais}
         />
 
+        {sobrepostos.length > 0 && (
+          <div className="aviso" style={{ marginTop: 14 }}>
+            <strong>
+              Turnos sobrepostos: em {sobrepostos.length} combinação(ões) de mês
+              e dia da semana, os turnos marcados somam mais de 24 h.
+            </strong>
+            <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
+              {sobrepostos.slice(0, 8).map((x) => (
+                <li key={`${x.mes}:${x.dia_semana}`}>
+                  {MESES[Number(x.mes)]} · {DIAS[Number(x.dia_semana)]} —{' '}
+                  <strong>{Number(x.minutos).toLocaleString('pt-BR')} min</strong>
+                  {' '}de 1.440 possíveis
+                </li>
+              ))}
+              {sobrepostos.length > 8 && <li>… e mais {sobrepostos.length - 8}.</li>}
+            </ul>
+            <p style={{ margin: '8px 0 0' }}>
+              O motor soma turno a turno, então a planejada vai passar da
+              instalada e o "% do teto" vai estourar 100%. Costuma ser um turno
+              de 24 h marcado junto com os turnos que ele já cobre — desmarque
+              os que sobram.
+            </p>
+          </div>
+        )}
+
         <p className="rodape">
-          Marcar o turno aqui é necessário, mas não basta: o turno também tem
-          que rodar no calendário escolhido acima. Turno criado pela tela de
-          Turnos já entra nos calendários da planta; se algum estiver de fora, a
-          própria tela de Turnos avisa e conserta num clique.
+          Marcar o turno aqui é necessário, mas não basta. Para o recurso
+          produzir num dia, dois portões precisam estar abertos:{' '}
+          <strong>o turno tem horário naquele dia da semana</strong> (na tela de
+          Turnos — sem horário, o dia nem gera linha) e{' '}
+          <strong>o regime acima trabalha naquele dia</strong> (sem isso, a
+          linha sai com planejada zero). Descendo até o dia no painel dá para
+          ver qual dos dois fechou.
         </p>
       </div>
     </>

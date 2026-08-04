@@ -250,7 +250,12 @@ export default async function Page({ searchParams }) {
           <p className="val" title={horasEMinutos(tot.disponivel)}>
             {formataUnidade(tot.disponivel, unidade)} {sufixoUnidade(unidade)}
           </p>
-          <p className="sub">{oeeMedio ? `com OEE ${oeeMedio}%` : '—'}</p>
+          {/* O % do teto vem antes: é o número comparável entre recursos.
+              O OEE explica de onde veio a diferença para a planejada. */}
+          <p className="sub">
+            {pct(tot.disponivel, tot.instalada)} do teto
+            {oeeMedio && ` com OEE ${oeeMedio}%`}
+          </p>
         </div>
       </div>
 
