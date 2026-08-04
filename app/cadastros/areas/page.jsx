@@ -38,6 +38,7 @@ export default async function Page() {
           itens={areas}
           podeReativar
           rotuloNovo="Criar área"
+          selecaoMultipla
           vazio="Nenhuma área cadastrada. Crie a primeira abaixo."
           campos={[
             // O vínculo é escolha explícita do formulário, não herança de uma

@@ -24,6 +24,7 @@ export default async function Page() {
           itens={plantas}
           podeReativar
           rotuloNovo="Criar planta"
+          selecaoMultipla
           vazio="Nenhuma planta cadastrada. Crie a primeira abaixo."
           campos={[
             { nome: 'codigo', rot: 'Código', placeholder: 'ex.: MATRIZ' },

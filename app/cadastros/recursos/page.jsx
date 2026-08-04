@@ -49,6 +49,7 @@ export default async function Page() {
           rota="/api/cadastro/recurso"
           itens={recursos}
           rotuloNovo="Adicionar recurso"
+          selecaoMultipla
           podeReativar
           vazio="Nenhum recurso cadastrado. Crie o primeiro abaixo."
           formularioSobDemanda

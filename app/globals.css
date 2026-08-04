@@ -448,3 +448,12 @@ input.invalido { border-color: #a32d2d; }
 }
 .matriz-ano input { width: 13px; height: 13px; cursor: pointer; }
 .matriz-ano:hover { color: var(--accent); }
+
+/* Seleção múltipla nas listas de cadastro. */
+.col-marca { width: 34px; text-align: center; }
+.col-marca input { width: 15px; height: 15px; cursor: pointer; }
+.barra-lote {
+  margin-bottom: 12px; padding: 8px 12px; border-radius: 8px;
+  background: var(--teal-bg); color: var(--teal-fg);
+}
+.aviso-ok { background: var(--teal-bg); border-color: var(--teal-fg); color: var(--teal-fg); }

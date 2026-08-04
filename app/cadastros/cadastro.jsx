@@ -24,6 +24,7 @@ export default function Cadastro({
   // formulário atrás de um botão e pôr filtro por coluna só atrapalha.
   formularioSobDemanda = false,
   filtrarColunas = false,
+  selecaoMultipla = false,
 }) {
   const router = useRouter();
 
@@ -34,6 +35,8 @@ export default function Cadastro({
   const [novo, setNovo] = useState(limpo);
   const [criando, setCriando] = useState(false);
   const [filtros, setFiltros] = useState({});
+  const [escolhidos, setEscolhidos] = useState(() => new Set());
+  const [lote, setLote] = useState(null);
   const [editando, setEditando] = useState(null);
   const [rascunho, setRascunho] = useState({});
   const [confirmando, setConfirmando] = useState(null);
@@ -130,6 +133,55 @@ export default function Cadastro({
 
   const filtrando = Object.values(filtros).some(Boolean);
 
+  const marca = (id) => setEscolhidos((s) => {
+    const novo = new Set(s);
+    if (novo.has(id)) novo.delete(id); else novo.add(id);
+    return novo;
+  });
+
+  // "Todos" marca o que está VISÍVEL, não a tabela inteira: com filtro ativo,
+  // selecionar tudo e apagar levaria junto linha que a pessoa não está vendo.
+  const todosVisiveis = visiveis.length > 0
+    && visiveis.every((it) => escolhidos.has(it.id));
+
+  const marcaTodos = () => setEscolhidos(
+    todosVisiveis ? new Set() : new Set(visiveis.map((it) => it.id)));
+
+  /**
+   * Exclui um a um, em sequência.
+   *
+   * Em sequência e não em paralelo porque cada exclusão pode desativar em vez
+   * de apagar, e o resultado precisa ser contado — disparar tudo junto daria
+   * um amontoado de respostas sem dizer o que aconteceu com o quê.
+   */
+  async function excluirLote() {
+    setOcupado(true);
+    setErro(null);
+    setAviso(null);
+    const resumo = { apagados: 0, desativados: 0, falhas: [] };
+
+    for (const id of escolhidos) {
+      try {
+        const r = await fetch(rota, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        });
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.erro);
+        if (j.desativado) resumo.desativados++; else resumo.apagados++;
+      } catch (e) {
+        const nome = itens.find((x) => x.id === id)?.[campos[1]?.nome ?? 'nome'];
+        resumo.falhas.push(`${nome ?? id}: ${e.message ?? 'falhou'}`);
+      }
+    }
+
+    setEscolhidos(new Set());
+    setLote(resumo);
+    setOcupado(false);
+    router.refresh();
+  }
+
   // O formulário fica ACIMA da tabela quando entra sob demanda: com a lista
   // grande, um botão no rodapé desce junto e some da tela.
   const formulario = (
@@ -176,6 +228,41 @@ export default function Cadastro({
     <>
       {formularioSobDemanda && formulario}
 
+      {selecaoMultipla && escolhidos.size > 0 && (
+        <div className="acoes barra-lote">
+          <strong>{escolhidos.size} selecionado(s)</strong>
+          <button className="btn btn-mini btn-perigo" disabled={ocupado}
+                  onClick={excluirLote}>
+            {ocupado ? 'Excluindo…' : 'Excluir selecionados'}
+          </button>
+          <button className="btn btn-mini" disabled={ocupado}
+                  onClick={() => setEscolhidos(new Set())}>
+            Limpar seleção
+          </button>
+        </div>
+      )}
+
+      {lote && (
+        <div className={'aviso' + (lote.falhas.length ? '' : ' aviso-ok')}
+             style={{ marginBottom: 12 }}>
+          <strong>
+            {lote.apagados > 0 && `${lote.apagados} apagado(s). `}
+            {lote.desativados > 0 && `${lote.desativados} desativado(s). `}
+            {lote.falhas.length > 0 && `${lote.falhas.length} não deu.`}
+            {lote.apagados + lote.desativados + lote.falhas.length === 0
+              && 'Nada foi alterado.'}
+          </strong>
+          {lote.falhas.length > 0 && (
+            <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+              {lote.falhas.map((f) => <li key={f}>{f}</li>)}
+            </ul>
+          )}
+          <p style={{ margin: '6px 0 0' }}>
+            <button className="link-linha" onClick={() => setLote(null)}>fechar</button>
+          </p>
+        </div>
+      )}
+
       {itens.length === 0 ? (
         <p className="muted">{vazio}</p>
       ) : (
@@ -183,11 +270,19 @@ export default function Cadastro({
           <table>
             <thead>
               <tr>
+                {selecaoMultipla && (
+                  <th className="col-marca">
+                    <input type="checkbox" checked={todosVisiveis}
+                           onChange={marcaTodos}
+                           title="Marcar ou desmarcar o que está visível" />
+                  </th>
+                )}
                 {campos.map((c) => <th key={c.nome}>{c.rot}</th>)}
                 <th />
               </tr>
               {filtrarColunas && (
                 <tr className="linha-filtro">
+                  {selecaoMultipla && <th className="col-marca" />}
                   {campos.map((c) => (
                     <th key={c.nome}>
                       {c.tipo === 'select' ? (
@@ -224,6 +319,12 @@ export default function Cadastro({
 
                 return (
                   <tr key={it.id} className={inativo ? 'linha-vazia' : ''}>
+                    {selecaoMultipla && (
+                      <td className="col-marca">
+                        <input type="checkbox" checked={escolhidos.has(it.id)}
+                               onChange={() => marca(it.id)} />
+                      </td>
+                    )}
                     {campos.map((c, i) => (
                       <td key={c.nome}>
                         {edit && !c.soCriacao && !c.soLeitura
