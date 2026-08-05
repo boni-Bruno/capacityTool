@@ -58,16 +58,9 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
         <h2>Nova parada</h2>
 
         <div className="form-grade">
-          <label className="campo">
-            <span className="campo-rot">Recurso</span>
-            <select value={form.recurso_id} onChange={set('recurso_id')}>
-              <option value="">selecione…</option>
-              {recursos.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
-            </select>
-          </label>
-
-          {/* Escolhe o mesmo recurso pelo código da controladoria. Escrevem no
-              mesmo campo, então mexer num acerta o outro. */}
+          {/* Código primeiro: é a identidade da máquina na controladoria, e o
+              nome vem em seguida para confirmar que é ela mesma. Os dois
+              gravam o mesmo recurso_id, então mexer num acerta o outro. */}
           <label className="campo">
             <span className="campo-rot">Código</span>
             <select value={form.recurso_id} onChange={set('recurso_id')}>
@@ -75,6 +68,14 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
               {porCodigo(recursos).map((r) => (
                 <option key={r.id} value={r.id}>{r.codigo}</option>
               ))}
+            </select>
+          </label>
+
+          <label className="campo">
+            <span className="campo-rot">Recurso</span>
+            <select value={form.recurso_id} onChange={set('recurso_id')}>
+              <option value="">selecione…</option>
+              {recursos.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
             </select>
           </label>
 
@@ -151,8 +152,8 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
           <table>
             <thead>
               <tr>
-                <th>Recurso</th>
                 <th>Código</th>
+                <th>Recurso</th>
                 <th>Tipo</th>
                 <th>Turno</th>
                 <th>Período</th>
@@ -164,8 +165,8 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
             <tbody>
               {paradas.map((p) => (
                 <tr key={p.id}>
-                  <td>{p.recurso}</td>
                   <td className="muted">{p.recurso_codigo}</td>
+                  <td>{p.recurso}</td>
                   <td>
                     <span className="ponto" style={{ background: p.cor ?? '#999' }} />
                     {p.tipo}

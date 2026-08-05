@@ -77,18 +77,19 @@ export default async function Page({ searchParams }) {
   const conflito = origens.filter((o) => o.origem !== origem);
 
   campos.push(
-    {
-      nome: 'recurso', rotulo: 'Recurso', tipo: 'select', valor: String(recurso.id),
-      opcoes: listaRecursos.map((r) => ({ valor: String(r.id), rotulo: r.nome })),
-    },
-    // Mesma escolha, outra chave de leitura: a lista sai ordenada por código
-    // (CC-CT-Patrimônio), que é como a máquina aparece na controladoria.
+    // Código primeiro: é a identidade da máquina na controladoria, e o nome
+    // vem em seguida para confirmar que é ela mesma. Os dois seletores fazem a
+    // mesma escolha — a lista do código sai ordenada por código.
     {
       nome: 'codigo', param: 'recurso', rotulo: 'Código', tipo: 'select',
       valor: String(recurso.id),
       opcoes: porCodigo(listaRecursos).map((r) => ({
         valor: String(r.id), rotulo: r.codigo,
       })),
+    },
+    {
+      nome: 'recurso', rotulo: 'Recurso', tipo: 'select', valor: String(recurso.id),
+      opcoes: listaRecursos.map((r) => ({ valor: String(r.id), rotulo: r.nome })),
     },
     {
       nome: 'origem', rotulo: 'Origem', tipo: 'select', valor: origem,
@@ -111,9 +112,9 @@ export default async function Page({ searchParams }) {
 
       <div className="painel">
         <h2>
-          {recurso.nome}
+          {recurso.codigo}
           <span className="muted" style={{ fontWeight: 400 }}>
-            {' '}{recurso.codigo}
+            {' '}{recurso.nome}
           </span>
           {' '}· OEE {rotuloOrigem(origem)} · {ano}
         </h2>

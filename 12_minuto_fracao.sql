@@ -1,23 +1,40 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 12. MINUTO COM FRAÇÃO
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee (da origem pedida)
+-- PROBLEMA: planejada de 29.430 min com OEE de 75% dava 22.092 de disponível,
+-- e não 22.072,5 como a conta de cabeça manda. O motor calculava
+-- round(planejada x oee) em CADA linha — o grão é recurso x dia x turno — e o
+-- mês era a soma dessas linhas já arredondadas. Meio minuto sobrando aqui, um
+-- quarto ali, e no fim do mês a soma não bate com a multiplicação.
 --
--- Cada passo da conta vai para capacidade_memoria, que responde "por que esse
--- recurso deu X h?". Só as etapas que mudaram algo, mais o ponto de partida.
+-- Não era erro de fórmula: era arredondar cedo demais. Duas máquinas com o
+-- mesmo total mensal podiam dar disponíveis diferentes, dependendo de como os
+-- minutos se dividiam entre os dias — o que é indefensável numa ferramenta em
+-- que a pessoa confere na calculadora.
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- CORREÇÃO: o minuto passa a admitir fração em toda a cadeia. Nada de round
+-- no meio do caminho; arredondar é decisão da tela, não do motor.
+--
+-- IMPACTO NOS NÚMEROS: a disponível muda um pouco em qualquer recurso cujo
+-- OEE não dê minuto redondo — para o valor certo. Instalada e planejada só
+-- mudam onde a equivalência tem casa decimal, pelo mesmo motivo. Rodadas
+-- antigas ficam como estão; recalcule para os números novos.
+--
+-- ORDEM: rode ANTES do deploy do código novo.
 -- =============================================================================
+
+-- Os alter table são baratos: numeric aceita todo bigint que já está lá.
+alter table capacidade_instalada_dia
+    alter column min_instalada  type numeric(18,6);
+
+alter table capacidade_fato
+    alter column min_planejada  type numeric(18,6),
+    alter column min_disponivel type numeric(18,6);
+
+alter table capacidade_memoria
+    alter column minutos_antes  type numeric(18,6),
+    alter column minutos_delta  type numeric(18,6),
+    alter column minutos_depois type numeric(18,6);
 
 create or replace function fn_calcular_capacidade(
     p_cenario_id  int,

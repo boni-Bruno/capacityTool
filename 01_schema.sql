@@ -412,7 +412,9 @@ create table capacidade_instalada_dia (
     data          date   not null,
     qt_recursos   int    not null,
     equivalencia  numeric(10,4) not null,
-    min_instalada bigint not null,
+    -- Numeric e nao bigint: arredondar minuto no meio da cadeia faz a soma
+    -- do mes discordar da multiplicacao. Ver 12_minuto_fracao.sql.
+    min_instalada numeric(18,6) not null,
     primary key (execucao_id, recurso_id, data)
 );
 create index ix_cid_area_data on capacidade_instalada_dia (area_id, data);
@@ -438,8 +440,8 @@ create table capacidade_fato (
     min_turno_liquido    int    not null,
     min_parada_planejada int    not null default 0,
     min_parada_outras    int    not null default 0,
-    min_planejada        bigint not null,
-    min_disponivel       bigint not null,
+    min_planejada        numeric(18,6) not null,
+    min_disponivel       numeric(18,6) not null,
 
     unidade_medida_id    int references unidade_medida(id),
     qtd_planejada        numeric(18,4),
@@ -459,9 +461,9 @@ create table capacidade_memoria (
     turno_id       int  not null,
     ordem          smallint not null,
     etapa          varchar(40) not null,
-    minutos_antes  bigint not null,
-    minutos_delta  bigint not null,
-    minutos_depois bigint not null,
+    minutos_antes  numeric(18,6) not null,
+    minutos_delta  numeric(18,6) not null,
+    minutos_depois numeric(18,6) not null,
     origem_tabela  varchar(40),
     origem_id      bigint,
     descricao      varchar(200)
