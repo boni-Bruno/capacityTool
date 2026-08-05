@@ -11,6 +11,11 @@ import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
 
 export const dynamic = 'force-dynamic';
 
+// A lista de recursos vem ordenada por nome. O seletor de código precisa dela
+// ordenada por código, senão procurar um patrimônio vira uma varredura.
+const porCodigo = (lista) =>
+  [...lista].sort((a, b) => String(a.codigo).localeCompare(String(b.codigo), 'pt-BR'));
+
 export default async function Page({ searchParams }) {
   let listaAreas;
   try {
@@ -80,6 +85,15 @@ export default async function Page({ searchParams }) {
       nome: 'recurso', rotulo: 'Recurso', tipo: 'select', valor: String(recurso.id),
       opcoes: listaRecursos.map((r) => ({ valor: String(r.id), rotulo: r.nome })),
     },
+    // Mesma escolha, outra chave de leitura: a lista sai ordenada por código
+    // (CC-CT-Patrimônio), que é como a máquina aparece na controladoria.
+    {
+      nome: 'codigo', param: 'recurso', rotulo: 'Código', tipo: 'select',
+      valor: String(recurso.id),
+      opcoes: porCodigo(listaRecursos).map((r) => ({
+        valor: String(r.id), rotulo: r.codigo,
+      })),
+    },
     {
       nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
       opcoes: [anoAtual - 1, anoAtual, anoAtual + 1].map((a) => ({
@@ -98,6 +112,9 @@ export default async function Page({ searchParams }) {
       <div className="painel">
         <h2>
           {recurso.nome}
+          <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
+            {recurso.codigo}
+          </span>
           <span className="selo padrao" style={{ marginLeft: 8 }}>
             {recurso.tipo_recurso.toLowerCase()}
           </span>

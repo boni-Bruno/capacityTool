@@ -33,6 +33,12 @@ const ESTRUTURA = [
            'equipamento na controladoria.',
   },
   {
+    href: '/cadastros/turnos',
+    titulo: 'Turnos',
+    texto: 'Criar e excluir turnos, e definir início e fim de cada um por dia ' +
+           'da semana. Turno novo nasce com a semana zerada.',
+  },
+  {
     href: '/cadastros/calendarios',
     titulo: 'Calendários',
     texto: 'Os dias em que cada linha trabalha: turnos por dia da semana, ' +
@@ -46,12 +52,6 @@ const CADASTRAR = [
     titulo: 'Turnos do recurso',
     texto: 'Quais turnos cada recurso roda em cada mês, e o regime de dias ' +
            '(rodízio ou padrão).',
-  },
-  {
-    href: '/cadastros/turnos',
-    titulo: 'Turnos',
-    texto: 'Criar e excluir turnos, e definir início e fim de cada um por dia ' +
-           'da semana. Turno novo nasce com a semana zerada.',
   },
   {
     href: '/cadastros/oee',

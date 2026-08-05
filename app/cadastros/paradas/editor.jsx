@@ -11,6 +11,11 @@ const vazio = () => ({
   minutos: '', dia_inteiro: false, descricao: '',
 });
 
+// A mesma lista, ordenada por código. Quem cadastra parada costuma ter o
+// patrimônio na mão — a ordem por nome não ajuda a achar.
+const porCodigo = (lista) =>
+  [...lista].sort((a, b) => String(a.codigo).localeCompare(String(b.codigo), 'pt-BR'));
+
 export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
   const router = useRouter();
   const [form, setForm] = useState(vazio);
@@ -58,6 +63,18 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
             <select value={form.recurso_id} onChange={set('recurso_id')}>
               <option value="">selecione…</option>
               {recursos.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
+            </select>
+          </label>
+
+          {/* Escolhe o mesmo recurso pelo código da controladoria. Escrevem no
+              mesmo campo, então mexer num acerta o outro. */}
+          <label className="campo">
+            <span className="campo-rot">Código</span>
+            <select value={form.recurso_id} onChange={set('recurso_id')}>
+              <option value="">selecione…</option>
+              {porCodigo(recursos).map((r) => (
+                <option key={r.id} value={r.id}>{r.codigo}</option>
+              ))}
             </select>
           </label>
 
@@ -135,6 +152,7 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
             <thead>
               <tr>
                 <th>Recurso</th>
+                <th>Código</th>
                 <th>Tipo</th>
                 <th>Turno</th>
                 <th>Período</th>
@@ -147,6 +165,7 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
               {paradas.map((p) => (
                 <tr key={p.id}>
                   <td>{p.recurso}</td>
+                  <td className="muted">{p.recurso_codigo}</td>
                   <td>
                     <span className="ponto" style={{ background: p.cor ?? '#999' }} />
                     {p.tipo}

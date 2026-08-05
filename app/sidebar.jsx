@@ -17,13 +17,16 @@ const GRUPOS = [
       { href: '/cadastros/plantas',     rotulo: 'Plantas' },
       { href: '/cadastros/areas',       rotulo: 'Áreas' },
       { href: '/cadastros/recursos',    rotulo: 'Recursos' },
+      // Turno e calendário são da estrutura: descrevem como a empresa
+      // trabalha, não o que se planeja para um ano. Quem escolhe turno para
+      // um recurso está do outro lado, em Planejamento.
+      { href: '/cadastros/turnos',      rotulo: 'Turnos' },
       { href: '/cadastros/calendarios', rotulo: 'Calendários' },
     ],
   },
   {
     nome: 'Planejamento',
     itens: [
-      { href: '/cadastros/turnos',            rotulo: 'Turnos' },
       { href: '/cadastros/turnos-do-recurso', rotulo: 'Turnos do recurso' },
       { href: '/cadastros/oee',               rotulo: 'OEE' },
       { href: '/cadastros/paradas',           rotulo: 'Paradas' },

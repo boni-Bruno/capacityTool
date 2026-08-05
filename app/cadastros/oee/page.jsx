@@ -11,6 +11,11 @@ import EditorOee from './editor';
 
 export const dynamic = 'force-dynamic';
 
+// A lista de recursos vem ordenada por nome. O seletor de código precisa dela
+// ordenada por código, senão procurar um patrimônio vira uma varredura.
+const porCodigo = (lista) =>
+  [...lista].sort((a, b) => String(a.codigo).localeCompare(String(b.codigo), 'pt-BR'));
+
 // 0.85500 guardado no banco vira "85,5" na tela.
 const paraTela = (v) =>
   String(Number((Number(v) * 100).toFixed(3))).replace('.', ',');
@@ -76,6 +81,15 @@ export default async function Page({ searchParams }) {
       nome: 'recurso', rotulo: 'Recurso', tipo: 'select', valor: String(recurso.id),
       opcoes: listaRecursos.map((r) => ({ valor: String(r.id), rotulo: r.nome })),
     },
+    // Mesma escolha, outra chave de leitura: a lista sai ordenada por código
+    // (CC-CT-Patrimônio), que é como a máquina aparece na controladoria.
+    {
+      nome: 'codigo', param: 'recurso', rotulo: 'Código', tipo: 'select',
+      valor: String(recurso.id),
+      opcoes: porCodigo(listaRecursos).map((r) => ({
+        valor: String(r.id), rotulo: r.codigo,
+      })),
+    },
     {
       nome: 'origem', rotulo: 'Origem', tipo: 'select', valor: origem,
       opcoes: ORIGENS.map((o) => ({ valor: o, rotulo: rotuloOrigem(o) })),
@@ -96,7 +110,13 @@ export default async function Page({ searchParams }) {
       </div>
 
       <div className="painel">
-        <h2>{recurso.nome} · OEE {rotuloOrigem(origem)} · {ano}</h2>
+        <h2>
+          {recurso.nome}
+          <span className="muted" style={{ fontWeight: 400 }}>
+            {' '}{recurso.codigo}
+          </span>
+          {' '}· OEE {rotuloOrigem(origem)} · {ano}
+        </h2>
 
         <EditorOee
           key={`${recurso.id}:${origem}:${ano}`}

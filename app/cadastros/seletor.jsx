@@ -8,6 +8,10 @@ export default function Seletor({ campos }) {
   const router = useRouter();
   const params = useSearchParams();
 
+  // `param` separa o nome do campo do parâmetro que ele escreve na URL: dois
+  // campos podem apontar para o mesmo parâmetro. É o caso de Recurso e Código,
+  // duas maneiras de escolher a mesma máquina — quem a conhece pelo patrimônio
+  // não precisa saber o apelido dela.
   function muda(nome, valor) {
     const p = new URLSearchParams(params.toString());
     // Opção vazia ("todas as áreas") some da URL em vez de virar "area=":
@@ -26,10 +30,11 @@ export default function Seletor({ campos }) {
             <input
               type="date"
               value={c.valor}
-              onChange={(e) => muda(c.nome, e.target.value)}
+              onChange={(e) => muda(c.param ?? c.nome, e.target.value)}
             />
           ) : (
-            <select value={c.valor} onChange={(e) => muda(c.nome, e.target.value)}>
+            <select value={c.valor}
+                    onChange={(e) => muda(c.param ?? c.nome, e.target.value)}>
               {c.opcoes.map((o) => (
                 <option key={o.valor} value={o.valor}>{o.rotulo}</option>
               ))}
