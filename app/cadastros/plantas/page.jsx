@@ -1,4 +1,5 @@
 import { plantasCadastro } from '../../../lib/estrutura';
+import { ordemGuardada } from '../../../lib/ordem-servidor';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
 
@@ -25,6 +26,9 @@ export default async function Page() {
           podeAtivar
           rotuloNovo="Criar planta"
           selecaoMultipla
+          filtrarColunas
+          entidade="planta"
+          ordemInicial={ordemGuardada('planta')}
           vazio="Nenhuma planta cadastrada. Crie a primeira abaixo."
           campos={[
             { nome: 'codigo', rot: 'Código', placeholder: 'ex.: MATRIZ' },
@@ -32,6 +36,11 @@ export default async function Page() {
             { nome: 'areas',  rot: 'Áreas',  soLeitura: true },
           ]}
         />
+        <p className="rodape">
+          Clicar no título da coluna ordena por ela — de novo inverte, e a
+          terceira vez volta à ordem do banco. A escolha fica guardada e vale
+          também para os seletores de planta do resto do app.
+        </p>
         <p className="rodape">
           <strong>Ativo</strong> tira a planta de circulação sem apagar nada:
           desligada, ela não aparece mais para receber área ou calendário novo.

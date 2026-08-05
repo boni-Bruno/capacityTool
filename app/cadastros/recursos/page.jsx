@@ -3,6 +3,7 @@ import {
 } from '../../../lib/estrutura';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
+import { ordemGuardada } from '../../../lib/ordem-servidor';
 import Definitivo from './definitivo';
 
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,8 @@ export default async function Page() {
           vazio="Nenhum recurso cadastrado. Crie o primeiro abaixo."
           formularioSobDemanda
           filtrarColunas
+          entidade="recurso"
+          ordemInicial={ordemGuardada('recurso')}
           campos={[
             { nome: 'area_id', rot: 'Área', tipo: 'select', col: 'area',
               soCriacao: true,
@@ -62,7 +65,10 @@ export default async function Page() {
               opcoes: areas.map((a) => ({
                 valor: a.id, rotulo: `${a.planta} · ${a.nome}`,
               })) },
-            { nome: 'codigo', rot: 'Código', placeholder: 'ex.: TEXPA-01' },
+            // Montado a partir de CC-CT-Patrimônio, não digitado: é a
+            // identidade da máquina na controladoria, e deixar a pessoa
+            // escrever à mão só criaria divergência entre os dois cadastros.
+            { nome: 'codigo', rot: 'Código', soLeitura: true },
             { nome: 'nome',   rot: 'Nome',   placeholder: 'ex.: Texturizadeira 01' },
             // Texto solto, sem tabela: serve para agrupar na leitura, não tem
             // regra própria. Opcional.
@@ -96,10 +102,12 @@ export default async function Page() {
           </div>
         )}
         <p className="rodape">
-          CC, CT e Patrimônio identificam a máquina física na controladoria. A
-          trinca é única dentro da planta — dois recursos com a mesma trinca
-          passam a apontar para o mesmo equipamento, que é o caso de dois postos
-          dividindo a mesma máquina.
+          CC, CT e Patrimônio identificam a máquina física na controladoria, e
+          o <strong>Código</strong> do recurso é a trinca concatenada — não se
+          digita, sai dos três campos. Por isso a trinca não se repete entre
+          recursos: dois recursos com a mesma trinca teriam o mesmo código.
+          {' '}Clicar no título de qualquer coluna ordena a tabela por ela, e a
+          ordem escolhida fica guardada.
           {' '}<strong>Tipo</strong> decide o intervalo de refeição: máquina não
           para para almoçar, pessoa para.
           {' '}<strong>Sub-área</strong> é texto livre e opcional — serve para

@@ -1,4 +1,5 @@
 import { areasCadastro, plantasParaEscolha } from '../../../lib/estrutura';
+import { ordemGuardada } from '../../../lib/ordem-servidor';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
 
@@ -39,6 +40,9 @@ export default async function Page() {
           podeAtivar
           rotuloNovo="Criar área"
           selecaoMultipla
+          filtrarColunas
+          entidade="area"
+          ordemInicial={ordemGuardada('area')}
           vazio="Nenhuma área cadastrada. Crie a primeira abaixo."
           campos={[
             // O vínculo é escolha explícita do formulário, não herança de uma
@@ -52,6 +56,11 @@ export default async function Page() {
             { nome: 'recursos', rot: 'Recursos', soLeitura: true },
           ]}
         />
+        <p className="rodape">
+          Clicar no título da coluna ordena por ela — de novo inverte, e a
+          terceira vez volta à ordem do banco. A escolha fica guardada e vale
+          também para os seletores de área do resto do app.
+        </p>
         <p className="rodape">
           A planta é definida na criação e não muda depois — mover uma área de
           planta levaria junto todos os recursos dela.

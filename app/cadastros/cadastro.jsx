@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { COOKIE, escreveOrdem, leOrdem, ordenar } from '../../lib/ordem';
 
 // Tabela + formulário para planta, área e recurso.
 //
@@ -25,6 +26,11 @@ export default function Cadastro({
   formularioSobDemanda = false,
   filtrarColunas = false,
   selecaoMultipla = false,
+  // Qual chave de cookie guarda a ordenação desta tabela. Sem ela a tabela
+  // ordena só na sessão; com ela, a escolha vale também nos seletores de
+  // planta e área do resto do app.
+  entidade = null,
+  ordemInicial = null,
 }) {
   const router = useRouter();
 
@@ -39,6 +45,7 @@ export default function Cadastro({
   // A coluna Ativo não vem de `campos` — ela é gerada pelo componente — então
   // o filtro dela precisa de uma chave própria, fora do espaço dos campos.
   const [soAtivos, setSoAtivos] = useState('');   // '' | 'sim' | 'nao'
+  const [ordem, setOrdem] = useState(() => leOrdem(ordemInicial));
   const [lote, setLote] = useState(null);
   const [editando, setEditando] = useState(null);
   const [rascunho, setRascunho] = useState({});
@@ -89,6 +96,24 @@ export default function Cadastro({
     .filter((c) => c.obrigatorio !== false)
     .every((c) => String(novo[c.nome] ?? '').trim());
 
+  /**
+   * Clique no cabeçalho: sobe, desce, e volta à ordem que veio do banco.
+   *
+   * O terceiro estado existe de propósito — sem ele não há como desfazer uma
+   * ordenação, e a ordem do banco é a que agrupa por planta.
+   */
+  function ordenarPor(campo) {
+    const proxima = !ordem || ordem.campo !== campo ? { campo, desc: false }
+                  : ordem.desc ? null
+                  : { campo, desc: true };
+    setOrdem(proxima);
+    if (!entidade) return;
+    // Cookie e não localStorage: o servidor precisa ler isto para os seletores
+    // de planta e área saírem na mesma ordem da tabela.
+    document.cookie = COOKIE[entidade] + '=' + escreveOrdem(proxima)
+                      + '; path=/; max-age=31536000; samesite=lax';
+  }
+
   function entrada(c, valor, onChange) {
     if (c.tipo === 'select') {
       return (
@@ -138,6 +163,10 @@ export default function Cadastro({
     }));
 
   const filtrando = Object.values(filtros).some(Boolean) || soAtivos !== '';
+
+  // Ordena depois de filtrar: a ordem é de apresentação, o filtro é de
+  // conteúdo, e inverter isso só faria trabalho à toa.
+  const linhas = ordenar(visiveis, ordem);
 
   const marca = (id) => setEscolhidos((s) => {
     const novo = new Set(s);
@@ -283,23 +312,29 @@ export default function Cadastro({
                            title="Marcar ou desmarcar o que está visível" />
                   </th>
                 )}
-                {campos.map((c) => <th key={c.nome}>{c.rot}</th>)}
+                {campos.map((c) => {
+                  // Ordena pelo que está escrito na célula: na coluna de
+                  // vínculo o dado é um id, e ordenar por id daria uma
+                  // sequência que não corresponde a nada na tela.
+                  const chave = c.col ?? c.nome;
+                  return (
+                    <th key={c.nome}>
+                      <button className="th-ordem" onClick={() => ordenarPor(chave)}
+                              title="Ordenar por esta coluna">
+                        {c.rot}
+                        <span className="th-seta">
+                          {ordem?.campo === chave ? (ordem.desc ? '▼' : '▲') : '⇅'}
+                        </span>
+                      </button>
+                    </th>
+                  );
+                })}
                 {podeAtivar && <th className="col-marca">Ativo</th>}
                 <th />
               </tr>
               {filtrarColunas && (
                 <tr className="linha-filtro">
                   {selecaoMultipla && <th className="col-marca" />}
-                  {podeAtivar && (
-                    <th className="col-ativo-filtro">
-                      <select value={soAtivos}
-                              onChange={(e) => setSoAtivos(e.target.value)}>
-                        <option value="">todos</option>
-                        <option value="sim">ativos</option>
-                        <option value="nao">inativos</option>
-                      </select>
-                    </th>
-                  )}
                   {campos.map((c) => (
                     <th key={c.nome}>
                       {c.tipo === 'select' ? (
@@ -319,6 +354,16 @@ export default function Cadastro({
                       )}
                     </th>
                   ))}
+                  {podeAtivar && (
+                    <th className="col-ativo-filtro">
+                      <select value={soAtivos}
+                              onChange={(e) => setSoAtivos(e.target.value)}>
+                        <option value="">todos</option>
+                        <option value="sim">ativos</option>
+                        <option value="nao">inativos</option>
+                      </select>
+                    </th>
+                  )}
                   <th className="acoes">
                     {filtrando && (
                       <button className="btn btn-mini"
@@ -331,7 +376,7 @@ export default function Cadastro({
               )}
             </thead>
             <tbody>
-              {visiveis.map((it) => {
+              {linhas.map((it) => {
                 const edit = editando === it.id;
                 const inativo = it.ativo === false;
 
@@ -412,7 +457,7 @@ export default function Cadastro({
             </tbody>
           </table>
 
-          {visiveis.length === 0 && (
+          {linhas.length === 0 && (
             <p className="muted" style={{ marginTop: 12 }}>
               Nenhuma linha casa o filtro.{' '}
               <button className="link-linha"
