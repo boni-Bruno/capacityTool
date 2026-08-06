@@ -17,7 +17,7 @@ import {
 //
 // `mostrarInstalada` é falso no nível de turno: instalada é grão dia, e
 // repeti-la em cada barra de turno era o que inflava o total no Qlik antigo.
-export default function Grafico({ dados, mostrarInstalada = true, unidade = 'h' }) {
+export default function Grafico({ dados, mostrarInstalada = true, unidade = 'min' }) {
   const router = useRouter();
 
   // Os dados chegam em minutos, que é a moeda base do projeto. A barra precisa

@@ -6,7 +6,7 @@
 // instalada é grão dia e não se reparte por turno.
 import { formataUnidade, horasEMinutos, sufixoUnidade } from '../../lib/formato';
 
-export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'h' }) {
+export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'min' }) {
   const linhas = [
     ...(mostrarInstalada
       ? [{ rot: 'Instalada', campo: 'instalada', classe: 'med-inst' }]

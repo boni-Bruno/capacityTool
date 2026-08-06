@@ -62,8 +62,11 @@ export default async function Page({ searchParams }) {
   // planejar. Ver lib/anos.js.
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
+  // Minuto é o default: é a moeda base do projeto e o número exato. Hora com
+  // uma casa arredonda, e conferir uma parada de 30 min contra a calculadora
+  // era a primeira coisa que alguém tentava fazer.
   const unidade = UNIDADES.some((u) => u.valor === searchParams?.unidade)
-    ? searchParams.unidade : 'h';
+    ? searchParams.unidade : 'min';
   // META e SIMULADO são rodadas distintas; trocar aqui troca de rodada, não
   // recalcula. Default META, que é o cenário oficial.
   const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
