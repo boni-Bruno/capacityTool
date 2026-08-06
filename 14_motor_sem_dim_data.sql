@@ -1,22 +1,29 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 14. O MOTOR DEIXA DE DEPENDER DA dim_data
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee (da origem pedida)
+-- PROBLEMA: dim_data foi populada com generate_series(2026-01-01, 2027-12-31).
+-- Pedir 2028 — ou 2025 — fazia o join devolver zero linha. A função inseria
+-- nada, marcava a execução como 'OK' e devolvia um id. O painel então não
+-- achava rodada para aquele ano e mostrava "Nenhum cálculo. Clique em
+-- Recalcular". Clicar de novo dava o mesmo. Sem erro, sem aviso, sem pista.
 --
--- Cada passo da conta vai para capacidade_memoria, que responde "por que esse
--- recurso deu X h?". Só as etapas que mudaram algo, mais o ponto de partida.
+-- Pior: a tela de Calendários monta o ano com generate_series e não usa a
+-- dim_data. Dava para cadastrar os feriados de 2028 inteiros, ver a contagem
+-- de dias úteis, e o painel continuar dizendo que nada foi calculado. Dois
+-- lugares discordando sobre se o ano existe.
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- CORREÇÃO: o motor gera os dias do período pedido, como as telas de
+-- calendário já faziam. Ele usava exatamente duas colunas da dim_data — data e
+-- dia_semana — e as duas saem de generate_series + extract(dow). Não existe
+-- mais ano que falta: qualquer período pedido é calculável.
+--
+-- A dim_data continua existindo e não é apagada; nada mais no app lê ela.
+--
+-- IMPACTO NOS NÚMEROS: nenhum dentro de 2026-2027 — os mesmos dias, o mesmo
+-- dow (0 = domingo). Fora dessa janela, passa a existir número onde antes
+-- havia silêncio.
+--
+-- ORDEM: rode ANTES do deploy do código novo.
 -- =============================================================================
 
 create or replace function fn_calcular_capacidade(

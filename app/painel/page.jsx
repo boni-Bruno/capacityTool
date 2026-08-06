@@ -2,8 +2,9 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import {
   ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
-  memoriaDoDia,
+  memoriaDoDia, anosComRodada,
 } from '../../lib/db';
+import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import { MESES, DIAS, DIAS_CURTO } from '../../lib/dias';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
@@ -55,10 +56,12 @@ export default async function Page({ searchParams }) {
 
   // Área e ano vêm antes da execução: a rodada é por área, então só dá para
   // saber qual delas mostrar depois de saber o que o usuário está olhando.
-  const anoAtual = new Date().getFullYear();
   const areaId = Number(searchParams?.area ?? listaAreas[0]?.id);
-  const ano = Number(searchParams?.ano ?? anoAtual);
-  const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
+  // A lista sai do banco, não do relógio: ano com rodada guardada continua
+  // acessível para sempre, e a janela em volta de hoje segue disponível para
+  // planejar. Ver lib/anos.js.
+  const anos = anosParaEscolha(await anosComRodada());
+  const ano = anoEscolhido(searchParams?.ano, anos);
   const unidade = UNIDADES.some((u) => u.valor === searchParams?.unidade)
     ? searchParams.unidade : 'h';
   // META e SIMULADO são rodadas distintas; trocar aqui troca de rodada, não

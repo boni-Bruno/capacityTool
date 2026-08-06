@@ -5,6 +5,8 @@ import {
 } from '../../../lib/calendario';
 import { excecoesDoAno, areasDaPlanta, TIPOS } from '../../../lib/excecao';
 import { plantasParaEscolha } from '../../../lib/estrutura';
+import { anosComRodada } from '../../../lib/db';
+import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { DIAS } from '../../../lib/dias';
 import { diasUteisPorMes, formataDiasUteis } from '../../../lib/dia-util';
 import AvisoBanco from '../aviso-banco';
@@ -51,8 +53,9 @@ export default async function Page({ searchParams }) {
     );
   }
 
-  const anoAtual = new Date().getFullYear();
-  const ano = Number(searchParams?.ano ?? anoAtual);
+  // Mesma lista do painel: ano com rodada não some quando o tempo passa.
+  const anos = anosParaEscolha(await anosComRodada());
+  const ano = anoEscolhido(searchParams?.ano, anos);
   const itens = lista.map((c) => ({ ...c, resumo: descreveDias(c.dias) }));
 
   const pedido = Number(searchParams?.calendario);
@@ -127,9 +130,7 @@ export default async function Page({ searchParams }) {
             }] : []),
             {
               nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
-              opcoes: [anoAtual - 1, anoAtual, anoAtual + 1, anoAtual + 2].map((a) => ({
-                valor: String(a), rotulo: String(a),
-              })),
+              opcoes: anos.map((a) => ({ valor: String(a), rotulo: String(a) })),
             },
           ]} />
         </Suspense>

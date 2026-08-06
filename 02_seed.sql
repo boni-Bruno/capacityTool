@@ -205,6 +205,10 @@ insert into tipo_parada (codigo, nome, planejada, abate_planejada, abate_disponi
 insert into cenario (codigo, nome, descricao, baseline)
 values ('BASELINE', 'Baseline', 'Cenário oficial, espelha o cadastro real', true);
 
+-- OBSOLETA para o motor: desde a 14 ele gera os dias do periodo pedido com
+-- generate_series, e nao le mais esta tabela. Uma tabela de datas com fim
+-- fixo virava ano faltando em silencio. Fica aqui porque nao custa nada e
+-- pode servir a consulta ad-hoc no Neon.
 insert into dim_data (data, ano, mes, dia, dia_semana, semana_iso, mes_ano, trimestre)
 select d::date,
        extract(year from d)::smallint, extract(month from d)::smallint,

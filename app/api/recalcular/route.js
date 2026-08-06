@@ -9,9 +9,14 @@ export async function POST(req) {
   try {
     await exigeSessao();
     const { areaId, ano, origem } = await req.json();
-    const id = await recalcular(Number(areaId), Number(ano), origem ?? 'META');
+    const r = await recalcular(Number(areaId), Number(ano), origem ?? 'META');
     revalidarCadastros();
-    return NextResponse.json({ ok: true, execucaoId: id });
+    // As contagens vão junto: rodada que não gerou linha é um resultado, não
+    // uma falha, e a tela precisa poder dizer isso em vez de mandar recalcular
+    // de novo.
+    return NextResponse.json({
+      ok: true, execucaoId: r.id, instalada: r.instalada, fato: r.fato,
+    });
   } catch (e) {
     return NextResponse.json(
       { ok: false, erro: e.message ?? 'Falha no cálculo' },

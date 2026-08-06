@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
-import { areas } from '../../../lib/db';
+import { areas, anosComRodada } from '../../../lib/db';
+import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import {
   recursos, matrizTurnosDoAno, calendariosDoRecurso, turnosSobrepostos,
 } from '../../../lib/cadastro';
@@ -29,8 +30,9 @@ export default async function Page({ searchParams }) {
   }
 
   const areaId = Number(searchParams?.area ?? listaAreas[0].id);
-  const anoAtual = new Date().getFullYear();
-  const ano = Number(searchParams?.ano ?? anoAtual);
+  // Mesma lista do painel: ano com rodada não some quando o tempo passa.
+  const anos = anosParaEscolha(await anosComRodada());
+  const ano = anoEscolhido(searchParams?.ano, anos);
   const listaRecursos = await recursos(areaId);
 
   const campos = [
@@ -97,9 +99,7 @@ export default async function Page({ searchParams }) {
     },
     {
       nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
-      opcoes: [anoAtual - 1, anoAtual, anoAtual + 1].map((a) => ({
-        valor: String(a), rotulo: String(a),
-      })),
+      opcoes: anos.map((a) => ({ valor: String(a), rotulo: String(a) })),
     },
   );
 
