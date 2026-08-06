@@ -82,6 +82,12 @@ export default async function Page() {
             // Entram direto na fórmula: instalada = 1440 x qt x equivalência.
             { nome: 'qt_recursos',  rot: 'Qtd',          padrao: '1' },
             { nome: 'equivalencia', rot: 'Equivalência', padrao: '1' },
+            // A janela em que a máquina existe. Fora dela o motor não gera
+            // linha nenhuma — nem instalada. Vazio dos dois lados é o normal.
+            { nome: 'inicio', rot: 'Em operação de', tipo: 'data',
+              obrigatorio: false },
+            { nome: 'fim',    rot: 'até',            tipo: 'data',
+              obrigatorio: false },
           ]}
         />
 
@@ -114,14 +120,30 @@ export default async function Page() {
           agrupar na leitura e não tem cadastro nem regra própria.
         </p>
         <p className="rodape">
-          <strong>Ativo</strong> tira e devolve o recurso ao planejamento sem
-          apagar nada: desligado, ele para de gerar capacidade no próximo
-          Recalcular e some das telas de turno, OEE e parada — útil quando o
-          recurso existe e opera, mas não entra no plano do ano.
+          <strong>Em operação de … até</strong> é a janela em que a máquina
+          existe. Fora dela o motor não gera linha nenhuma —{' '}
+          <strong>nem instalada</strong> — porque máquina que ainda não chegou
+          não tem teto de capacidade. Máquina comprada para julho entra com
+          1º/07 no primeiro campo e some dos seis primeiros meses; máquina
+          vendida entra com o último dia de operação no segundo. Os dois em
+          branco significam sempre, que é o caso comum. Cadastre o recurso
+          antes de ele chegar: com a janela preenchida, turno e OEE podem ser
+          configurados na frente sem sujar o número de hoje.
+        </p>
+        <p className="rodape">
+          <strong>Ativo</strong> é outra coisa: a máquina existe e opera, mas
+          você decidiu não usá-la neste plano. Desligado, ela{' '}
+          <strong>continua contando na instalada</strong> e para de gerar
+          planejada e disponível — é assim que a ociosidade que você optou por
+          não usar aparece no painel em vez de sumir. Ela também some das telas
+          de turno, OEE e parada.
           {' '}<strong>Excluir</strong> apaga de vez o que nunca entrou num
-          cálculo; o que já entrou é apenas desativado, porque as rodadas
-          antigas precisam continuar explicáveis. Se foi criado por engano, o
-          painel abaixo apaga de vez.
+          cálculo. O que já entrou é desativado <em>e</em> tem a janela de
+          operação fechada em hoje — aí sim ele sai do teto, porque excluir
+          quer dizer que a máquina deixou de existir. As rodadas antigas ficam
+          intactas. Para desfazer, reative e limpe o campo{' '}
+          <strong>até</strong>. Se foi criado por engano, o painel abaixo apaga
+          de vez.
         </p>
       </div>
 

@@ -127,6 +127,9 @@ export default function Cadastro({
         </select>
       );
     }
+    if (c.tipo === 'data') {
+      return <input type="date" value={valor ?? ''} onChange={onChange} />;
+    }
     return (
       <input type="text" value={valor ?? ''} onChange={onChange}
              placeholder={c.placeholder ?? ''} />
@@ -139,6 +142,14 @@ export default function Cadastro({
     if (c.tipo === 'select') {
       return c.opcoes.find((o) => String(o.valor) === String(item[c.nome]))?.rotulo
              ?? item[c.nome];
+    }
+    // Data vazia é a regra, não a exceção — o travessão diz "sem limite" em vez
+    // de deixar a célula em branco, que se lê como cadastro incompleto.
+    if (c.tipo === 'data') {
+      const v = item[c.nome];
+      if (!v) return '—';
+      const [a, m, d] = String(v).slice(0, 10).split('-');
+      return `${d}/${m}/${a}`;
     }
     return item[c.nome];
   }

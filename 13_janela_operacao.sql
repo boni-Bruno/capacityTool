@@ -1,22 +1,27 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 13. JANELA DE OPERAÇÃO E TETO DO DESATIVADO
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee (da origem pedida)
+-- Duas mudanças que andam juntas, as duas sobre "a máquina existe?".
 --
--- Cada passo da conta vai para capacidade_memoria, que responde "por que esse
--- recurso deu X h?". Só as etapas que mudaram algo, mais o ponto de partida.
+-- 1. QUANDO A MÁQUINA EXISTE — recurso_parametro.vigencia
+--    O motor já respeitava essa vigência nos dois lugares (instalada e o CTE
+--    base); o que faltava era a tela deixar preenchê-la, e ela gravava sempre
+--    daterange(null, null). Agora o cadastro de recurso tem "Em operação de …
+--    até". Máquina comprada para julho não gera linha nenhuma de janeiro a
+--    junho — nem instalada, porque máquina que não chegou não tem teto.
+--    Esta parte NÃO precisa de DDL: a coluna já existia e já era respeitada.
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- 2. O TETO DE UM RECURSO DESATIVADO — status_cadastro
+--    Antes, desativar tirava o recurso também da instalada. A máquina existe e
+--    opera; o que se decidiu foi não usá-la neste plano. Escondendo o teto, a
+--    ociosidade escolhida sumia do painel em vez de aparecer. A INSTALADA para
+--    de exigir status_cadastro; planejada e disponível continuam exigindo.
+--
+-- IMPACTO NOS NÚMEROS: a instalada sobe nas áreas que têm recurso desativado,
+-- e com ela o "% do teto" cai — para o valor honesto. Quem não tem recurso
+-- desativado não vê diferença. Rodadas antigas ficam como estão; recalcule.
+--
+-- ORDEM: rode ANTES do deploy do código novo.
 -- =============================================================================
 
 create or replace function fn_calcular_capacidade(
