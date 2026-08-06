@@ -282,6 +282,9 @@ create table recurso_turno (
     id                     serial primary key,
     recurso_id             int       not null references recurso(id) on delete cascade,
     turno_id               int       not null references turno(id),
+    -- Quantas maquinas rodam neste turno. Nulo = todas as do recurso.
+    -- Ver 15_qt_por_turno.sql.
+    qt_recursos            int       check (qt_recursos is null or qt_recursos > 0),
     escala_id              int       references escala(id),
     escala_data_referencia date,
     vigencia               daterange not null,

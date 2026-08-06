@@ -65,8 +65,17 @@ export default async function Page({ searchParams }) {
     turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso),
   ]);
 
+  // Quantas máquinas o recurso tem. É o teto de cada célula da matriz e o
+  // valor que "todas" resolve.
+  const qtRecurso = Math.max(1, Number(recurso.qt_recursos ?? 1));
+
   // A consulta vem esparramada em turno x mês; aqui vira a lista de turnos
   // (colunas) e dois mapas indexados por "turnoId:mes".
+  //
+  // A célula guarda TEXTO, não booleano: '' é não trabalha, e um número é
+  // quantas máquinas rodam ali. Vigência com qt_recursos nulo quer dizer
+  // "todas", e aparece como o número cheio — a tela mostra quantas rodam, não
+  // um conceito.
   const turnos = [];
   const inicial = {};
   const parciais = {};
@@ -78,7 +87,9 @@ export default async function Page({ searchParams }) {
     const dias = Number(c.dias_cobertos);
     const total = Number(c.dias_mes);
     const k = `${turnoId}:${Number(c.mes)}`;
-    inicial[k] = dias > 0;
+    inicial[k] = dias > 0
+      ? String(c.qt_recursos === null ? qtRecurso : Number(c.qt_recursos))
+      : '';
     parciais[k] = dias > 0 && dias < total;
   }
 
@@ -135,6 +146,7 @@ export default async function Page({ searchParams }) {
           key={`${recurso.id}:${ano}`}
           recursoId={recurso.id}
           ano={ano}
+          qtRecurso={qtRecurso}
           turnos={turnos}
           inicial={inicial}
           parciais={parciais}
@@ -163,6 +175,21 @@ export default async function Page({ searchParams }) {
               os que sobram.
             </p>
           </div>
+        )}
+
+        {qtRecurso > 1 && (
+          <p className="rodape">
+            Este recurso tem <strong>{qtRecurso} máquinas</strong>, então a
+            célula pede um número em vez de uma marca: quantas rodam naquele
+            turno. Dá para pôr 5 no 1º e 4 no 2º e no 3º. Vazio é não trabalha.
+            {' '}O <strong>teto</strong> continua sendo as {qtRecurso} máquinas
+            24 h por dia — máquina parada no 3º turno continua existindo —{' '}
+            então o &ldquo;% do teto&rdquo; no painel passa a mostrar sozinho a
+            ociosidade que você planejou.
+            {' '}Quando o número é igual a {qtRecurso}, o cadastro guarda
+            &ldquo;todas&rdquo;: se um dia o recurso passar a ter {qtRecurso + 1},
+            esse turno acompanha.
+          </p>
         )}
 
         <p className="rodape">

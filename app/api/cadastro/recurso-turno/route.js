@@ -6,11 +6,15 @@ import { revalidarCadastros } from '../../../../lib/revalidar';
 
 // Salva a matriz mês x turno de um recurso, um ano por vez.
 //
-// Corpo: { recurso_id, ano, marcados: { turnoId: [meses] } }
+// Corpo: { recurso_id, ano, marcados: { turnoId: { mes: 'todas' | n } } }
+//
+// O valor da célula é quantas máquinas do recurso rodam naquele turno naquele
+// mês; 'todas' vira null no banco e faz o turno acompanhar a quantidade do
+// recurso. Mês ausente = não trabalha.
 //
 // O ano inteiro vem da tela em cada salvamento — turno que não aparece em
 // `marcados` fica desligado no ano. O que está configurado fora do ano é
-// preservado pelo recomporFaixas().
+// preservado pelo recomporFaixasComValor().
 export async function POST(req) {
   try {
     await exigeSessao();

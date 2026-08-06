@@ -1,23 +1,42 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 15. QUANTIDADE POR TURNO
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee (da origem pedida)
+-- Um recurso com qt_recursos = 5 rodava as cinco máquinas em todo turno
+-- marcado. Não havia como dizer "5 no 1º turno, 4 no 2º e 4 no 3º":
+-- recurso_parametro.qt_recursos não tem turno_id, e recurso_turno só guardava
+-- SE o turno está marcado.
 --
--- Cada passo da conta vai para capacidade_memoria, que responde "por que esse
--- recurso deu X h?". Só as etapas que mudaram algo, mais o ponto de partida.
+-- recurso_turno ganha qt_recursos. Nulo = todas, que é o que todas as linhas
+-- existentes significam — por isso a coluna nasce nula e nada precisa ser
+-- migrado.
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- OS DOIS NÚMEROS PASSAM A SIGNIFICAR COISAS DIFERENTES, e é o ponto:
+--
+--   recurso_parametro.qt_recursos  quantas máquinas EXISTEM  -> instalada
+--   recurso_turno.qt_recursos      quantas VÃO RODAR naquele -> planejada
+--                                  turno
+--
+-- Com 5 no teto e 5/4/4 nos turnos, o "% do teto" passa a mostrar sozinho a
+-- máquina parada no 2º e no 3º. Antes daria 100% e esconderia a ociosidade —
+-- mesmo raciocínio da 13, onde recurso desativado voltou a ocupar o teto.
+--
+-- IMPACTO NOS NÚMEROS: nenhum enquanto ninguém preencher a coluna nova.
+-- coalesce(null, rp.qt_recursos) é exatamente o que o motor fazia antes.
+--
+-- ORDEM: rode ANTES do deploy do código novo.
 -- =============================================================================
+
+alter table recurso_turno
+    add column if not exists qt_recursos int;
+
+-- Zero maquina nao e "nao trabalha": nao trabalhar e nao ter a linha. Deixar
+-- zero passar criaria dois jeitos de dizer a mesma coisa, e um deles gera
+-- linha de capacidade zerada no fato.
+alter table recurso_turno
+    drop constraint if exists rt_qt_positiva;
+alter table recurso_turno
+    add constraint rt_qt_positiva
+    check (qt_recursos is null or qt_recursos > 0);
 
 create or replace function fn_calcular_capacidade(
     p_cenario_id  int,
