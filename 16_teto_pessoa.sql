@@ -1,22 +1,34 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 16. TETO DE PESSOA É A PRÓPRIA PLANEJADA
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee (da origem pedida)
+-- A instalada era 1440 x qt_recursos x equivalencia para todo mundo: 24 h por
+-- dia, todo dia. Para máquina é o certo e é o ponto — a máquina existe no
+-- feriado, e é isso que faz o "% do teto" mostrar ociosidade de verdade.
 --
--- Cada passo da conta vai para capacidade_memoria, que responde "por que esse
--- recurso deu X h?". Só as etapas que mudaram algo, mais o ponto de partida.
+-- Para pessoa não existe esse teto. Ninguém trabalha 24 h, então 5 pessoas x
+-- 1.440 min é um número que não existe em lugar nenhum, e ele deixava o
+-- "% do teto" de qualquer recurso de pessoa artificialmente baixo, sempre.
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- O teto da máquina é físico; o da pessoa é contratual. E o contrato é o turno
+-- escalado, que já está na planejada — com feriado zerado pelo calendário e
+-- parada descontada. Então, para PESSOA, instalada = planejada.
+--
+-- CONSEQUÊNCIAS, aceitas de propósito:
+--   . para pessoa o "% do teto" fica 100% fixo;
+--   . o indicador "disponível sobre teto" de uma seleção só de pessoas vira o
+--     próprio OEE, que já aparece escrito ao lado;
+--   . em área mista, a parcela de pessoas entra em cima e embaixo da razão e
+--     puxa o resultado para 100%. É bem menos distorção do que o 1440 x qt
+--     puxando para baixo, e o filtro de tipo do painel ("só máquina") isola o
+--     número físico quando se quer ele limpo.
+--
+-- Nada disso muda planejada ou disponível: a instalada não é lida pela cadeia
+-- de cálculo em momento nenhum, só por indicador de leitura.
+--
+-- ESTRUTURA: o bloco da INSTALADA passou a rodar DEPOIS do tmp_calc, porque
+-- agora depende da planejada. Nenhuma outra conta mudou de lugar.
+--
+-- ORDEM: rode ANTES do deploy do código novo. Depois, Recalcular.
 -- =============================================================================
 
 create or replace function fn_calcular_capacidade(

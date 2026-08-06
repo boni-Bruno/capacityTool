@@ -114,8 +114,12 @@ export default async function Page() {
           recursos: dois recursos com a mesma trinca teriam o mesmo código.
           {' '}Clicar no título de qualquer coluna ordena a tabela por ela, e a
           ordem escolhida fica guardada.
-          {' '}<strong>Tipo</strong> decide o intervalo de refeição: máquina não
-          para para almoçar, pessoa para.
+          {' '}<strong>Tipo</strong> decide duas coisas. O intervalo de
+          refeição — máquina não para para almoçar, pessoa para. E o teto:
+          máquina tem capacidade instalada de 24 h por dia, todo dia, porque
+          ela existe mesmo no feriado; para pessoa o teto é o turno escalado,
+          e a instalada sai igual à planejada. Trocar o tipo de um recurso muda
+          o &ldquo;% do teto&rdquo; dele no próximo Recalcular.
           {' '}<strong>Sub-área</strong> é texto livre e opcional — serve para
           agrupar na leitura e não tem cadastro nem regra própria.
         </p>

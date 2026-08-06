@@ -127,6 +127,15 @@ export default async function Page({ searchParams }) {
 
   // Clicar num recurso estreita ainda mais; sem clique, valem os filtros.
   const visiveis = foco ? [foco] : recursos;
+
+  // De que é feito o teto desta seleção. Máquina tem teto físico de 24 h por
+  // dia; pessoa tem o turno escalado, e ali a instalada é a própria planejada.
+  // O indicador precisa dizer qual dos dois está somando, senão "teto físico
+  // 24/7" vira legenda errada numa seleção de pessoas.
+  const composicao = !visiveis.length ? 'VAZIA'
+    : visiveis.every((r) => r.tipo_recurso === 'PESSOA')  ? 'PESSOA'
+    : visiveis.every((r) => r.tipo_recurso === 'MAQUINA') ? 'MAQUINA'
+    : 'MISTA';
   const filtrado = sub !== null || tipo !== null || foco !== null;
   // '0' quando nada casa o filtro: nenhum recurso tem id 0, então as consultas
   // voltam zeradas. String vazia estouraria no cast de string_to_array.
@@ -237,8 +246,14 @@ export default async function Page({ searchParams }) {
           <p className="val" title={horasEMinutos(tot.instalada)}>
             {formataUnidade(tot.instalada, unidade)} {sufixoUnidade(unidade)}
           </p>
+          {/* O teto de máquina é físico (24/7); o de pessoa é o turno
+              escalado, e nesse caso ele é igual à planejada. Dizer "físico
+              24/7" numa seleção de pessoas seria mentira. */}
           <p className="sub">
-            {mostrarInstalada ? 'teto físico 24/7' : 'teto do dia (não se reparte por turno)'}
+            {!mostrarInstalada ? 'teto do dia (não se reparte por turno)'
+              : composicao === 'PESSOA' ? 'teto = turno escalado'
+              : composicao === 'MISTA'  ? 'teto 24/7 na máquina, turno na pessoa'
+              : 'teto físico 24/7'}
           </p>
         </div>
         <div className="kpi">
@@ -261,6 +276,30 @@ export default async function Page({ searchParams }) {
           </p>
         </div>
       </div>
+
+      {/* O que o "% do teto" quer dizer muda com o que está selecionado, e
+          calado ele engana: 100% numa seleção de pessoas parece capacidade
+          esgotada quando é só a definição do teto. */}
+      {mostrarInstalada && composicao === 'PESSOA' && (
+        <p className="rodape" style={{ marginTop: -8, marginBottom: '1.5rem' }}>
+          Esta seleção é só de <strong>pessoas</strong>, e para pessoa o teto é
+          o turno escalado — a instalada sai igual à planejada. Por isso a
+          planejada marca 100% do teto, e o disponível sobre o teto é o próprio
+          OEE. Não é capacidade esgotada: é que não existe teto físico de 24 h
+          para pessoa. O efeito de feriado e parada continua dentro da
+          planejada, no número absoluto.
+        </p>
+      )}
+      {mostrarInstalada && composicao === 'MISTA' && (
+        <p className="rodape" style={{ marginTop: -8, marginBottom: '1.5rem' }}>
+          Esta seleção mistura <strong>máquina e pessoa</strong>, e os dois têm
+          teto de natureza diferente: 24 h por dia na máquina, turno escalado na
+          pessoa — onde a instalada é a própria planejada. A parcela de pessoas
+          entra em cima e embaixo da razão e puxa o &ldquo;% do teto&rdquo; na
+          direção de 100%. Para ler a ociosidade física limpa, use o filtro{' '}
+          <strong>só máquina</strong> ao lado do ano.
+        </p>
+      )}
 
       <div className="painel">
         <div className="painel-topo">
