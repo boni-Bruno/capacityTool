@@ -195,9 +195,11 @@ export default function Matriz({
                               type="number"
                               min="1"
                               max={qtRecurso}
+                              step="1"
                               placeholder="—"
                               title={`Quantas das ${qtRecurso} máquinas rodam neste turno. Vazio = não trabalha.`}
                               value={celulas[k] ?? ''}
+                              onFocus={(e) => e.target.select()}
                               onChange={(e) => poe(t.turno_id, mes, e.target.value)}
                             />
                           )}

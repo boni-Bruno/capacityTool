@@ -137,6 +137,30 @@ export default async function Page({ searchParams }) {
       <div className="painel">
         <h2>Turnos em {ano}</h2>
 
+        {qtRecurso > 1 && (
+          <div className="aviso" style={{ marginBottom: 14 }}>
+            <strong>
+              Este recurso tem {qtRecurso} máquinas, então a célula pede um
+              número — não uma marca.
+            </strong>
+            <p style={{ margin: '6px 0 0' }}>
+              Digite quantas rodam naquele turno: dá para pôr {qtRecurso} no 1º
+              e {qtRecurso - 1} no 2º e no 3º. Campo vazio é não trabalha, e o
+              botão <strong>ano todo</strong> preenche os doze meses com{' '}
+              {qtRecurso} de uma vez.
+              {' '}Quando o número é igual a {qtRecurso}, o cadastro guarda
+              &ldquo;todas&rdquo;: se um dia o recurso passar a ter{' '}
+              {qtRecurso + 1}, esse turno acompanha sozinho.
+            </p>
+            <p style={{ margin: '6px 0 0' }}>
+              O <strong>teto</strong> continua sendo as {qtRecurso} máquinas 24 h
+              por dia — máquina parada no 3º turno continua existindo — então o
+              &ldquo;% do teto&rdquo; no painel passa a mostrar a ociosidade que
+              você planejou.
+            </p>
+          </div>
+        )}
+
         {/* A key força o React a remontar a matriz ao trocar de recurso ou de
             ano. Sem ela o componente é reaproveitado na mesma posição da
             árvore e o useState(inicial) mantém os checkboxes do recurso
@@ -175,21 +199,6 @@ export default async function Page({ searchParams }) {
               os que sobram.
             </p>
           </div>
-        )}
-
-        {qtRecurso > 1 && (
-          <p className="rodape">
-            Este recurso tem <strong>{qtRecurso} máquinas</strong>, então a
-            célula pede um número em vez de uma marca: quantas rodam naquele
-            turno. Dá para pôr 5 no 1º e 4 no 2º e no 3º. Vazio é não trabalha.
-            {' '}O <strong>teto</strong> continua sendo as {qtRecurso} máquinas
-            24 h por dia — máquina parada no 3º turno continua existindo —{' '}
-            então o &ldquo;% do teto&rdquo; no painel passa a mostrar sozinho a
-            ociosidade que você planejou.
-            {' '}Quando o número é igual a {qtRecurso}, o cadastro guarda
-            &ldquo;todas&rdquo;: se um dia o recurso passar a ter {qtRecurso + 1},
-            esse turno acompanha.
-          </p>
         )}
 
         <p className="rodape">

@@ -327,7 +327,10 @@ a.trilha-atual { color: var(--text); }
 .matriz-cab:hover { background: var(--gray-bg); color: var(--text); }
 
 .matriz-flag { position: relative; display: inline-flex; align-items: center; }
-.matriz-flag input {
+/* Só a caixa de marcar. Sem o [type], esta regra também pegava o campo de
+   quantidade e o espremia em 17 px — e ela vence por especificidade, então
+   nem declarar a largura depois adiantava. */
+.matriz-flag input[type="checkbox"] {
   width: 17px; height: 17px; cursor: pointer; accent-color: var(--accent);
 }
 .matriz-parcial {
@@ -474,8 +477,8 @@ input.invalido { border-color: #a32d2d; }
 
 /* Célula de quantidade na matriz de turnos. Estreita de propósito: o número
    vai de 1 a poucas dezenas, e campo largo faria a grade de 12 meses rolar. */
-.matriz-qt {
-  width: 52px; height: 30px; padding: 0 6px; text-align: center;
+.matriz-flag input.matriz-qt {
+  width: 54px; height: 30px; padding: 0 4px; text-align: center;
   font: inherit; font-size: 14px; font-variant-numeric: tabular-nums;
   border: 1px solid var(--border); border-radius: 6px;
   background: var(--card); color: var(--text);
