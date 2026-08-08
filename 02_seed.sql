@@ -46,10 +46,14 @@ cross join generate_series(0, 6) as d(dia);
 
 -- Intervalo de refeição: 30 min, só para recurso do tipo PESSOA.
 -- Máquina não para para almoçar.
-insert into turno_intervalo (turno_id, descricao, minutos, descontavel, aplica_a)
-select t.id, 'Refeição', 30, true, 'PESSOA'
+-- Uma linha por dia da semana: o intervalo passou a ser por dia, e o cadastro
+-- de turno deixa mudar dia a dia. Ver 17_intervalo_por_dia.sql.
+insert into turno_intervalo
+       (turno_id, dia_semana, descricao, minutos, descontavel, aplica_a)
+select t.id, d.dia_semana, 'Refeição', 30, true, 'PESSOA'
 from turno t
 join planta p on p.id = t.planta_id
+cross join generate_series(0, 6) as d(dia_semana)
 where p.codigo = 'MATRIZ';
 
 -- =============================================================================

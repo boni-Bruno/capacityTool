@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import {
   turnosParaCadastro, plantas, horariosDoTurno, intervalosDoTurno,
 } from '../../../lib/cadastro';
+import { DIAS_CURTO } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Turnos from './turnos';
 import EditorHorario from './editor';
@@ -67,13 +68,19 @@ export default async function Page({ searchParams }) {
             <p className="rodape">
               Intervalos deste turno:{' '}
               {intervalos.map((i, n) => (
-                <span key={i.id}>
+                <span key={`${i.descricao}:${i.minutos}:${i.aplica_a}:${i.descontavel}`}>
                   {n > 0 && ' · '}
                   {i.descricao} {i.minutos} min
+                  {/* O intervalo é por dia da semana. Sete dias é o caso comum
+                      e não merece uma lista; menos que isso, sim — é
+                      justamente o sábado diferente. */}
+                  {i.dias === 7
+                    ? ' (todo dia)'
+                    : ` (${i.dias_semana.map((d) => DIAS_CURTO[Number(d)]).join(', ')})`}
                   {!i.descontavel
-                    ? ' (não desconta)'
-                    : i.aplica_a === 'AMBOS' ? ' (máquina e pessoa)'
-                    : ` (só ${i.aplica_a.toLowerCase()})`}
+                    ? ' — não desconta'
+                    : i.aplica_a === 'AMBOS' ? ' — máquina e pessoa'
+                    : ` — só ${i.aplica_a.toLowerCase()}`}
                 </span>
               ))}
             </p>

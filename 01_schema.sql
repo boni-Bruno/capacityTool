@@ -164,12 +164,16 @@ create trigger trg_turno_horario_calcula
 create table turno_intervalo (
     id          serial primary key,
     turno_id    int         not null references turno(id) on delete cascade,
+    -- O intervalo e por dia da semana: sabado de meio periodo nao leva a mesma
+    -- refeicao do dia cheio. Ver 17_intervalo_por_dia.sql.
+    dia_semana  smallint    not null check (dia_semana between 0 and 6),
     descricao   varchar(60) not null,
     minutos     int         not null check (minutos > 0),
     descontavel boolean     not null default true,
     aplica_a    varchar(10) not null default 'AMBOS'
                 check (aplica_a in ('MAQUINA','PESSOA','AMBOS'))
 );
+create index ix_ti_turno_dia on turno_intervalo (turno_id, dia_semana);
 
 -- =============================================================================
 -- 3. ESCALA DE RODÍZIO
@@ -592,5 +596,6 @@ select th.turno_id,
        ), 0) as minutos
 from turno_horario th
 cross join (values ('MAQUINA'), ('PESSOA')) as tr(tipo_recurso)
-left join turno_intervalo i on i.turno_id = th.turno_id
+left join turno_intervalo i on i.turno_id   = th.turno_id
+                           and i.dia_semana = th.dia_semana
 group by th.turno_id, th.dia_semana, th.vigencia, tr.tipo_recurso, th.min_bruto;

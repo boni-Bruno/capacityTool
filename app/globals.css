@@ -485,3 +485,15 @@ input.invalido { border-color: #a32d2d; }
 }
 .matriz-qt:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .matriz-qt::placeholder { color: var(--muted); opacity: .5; }
+
+/* Minutos de intervalo na grade de horário do turno. */
+.intervalo-min {
+  width: 64px; height: 32px; padding: 0 6px; text-align: right;
+  font: inherit; font-size: 14px; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); color: var(--text);
+}
+.intervalo-min:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+/* Pessoa sem minuto nenhum: o intervalo comeu o turno. */
+td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
