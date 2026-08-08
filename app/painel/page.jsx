@@ -5,6 +5,10 @@ import {
   memoriaDoDia, anosComRodada,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
+import {
+  diaDaSemana, diasNoIntervalo, iso, mesesNoIntervalo, resolvePeriodo,
+  rotuloPeriodo,
+} from '../../lib/periodo';
 import { MESES, DIAS, DIAS_CURTO } from '../../lib/dias';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
@@ -20,11 +24,13 @@ export const dynamic = 'force-dynamic';
 
 // O gráfico pula mês sem resultado e a tabela ficaria fora do passo com ele.
 // Completar os 12 aqui, uma vez, mantém os dois lendo a mesma coisa.
-function dozeMeses(linhas) {
-  return Array.from({ length: 12 }, (_, i) => {
-    const achado = linhas.find((l) => Number(l.mes) === i + 1);
+// Mês sem linha no banco vira zero em vez de sumir: buraco no meio da série
+// esconde que aquele mês foi calculado e deu nada.
+function serieDeMeses(linhas, meses) {
+  return meses.map((m) => {
+    const achado = linhas.find((l) => Number(l.mes) === m.mes);
     return {
-      mes: i + 1,
+      ...m,
       instalada: Number(achado?.instalada ?? 0),
       planejada: Number(achado?.planejada ?? 0),
       disponivel: Number(achado?.disponivel ?? 0),
@@ -62,6 +68,9 @@ export default async function Page({ searchParams }) {
   // planejar. Ver lib/anos.js.
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
+  // O recorte de datas vem antes de qualquer consulta: ele decide o que somar
+  // e em que grão, inclusive na tabela por recurso. Ver lib/periodo.js.
+  const periodo = resolvePeriodo(searchParams, ano);
   // Minuto é o default: é a moeda base do projeto e o número exato. Hora com
   // uma casa arredonda, e conferir uma parada de 30 min contra a calculadora
   // era a primeira coisa que alguém tentava fazer.
@@ -110,7 +119,7 @@ export default async function Page({ searchParams }) {
   // A lista de recursos vem antes do resto para validar o que veio na URL:
   // recurso de outra área faria as consultas voltarem vazias e a tela mostraria
   // zero em tudo, parecendo cálculo errado em vez de filtro inválido.
-  const todos = await porRecurso(exec.id, areaId, ano);
+  const todos = await porRecurso(exec.id, areaId, periodo.de, periodo.ate);
 
   // Os filtros do cabeçalho são atributos do recurso, e a lista de opções sai
   // do que existe nesta área — sem cadastro à parte de sub-área.
@@ -147,7 +156,14 @@ export default async function Page({ searchParams }) {
 
   // Monta a URL preservando o que não está mudando. Passar null num campo o
   // remove — é assim que se sobe um nível do drill-down.
-  const url = ({ recurso = foco?.id ?? null, mes: m, dia: d } = {}) => {
+  // `de`/`ate` são o recorte; `periodo` não é passado nunca, serve só para
+  // limpar. Um parâmetro só descreve o que se está vendo, e o nível de detalhe
+  // sai do tamanho dele — ver lib/periodo.js.
+  const url = ({
+    recurso = foco?.id ?? null,
+    de: d1 = periodo.de,
+    ate: d2 = periodo.ate,
+  } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
     p.set('ano', String(ano));
@@ -156,27 +172,21 @@ export default async function Page({ searchParams }) {
     if (sub !== null) p.set('sub', sub);
     if (tipo !== null) p.set('tipo', tipo);
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
-    if (m !== null && m !== undefined) p.set('mes', String(m));
-    if (d !== null && d !== undefined) p.set('dia', String(d));
+    // Ano inteiro é a ausência de recorte, e some do endereço: parâmetro que
+    // repete o padrão só atrapalha quem lê a URL.
+    const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
+    if (d1 && d2 && !inteiro) { p.set('de', d1); p.set('ate', d2); }
     return '?' + p.toString();
   };
 
-  // Nível do drill-down: ano > mês a mês > dia a dia > turno.
-  const mesPedido = searchParams?.mes ? Number(searchParams.mes) : null;
-  const mes = mesPedido >= 1 && mesPedido <= 12 ? mesPedido : null;
-  const diaPedido = mes && searchParams?.dia ? Number(searchParams.dia) : null;
-  const diasNoMes = mes ? new Date(ano, mes, 0).getDate() : 0;
-  const dia = diaPedido >= 1 && diaPedido <= diasNoMes ? diaPedido : null;
-
-  const dd = (n) => String(n).padStart(2, '0');
-  const dataISO = mes && dia ? `${ano}-${dd(mes)}-${dd(dia)}` : null;
+  const dataISO = periodo.nivel === 'TURNO' ? periodo.de : null;
 
   let dados;
   let mostrarInstalada = true;
   let teto = null;
   let memoria = null;
 
-  if (dataISO) {
+  if (periodo.nivel === 'TURNO') {
     // Turno: sem instalada nas barras. Ela é grão dia — repetir o teto em cada
     // turno era o que inflava o total no Qlik antigo. Vem separado, uma vez.
     const [linhas, tetoDia] = await Promise.all([
@@ -194,31 +204,33 @@ export default async function Page({ searchParams }) {
     // O memorial é por recurso: com a área inteira somada, "de quanto para
     // quanto" não teria sujeito. Só carrega quando há um recurso em foco.
     if (foco) memoria = await memoriaDoDia(exec.id, foco.id, dataISO);
-  } else if (mes) {
-    const linhas = await porDia(exec.id, areaId, ano, mes, listaIds);
-    dados = Array.from({ length: diasNoMes }, (_, i) => {
-      const achado = linhas.find((l) => Number(l.dia) === i + 1);
+  } else if (periodo.nivel === 'DIA') {
+    const linhas = await porDia(exec.id, areaId, periodo.de, periodo.ate, listaIds);
+    dados = diasNoIntervalo(periodo.de, periodo.ate).map((data) => {
+      const achado = linhas.find((l) => l.data === data);
       // O dia da semana antes do número: é o que explica de bate-pronto por
       // que uma barra caiu — domingo e sábado saltam à vista sem precisar
       // conferir no calendário.
-      const semana = DIAS_CURTO[new Date(ano, mes - 1, i + 1).getDay()];
       return {
-        rotulo: `${semana} ${dd(i + 1)}`,
+        rotulo: `${DIAS_CURTO[diaDaSemana(data)]} ${data.slice(8)}`,
         instalada: Number(achado?.instalada ?? 0),
         planejada: Number(achado?.planejada ?? 0),
         disponivel: Number(achado?.disponivel ?? 0),
-        href: url({ mes, dia: i + 1 }),
+        href: url({ de: data, ate: data }),
       };
     });
   } else {
-    const linhas = await porMes(exec.id, areaId, ano, listaIds);
-    dados = dozeMeses(linhas).map((m) => ({
-      rotulo: MESES[m.mes],
-      instalada: m.instalada,
-      planejada: m.planejada,
-      disponivel: m.disponivel,
-      href: url({ mes: m.mes }),
-    }));
+    const linhas = await porMes(exec.id, areaId, periodo.de, periodo.ate, listaIds);
+    dados = serieDeMeses(linhas, mesesNoIntervalo(periodo.de, periodo.ate))
+      .map((m) => ({
+        // O asterisco avisa que a barra é de um mês cortado pelo recorte, e
+        // não do mês inteiro — senão a comparação com os vizinhos engana.
+        rotulo: MESES[m.mes] + (m.parcial ? '*' : ''),
+        instalada: m.instalada,
+        planejada: m.planejada,
+        disponivel: m.disponivel,
+        href: url({ de: m.de, ate: m.ate }),
+      }));
   }
 
   // Os indicadores somam o que está no gráfico, então eles nunca discordam da
@@ -307,26 +319,24 @@ export default async function Page({ searchParams }) {
       <div className="painel">
         <div className="painel-topo">
           <h2>
-            {dataISO ? 'Turno a turno' : mes ? 'Dia a dia' : 'Mês a mês'}
+            {periodo.nivel === 'TURNO' ? 'Turno a turno'
+              : periodo.nivel === 'DIA' ? 'Dia a dia' : 'Mês a mês'}
             {foco && <span className="foco"> · {foco.nome}</span>}
           </h2>
 
           <nav className="trilha">
-            {/* Cada degrau volta um nível removendo o parâmetro. */}
-            <Link href={url({ mes: null, dia: null })}
-                  className={mes ? '' : 'trilha-atual'}>{ano}</Link>
-            {mes && (
-              <>
-                <span className="trilha-sep">›</span>
-                <Link href={url({ mes, dia: null })}
-                      className={dia ? '' : 'trilha-atual'}>{MESES[mes]}</Link>
-              </>
-            )}
-            {dia && (
+            {/* O ano é o estado sem recorte; o degrau seguinte é o intervalo
+                que estiver valendo, venha ele do clique numa barra ou dos
+                campos De/Até. */}
+            <Link href={url({ de: null, ate: null })}
+                  className={periodo.anoInteiro ? 'trilha-atual' : ''}>{ano}</Link>
+            {!periodo.anoInteiro && (
               <>
                 <span className="trilha-sep">›</span>
                 <span className="trilha-atual">
-                  dia {dd(dia)} ({DIAS[new Date(ano, mes - 1, dia).getDay()]})
+                  {rotuloPeriodo(periodo.de, periodo.ate)}
+                  {periodo.nivel === 'TURNO'
+                    && ` (${DIAS[diaDaSemana(periodo.de)]})`}
                 </span>
               </>
             )}
@@ -349,7 +359,12 @@ export default async function Page({ searchParams }) {
               `todo dia — e por isso não aparece repartida entre os turnos. ` +
               `Turno que vira a meia-noite conta no dia em que termina: o da ` +
               `noite anterior aparece aqui, inteiro.`
-            : 'Clique numa coluna para descer um nível.'}
+            : periodo.nivel === 'DIA'
+              ? 'Clique numa coluna para ver os turnos daquele dia. Os campos '
+                + 'De e Até, ao lado do ano, mudam o recorte sem passar por aqui.'
+              : 'Clique numa coluna para descer ao dia a dia. Os campos De e '
+                + 'Até, ao lado do ano, recortam qualquer intervalo direto — '
+                + 'mês fora do recorte inteiro aparece com asterisco.'}
         </p>
       </div>
 
@@ -380,6 +395,7 @@ export default async function Page({ searchParams }) {
           <h2>Por recurso</h2>
           <Suspense>
             <FiltrosRecurso ano={ano} anos={anos} unidade={unidade}
+                            periodo={periodo}
                             subAreas={subAreas} sub={sub} tipo={tipo} />
           </Suspense>
         </div>
@@ -404,7 +420,7 @@ export default async function Page({ searchParams }) {
               <tr key={r.codigo} className={foco?.id === r.id ? 'linha-edit' : ''}>
                 <td>
                   <Link className="link-linha"
-                        href={url({ recurso: r.id, mes: null, dia: null })}>
+                        href={url({ recurso: r.id })}>
                     {r.nome}
                   </Link>
                 </td>

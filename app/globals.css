@@ -497,3 +497,17 @@ input.invalido { border-color: #a32d2d; }
 
 /* Pessoa sem minuto nenhum: o intervalo comeu o turno. */
 td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
+
+/* Campo com rótulo em linha, na barra de filtros do painel (De / Até). */
+.campo-inline {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--muted);
+}
+.campo-inline input[type="date"] {
+  height: 36px; padding: 0 8px; font-size: 14px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); color: var(--text);
+}
+.campo-inline input[type="date"]:focus {
+  outline: 2px solid var(--accent); outline-offset: -1px;
+}

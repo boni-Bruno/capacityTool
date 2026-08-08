@@ -22,16 +22,27 @@ function useMuda() {
   const router = useRouter();
   const params = useSearchParams();
 
+  // Aceita um campo ou vários de uma vez. Vários numa chamada só importa: duas
+  // chamadas seguidas leriam a mesma URL antiga, e a segunda desfaria a
+  // primeira — foi o que aconteceu ao limpar o período, que mexe em De e Até
+  // juntos.
   return function muda(campo, valor) {
+    const mudancas = typeof campo === 'object' ? campo : { [campo]: valor };
     const p = new URLSearchParams(params.toString());
-    if (valor === '') p.delete(campo); else p.set(campo, valor);
 
-    // O recurso clicado pode não estar mais na seleção, e o dia aberto era do
-    // conjunto antigo — manter mostraria número de um recorte que sumiu.
-    if (campo === 'sub' || campo === 'tipo' || campo === 'area'
-        || campo === 'origem') {
-      p.delete('recurso'); p.delete('mes'); p.delete('dia');
+    for (const [k, v] of Object.entries(mudancas)) {
+      if (v === '' || v === null) p.delete(k); else p.set(k, v);
     }
+    const chaves = Object.keys(mudancas);
+
+    // O recurso clicado pode não estar mais na seleção, e o recorte aberto era
+    // do conjunto antigo — manter mostraria número de um período que sumiu.
+    if (chaves.some((k) => ['sub', 'tipo', 'area', 'origem'].includes(k))) {
+      p.delete('recurso'); p.delete('de'); p.delete('ate');
+    }
+    // Trocar de ano invalida um recorte que era de outro ano.
+    if (chaves.includes('ano')) { p.delete('de'); p.delete('ate'); }
+
     router.push('?' + p.toString());
   };
 }
@@ -116,14 +127,46 @@ export function FiltrosTopo({ areas, areaId, ano, origem }) {
   );
 }
 
-export function FiltrosRecurso({ ano, anos, unidade, subAreas = [], sub = null, tipo = null }) {
+export function FiltrosRecurso({
+  ano, anos, unidade, subAreas = [], sub = null, tipo = null, periodo = null,
+}) {
   const muda = useMuda();
+
+  // O recorte de datas é o mesmo estado do drill-down do gráfico: escolher
+  // aqui é o atalho para o que antes só se alcançava clicando barra por barra.
+  // Um intervalo dentro de um mês já cai no dia a dia sozinho.
+  const limDe = `${ano}-01-01`;
+  const limAte = `${ano}-12-31`;
+  const recortado = periodo && !periodo.anoInteiro;
+
+  const limpaPeriodo = () => muda({ de: '', ate: '' });
 
   return (
     <div className="filtros">
       <select value={ano} onChange={(e) => muda('ano', e.target.value)}>
         {anos.map((a) => <option key={a} value={a}>{a}</option>)}
       </select>
+
+      {periodo && (
+        <>
+          <label className="campo-inline">
+            <span className="campo-rot">De</span>
+            <input type="date" value={periodo.de} min={limDe} max={limAte}
+                   onChange={(e) => muda('de', e.target.value)} />
+          </label>
+          <label className="campo-inline">
+            <span className="campo-rot">Até</span>
+            <input type="date" value={periodo.ate} min={limDe} max={limAte}
+                   onChange={(e) => muda('ate', e.target.value)} />
+          </label>
+          {recortado && (
+            <button className="btn btn-mini" onClick={limpaPeriodo}
+                    title="Voltar ao ano inteiro">
+              Ano todo
+            </button>
+          )}
+        </>
+      )}
 
       {subAreas.length > 0 && (
         <select value={sub ?? ''} onChange={(e) => muda('sub', e.target.value)}>

@@ -12,12 +12,20 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'm
       ? [{ rot: 'Instalada', campo: 'instalada', classe: 'med-inst' }]
       : []),
     { rot: 'Planejada',  campo: 'planejada',  classe: 'med-plan' },
-    { rot: 'Disponível', campo: 'disponivel', classe: 'med-disp' },
+    // Disponível sai de planejada x OEE e quase nunca dá minuto redondo. A
+    // fração existe no banco e importa para a soma fechar, mas numa grade de
+    // 31 colunas ela é só ruído — aqui a célula arredonda e o title continua
+    // trazendo o valor cheio.
+    { rot: 'Disponível', campo: 'disponivel', classe: 'med-disp', inteiro: true },
   ];
 
   // Os valores chegam em minutos; a célula mostra hora com uma casa e o
   // title traz a leitura exata em hora e minuto.
   const total = (campo) => dados.reduce((s, x) => s + Number(x[campo] ?? 0), 0);
+
+  // Arredonda o total de verdade, e não a soma dos já arredondados: a coluna
+  // total tem que bater com o indicador lá em cima.
+  const mostra = (v, inteiro) => (inteiro ? Math.round(Number(v ?? 0)) : v);
 
   if (!dados.length) return null;
 
@@ -40,11 +48,11 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'm
               </td>
               {dados.map((x) => (
                 <td key={x.rotulo} className="num" title={horasEMinutos(x[l.campo])}>
-                  {formataUnidade(x[l.campo], unidade)}
+                  {formataUnidade(mostra(x[l.campo], l.inteiro), unidade)}
                 </td>
               ))}
               <td className="num forte" title={horasEMinutos(total(l.campo))}>
-                {formataUnidade(total(l.campo), unidade)}
+                {formataUnidade(mostra(total(l.campo), l.inteiro), unidade)}
               </td>
             </tr>
           ))}
