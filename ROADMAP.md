@@ -34,27 +34,58 @@ Isso derruba a necessidade de cadastrar taxa e mix. As tabelas `produto` e
 `recurso_taxa.min_setup`, que sempre foi contraditório com a decisão de manter
 setup embutido no OEE.
 
+### As duas colunas de quantidade
+
+| coluna | é sempre |
+|---|---|
+| `Total Produção (M\Kg)` | **metro de tecelagem** — kg apenas na fiação |
+| `Total Produção (Un)` | a produção na **UM do material** |
+
+São duas leituras da mesma produção. O que liga uma à outra é a **pista**: o
+tear produz 2, 3 ou mais toalhas lado a lado no mesmo metro linear, e a
+confecção corta e separa as pistas.
+
+```
+pano de copa:  M\Kg = 462 m de tecelagem   Un = 2.640 peças
+               2.640 ÷ 462 = 5,71 panos por metro de tecelagem
+               4 pistas ÷ 0,70 m de pano   = 5,71   ✓
+
+toalha rosto:  índice 0,241 m por peça
+               3 pistas ÷ 0,72 m de toalha = 4,17 por metro   ✓
+```
+
+`TECIDO MEDICAO FELPUDO` é o único produto vendido a metro para o cliente, e
+por isso o único em que as duas colunas aparecem visíveis ao mesmo tempo:
+`M\Kg` traz o metro de tecelagem com as pistas juntas e `Un` traz o metro de
+cada pista já separada — ~3,74 pistas em média. Nos confeccionados a mesma
+coisa acontece, só que `Un` já sai contado em peça.
+
 ### A conta
 
-O CT produz em mais de uma UM (o 460-001 faz PC, JG2, JG3, JG4, PT6 e DZ), e
-somar peça com jogo de 4 não significa nada. Então a conversão é uma cesta:
-reparte o tempo disponível na proporção em que a demanda o reparte, e converte
-cada fatia pela taxa dela.
-
 ```
-fatia_u   = Σ min(CT, mês, UM=u)  ÷  Σ min(CT, mês)
-índice_u  = Σ Un(CT, mês, UM=u)   ÷  Σ min(CT, mês, UM=u)
-
-capacidade_u = disponível_min(CT, mês) × fatia_u × índice_u
+índice(CT, mês)  =  Σ quantidade(CT, mês)  ÷  Σ minutos(CT, mês)
+capacidade       =  disponível_min(CT, mês) × índice(CT, mês)
 ```
 
-Com uma UM só no CT, `fatia = 1` e a conta desaba na forma simples.
+Trocando a coluna de quantidade sai a unidade desejada:
 
-`índice` é a média harmônica ponderada, e é o único jeito certo: ponderar as
-taxas pela participação em QUANTIDADE infla a capacidade, porque o produto
-lento ocupa mais tempo do que a participação em quantidade sugere. Com 1.000 kg
-de A a 100 kg/h e 1.000 kg de B a 50 kg/h, a média por quantidade dá 75 kg/h e
-a realidade é 66,7.
+```
+índice em UM do material   =  Σ Un    ÷ Σ min
+índice em metro de tecelagem = Σ M\Kg ÷ Σ min
+```
+
+Os dois saem da mesma soma e são **paralelos, não encadeados** — embora
+encadear dê o mesmo número, porque
+`(Σ Un ÷ Σ min) × (Σ M\Kg ÷ Σ Un) = Σ M\Kg ÷ Σ min`. A igualdade só vale
+enquanto as três somas forem sobre exatamente o mesmo conjunto de linhas;
+calcular a pista por família e o índice por CT quebraria isso.
+
+Somar na cabeça do CT resolve o mix sozinho: cada material entra ponderado pela
+quantidade que a demanda pede. É a média harmônica ponderada, que é o único
+jeito certo — ponderar taxa por participação em QUANTIDADE infla a capacidade,
+porque o produto lento ocupa mais tempo do que a quantidade sugere. Com 1.000
+unidades de A a 100/h e 1.000 de B a 50/h, a média por quantidade dá 75/h e a
+realidade é 66,7.
 
 ### O vínculo com o recurso é derivado, não cadastrado
 
@@ -66,23 +97,20 @@ tabela de-para para manter desatualizada.
 Atenção aos zeros à esquerda: `100-001` não casa com um cadastro que tenha
 `cc = 100` e `ct = 1`.
 
-### `Total Produção (M\Kg)` está fora do escopo inicial
+### Cobertura: 80,3% do tempo vira metro de tecelagem
 
-A coluna traz o peso ou o comprimento da ficha técnica, e **não dá para saber
-pelo arquivo qual dos dois é**:
+| a linha rende | % do tempo |
+|---|---|
+| metro direto — a UM do material já é M | 58,2% |
+| metro pelo índice de pista — UM contável | 22,0% |
+| **kg — fiação, não tem metro de tecelagem** | 19,7% |
+| sem conversão (61 linhas, 2.792 min no ano) | 0,0% |
 
-| UM | M\Kg = Un | M\Kg ≠ Un | quando difere |
-|---|---|---|---|
-| M | 35.196 | 652 | 0,2674 → 267 g por metro |
-| PC | 24 | 32.375 | 0,1750 → 175 g por peça |
-| KG | 366 | 36 | 1,0330 → ? |
+A separação é por CT e é limpa: 30 CTs de fiação ficam em kg, o resto vira
+metro. Fio não ter metro de tecelagem é o certo, não uma lacuna.
 
-Para `UM = M` a coluna é metro em 98% das linhas (cópia de `Un`) e quilo nas
-outras. A regra "se UM=M então M\Kg é kg" quebra.
-
-`Total Produção (Un)` é a UM do material e não tem ambiguidade — é por onde
-começa. Destravar metro e quilo depende de a extração trazer uma coluna
-dizendo o que `M\Kg` é.
+Taxas que saem, para conferência de sanidade em tear de felpudo:
+`515-004` a 11,0 m/h, `278-002` a 51,5 m/h, `800-001` a 34,2 m/h.
 
 ### Decidido
 
@@ -91,9 +119,11 @@ dizendo o que `M\Kg` é.
 - `Cenário` é o nome da versão da carga (`Orçamento_2026_v3_Plano_Compras`);
   cada carga é uma versão, nunca uma sobrescrita
 - O painel mostra a **cesta inteira**; o usuário não escolhe várias UMs
-- A meta é padronizar numa UM que faça sentido para leitura — possivelmente
-  converter tudo para metro
-- Período da base é mensal (`2026.01`), o mesmo grão da capacidade
+- Unidade padrão de apresentação: **metro de tecelagem**, com a fiação em kg
+- Período da base é mensal (`2026.01` a `2026.12`), e isso **dita o grão do
+  índice**: converter um dia ou um turno usa o índice do mês daquele dia, o
+  que assume mix uniforme dentro do mês. É premissa, não defeito — mas tem que
+  estar escrita na tela quando o painel estiver no nível de dia.
 
 ### Em aberto
 
@@ -103,7 +133,8 @@ dizendo o que `M\Kg` é.
   O caminho é ler o arquivo no navegador e enviar já processado — `.xlsx` é um
   zip de XML e o navegador tem `DecompressionStream` nativo, então dá para ler
   sem dependência nova
-- Qual UM única faz sentido como padrão de apresentação
+- `Período` é o mês da **produção** ou o mês da necessidade/entrega? A
+  capacidade é consumida quando se produz, então a diferença importa
 
 ---
 
@@ -131,8 +162,9 @@ Da primeira leitura da base, o que a validação vai encontrar:
   ou falta uma coluna na chave, ou basta somar
 - `PT4`, `PT6` e `DZ` com taxas absurdas sobre volume ínfimo (DZ tem 2 minutos
   no ano inteiro)
-- 11 dos 123 CTs misturam unidades físicas de verdade: `401-001` faz contável,
-  quilo e metro; `654-004` faz contável e quilo
+- 11 dos 123 CTs misturam UMs de material diferentes. Em metro de tecelagem
+  isso deixa de ser problema — todas viram a mesma régua —, mas na leitura por
+  UM do material continua valendo o cuidado de não somar peça com jogo
 
 ---
 
