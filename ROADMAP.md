@@ -136,6 +136,20 @@ Taxas que saem, para conferência de sanidade em tear de felpudo:
 - `Período` é o mês da **produção** ou o mês da necessidade/entrega? A
   capacidade é consumida quando se produz, então a diferença importa
 
+### Regra de leitura do período
+
+O formato `AAAA.MM` vem da base e não pode ser alterado na origem. A tradução
+mora na importação: guarda-se o texto original como veio, para rastreabilidade
+e extração, e o par `(ano, mês)` normalizado, que é por onde o join com a
+capacidade acontece. Nenhuma das duas pontas precisa saber do formato da outra.
+
+**Cuidado com `2026.10`.** O valor parece um número, e no `.xlsx` ele vem como
+texto — conferido, o zero está lá. No caminho do CSV isso é um clássico: se
+qualquer ferramenta no meio tratar a coluna como numérica, `2026.10` vira
+`2026.1` e passa a colidir com janeiro. Duas linhas somadas no mês errado, sem
+erro nenhum na tela. A importação tem que recusar período que não case com
+`\d{4}\.\d{2}` em vez de tentar adivinhar.
+
 ---
 
 ## 2. Tabela de validação demanda × capacidade
