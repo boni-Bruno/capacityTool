@@ -120,6 +120,12 @@ Taxas que saem, para conferência de sanidade em tear de felpudo:
   cada carga é uma versão, nunca uma sobrescrita
 - O painel mostra a **cesta inteira**; o usuário não escolhe várias UMs
 - Unidade padrão de apresentação: **metro de tecelagem**, com a fiação em kg
+- A primeira entrega já sai em **metro de tecelagem**, sem passar por uma etapa
+  em `Un`. As duas conversões partem da mesma soma, então não há nada a ganhar
+  escalonando — `Un` fica como leitura secundária, para olhar um CT ou um
+  produto de cada vez
+- `Período` é o mês da **produção**. A demanda de um mês é consumida pela
+  capacidade daquele mesmo mês, sem deslocamento de lead time entre as duas
 - Período da base é mensal (`2026.01` a `2026.12`), e isso **dita o grão do
   índice**: converter um dia ou um turno usa o índice do mês daquele dia, o
   que assume mix uniforme dentro do mês. É premissa, não defeito — mas tem que
@@ -133,8 +139,6 @@ Taxas que saem, para conferência de sanidade em tear de felpudo:
   O caminho é ler o arquivo no navegador e enviar já processado — `.xlsx` é um
   zip de XML e o navegador tem `DecompressionStream` nativo, então dá para ler
   sem dependência nova
-- `Período` é o mês da **produção** ou o mês da necessidade/entrega? A
-  capacidade é consumida quando se produz, então a diferença importa
 
 ### Regra de leitura do período
 
