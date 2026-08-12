@@ -238,6 +238,11 @@ create table excecao (
     afeta_capacidade boolean not null default true,
     impacto_dia numeric(4,2) not null default 1
                 check (impacto_dia >= 0 and impacto_dia <= 1),
+    -- Afetou a capacidade, parou o dia inteiro: dia_util e booleano e o motor
+    -- nao tem meio termo. Meia parada real se cadastra em `parada`, por
+    -- recurso e em minutos.
+    constraint ex_impacto_so_apresentacao
+        check (afeta_capacidade = false or impacto_dia = 1),
     descricao   varchar(120),
     unique nulls not distinct (planta_id, data, turno_id, tipo)
 );

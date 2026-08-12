@@ -38,6 +38,20 @@ alter table excecao drop constraint if exists ex_impacto_valido;
 alter table excecao
     add constraint ex_impacto_valido check (impacto_dia >= 0 and impacto_dia <= 1);
 
+-- Exceção que afeta a capacidade para o dia INTEIRO: dia_util e booleano e o
+-- motor zera o dia todo, sem meio termo. Guardar 0,5 ali seria guardar um
+-- numero que ninguem le e que contradiz o que vai acontecer. Meia parada de
+-- verdade, que tira minutos sem tirar o dia, se cadastra em `parada`, por
+-- recurso e em minutos.
+alter table excecao drop constraint if exists ex_impacto_so_apresentacao;
+
+-- Normaliza o que ja existe antes de a constraint passar a valer.
+update excecao set impacto_dia = 1 where afeta_capacidade and impacto_dia <> 1;
+
+alter table excecao
+    add constraint ex_impacto_so_apresentacao
+    check (afeta_capacidade = false or impacto_dia = 1);
+
 -- O tipo ganha OUTRAS_PARADAS. O nome da constraint sai do padrao do Postgres
 -- para check de coluna: <tabela>_<coluna>_check.
 alter table excecao drop constraint if exists excecao_tipo_check;

@@ -77,9 +77,20 @@ export default function EditorExcecao({
 
   const oTipo = tipos.find((t) => t.valor === tipo);
   const nImpacto = Number(String(impacto).replace(',', '.'));
-  const impactoOk = Number.isFinite(nImpacto) && nImpacto >= 0 && nImpacto <= 1;
-  // Sem afetar capacidade e sem consumir dia, a exceção não faria nada.
-  const inutil = !afeta && impactoOk && nImpacto === 0;
+  // "Quanto do dia" só existe para a parada de apresentação. Quando a exceção
+  // para os recursos, o motor zera o dia inteiro — dia_util é booleano — e
+  // qualquer fração aqui seria um número que ninguém lê.
+  const impactoOk = afeta
+    || (Number.isFinite(nImpacto) && nImpacto > 0 && nImpacto <= 1);
+  const inutil = !afeta && Number.isFinite(nImpacto) && nImpacto === 0;
+
+  // Trocar para "para os recursos" devolve o campo ao dia inteiro, para a tela
+  // nunca mostrar 0,5 ao lado de uma parada que vai parar o dia todo.
+  function mudaEfeito(v) {
+    const novo = v === 'sim';
+    setAfeta(novo);
+    if (novo) setImpacto('1');
+  }
 
   return (
     <>
@@ -96,7 +107,7 @@ export default function EditorExcecao({
         <label className="campo">
           <span className="campo-rot">Efeito</span>
           <select value={afeta ? 'sim' : 'nao'}
-                  onChange={(e) => setAfeta(e.target.value === 'sim')}>
+                  onChange={(e) => mudaEfeito(e.target.value)}>
             <option value="sim">Para os recursos</option>
             <option value="nao">Só apresentação</option>
           </select>
@@ -104,11 +115,15 @@ export default function EditorExcecao({
 
         <label className="campo">
           <span className="campo-rot">Quanto do dia</span>
-          <input type="text" inputMode="decimal" value={impacto}
-                 placeholder="1"
+          <input type="text" inputMode="decimal"
+                 value={afeta ? '1' : impacto}
+                 disabled={afeta}
+                 placeholder="0,5"
                  onFocus={(e) => e.target.select()}
                  onChange={(e) => setImpacto(e.target.value)}
-                 title="1 é o dia inteiro, 0,5 é meio dia" />
+                 title={afeta
+                   ? 'Parada que atinge os recursos para o dia inteiro — o motor não tem meio termo.'
+                   : '1 é o dia inteiro, 0,5 é meio dia'} />
         </label>
 
         <label className="campo campo-largo">
@@ -156,9 +171,13 @@ export default function EditorExcecao({
         máquina de operação.
       </p>
       <p className="rodape">
-        <strong>Quanto do dia</strong> é o que essa parada consome na contagem
-        de dias úteis: <code>1</code> é o dia inteiro, <code>0,5</code> é meio
-        dia. Num sábado que já vale 0,5, uma parada de dia inteiro zera o
+        <strong>Quanto do dia</strong> só vale para a parada de apresentação, e
+        por isso fica travado no dia inteiro na outra opção: quando a exceção
+        atinge os recursos, o motor zera o dia todo — não existe meio termo lá
+        dentro. Meia parada de verdade, que tira minutos sem tirar o dia, se
+        cadastra em <strong>Paradas</strong>, por recurso e em minutos.
+        {' '}Na apresentação, <code>1</code> é o dia inteiro e <code>0,5</code>
+        é meio dia. Num sábado que já vale 0,5, uma parada de dia inteiro zera o
         sábado — não desconta do dia seguinte.
       </p>
 
@@ -180,14 +199,14 @@ export default function EditorExcecao({
             alcança ninguém
           </span>
         )}
-        {!impactoOk && (
+        {!impactoOk && !inutil && (
           <span className="muted">
-            &ldquo;quanto do dia&rdquo; tem que ser um número de 0 a 1
+            &ldquo;quanto do dia&rdquo; tem que ser maior que 0 e no máximo 1
           </span>
         )}
         {inutil && (
           <span className="muted">
-            só apresentação consumindo 0 do dia não faria nada — ou afeta os
+            só apresentação consumindo 0 do dia não faria nada — ou ela para os
             recursos, ou consome parte do dia
           </span>
         )}

@@ -519,3 +519,8 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
   box-shadow: inset 0 -3px 0 #7a54b0;
   font-weight: 600;
 }
+
+/* Campo travado: continua legível, mas diz que não se mexe nele. */
+.form-grade input:disabled {
+  background: var(--gray-bg); color: var(--muted); cursor: not-allowed;
+}
