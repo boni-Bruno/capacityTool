@@ -1,23 +1,49 @@
 -- =============================================================================
--- FERRAMENTA DE CAPACIDADE  —  03. MOTOR DE CÁLCULO
+-- FERRAMENTA DE CAPACIDADE — 18. PARADA DE APRESENTAÇÃO E IMPACTO EM DIA ÚTIL
 --
--- Para cada recurso / dia / turno do período, resolve:
---   1. o recurso existia?          -> recurso_parametro (vigência)
---   2. qual calendário ele segue?  -> recurso_calendario
---   3. em quais turnos trabalha?   -> recurso_turno
---   4. esse dia é útil?            -> calendario_dia + excecao (area+calendario) + escala
---   5. quantos minutos tem?        -> turno_horario (máquina x pessoa)
---   6. tem parada planejada?       -> parada + tipo_parada
---   7. qual o OEE?                 -> recurso_oee (da origem pedida)
+-- Duas coisas que a exceção não sabia dizer.
 --
--- Cada passo da conta vai para capacidade_memoria, que responde "por que esse
--- recurso deu X h?". Só as etapas que mudaram algo, mais o ponto de partida.
+-- 1. NEM TODA PARADA ZERA O DIA. Existe parada que precisa aparecer no
+--    calendário e na contagem de dias úteis, mas que não tira capacidade de
+--    recurso nenhum. Hoje cadastrar qualquer exceção zerava o dia.
+--    `afeta_capacidade` separa as duas coisas: com false, o motor ignora a
+--    exceção por completo e o dia produz normalmente.
 --
--- FÓRMULAS
---   instalada  = 1440 x qt_recursos x equivalencia          (grão dia)
---   planejada  = minutos x qt_recursos x equivalencia - paradas   (grão turno)
---   disponivel = planejada x oee
+-- 2. PARADA NEM SEMPRE É O DIA INTEIRO. `impacto_dia` diz quanto do dia a
+--    parada consome na contagem de dias úteis: 1 é o dia todo, 0,5 é meio dia.
+--    O dia útil daquela data vira `max(0, peso_do_dia_da_semana - impacto)`.
+--
+-- Os dois eixos são independentes de propósito:
+--
+--   afeta_capacidade  o dia produz?          -> motor
+--   impacto_dia       quanto o dia conta?    -> indicador de dias úteis
+--
+-- E entra o tipo OUTRAS_PARADAS, para o que não é feriado nem parada coletiva.
+--
+-- IMPACTO NOS NÚMEROS: nenhum. Toda exceção existente nasce com
+-- afeta_capacidade = true e impacto_dia = 1, que é exatamente o que elas fazem
+-- hoje — zerar o dia e tirá-lo da contagem.
+--
+-- ORDEM: rode ANTES do deploy do código novo.
 -- =============================================================================
+
+alter table excecao
+    add column if not exists afeta_capacidade boolean not null default true;
+
+-- Quanto do dia a parada consome na contagem de dias uteis. 1 = dia inteiro.
+alter table excecao
+    add column if not exists impacto_dia numeric(4,2) not null default 1;
+
+alter table excecao drop constraint if exists ex_impacto_valido;
+alter table excecao
+    add constraint ex_impacto_valido check (impacto_dia >= 0 and impacto_dia <= 1);
+
+-- O tipo ganha OUTRAS_PARADAS. O nome da constraint sai do padrao do Postgres
+-- para check de coluna: <tabela>_<coluna>_check.
+alter table excecao drop constraint if exists excecao_tipo_check;
+alter table excecao
+    add constraint excecao_tipo_check
+    check (tipo in ('FERIADO','PARADA_COLETIVA','DIA_EXTRA','OUTRAS_PARADAS'));
 
 create or replace function fn_calcular_capacidade(
     p_cenario_id  int,

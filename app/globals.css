@@ -511,3 +511,11 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 .campo-inline input[type="date"]:focus {
   outline: 2px solid var(--accent); outline-offset: -1px;
 }
+
+/* Outras paradas, e a parada que só aparece sem tirar capacidade. A segunda é
+   sublinhada em vez de preenchida: o dia produz, e cor cheia diria que parou. */
+.dia-outras_paradas { background: #ece3f7; color: #4a2d75; font-weight: 600; }
+.dia-apresenta {
+  box-shadow: inset 0 -3px 0 #7a54b0;
+  font-weight: 600;
+}

@@ -229,8 +229,15 @@ create table excecao (
     data        date     not null,
     turno_id    int      references turno(id),   -- null = dia inteiro
     tipo        varchar(25) not null
-                check (tipo in ('FERIADO','PARADA_COLETIVA','DIA_EXTRA')),
+                check (tipo in ('FERIADO','PARADA_COLETIVA','DIA_EXTRA',
+                                'OUTRAS_PARADAS')),
     dia_util    boolean  not null,               -- false zera; true habilita dia normalmente parado
+    -- Dois eixos independentes. Ver 18_parada_apresentacao.sql.
+    --   afeta_capacidade  o dia produz?        -> motor
+    --   impacto_dia       quanto o dia conta?  -> indicador de dias uteis
+    afeta_capacidade boolean not null default true,
+    impacto_dia numeric(4,2) not null default 1
+                check (impacto_dia >= 0 and impacto_dia <= 1),
     descricao   varchar(120),
     unique nulls not distinct (planta_id, data, turno_id, tipo)
 );

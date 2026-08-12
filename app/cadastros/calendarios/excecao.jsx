@@ -18,6 +18,11 @@ export default function EditorExcecao({
 
   const [tipo, setTipo] = useState(excecao?.tipo ?? 'FERIADO');
   const [descricao, setDescricao] = useState(excecao?.descricao ?? '');
+  // Os dois eixos novos. Nascem no comportamento de sempre — zera o dia
+  // inteiro — para quem só quer cadastrar um feriado não ter que decidir nada.
+  const [afeta, setAfeta] = useState(excecao?.afeta_capacidade ?? true);
+  const [impacto, setImpacto] = useState(
+    String(excecao?.impacto_dia ?? 1).replace('.', ','));
   const [marcados, setMarcados] = useState(() => {
     if (excecao?.calendario_ids) {
       return new Set(excecao.calendario_ids.split(',').map(Number));
@@ -64,11 +69,17 @@ export default function EditorExcecao({
   const salvar = () => chamar(excecao ? 'PATCH' : 'POST', {
     ...(excecao ? { id: excecao.id } : { planta_id: plantaId, data }),
     tipo, descricao,
+    afeta_capacidade: afeta,
+    impacto_dia: impacto,
     calendarios: [...marcados],
     areas: [...areasMarcadas],
   });
 
   const oTipo = tipos.find((t) => t.valor === tipo);
+  const nImpacto = Number(String(impacto).replace(',', '.'));
+  const impactoOk = Number.isFinite(nImpacto) && nImpacto >= 0 && nImpacto <= 1;
+  // Sem afetar capacidade e sem consumir dia, a exceção não faria nada.
+  const inutil = !afeta && impactoOk && nImpacto === 0;
 
   return (
     <>
@@ -80,6 +91,24 @@ export default function EditorExcecao({
               <option key={t.valor} value={t.valor}>{t.rotulo}</option>
             ))}
           </select>
+        </label>
+
+        <label className="campo">
+          <span className="campo-rot">Efeito</span>
+          <select value={afeta ? 'sim' : 'nao'}
+                  onChange={(e) => setAfeta(e.target.value === 'sim')}>
+            <option value="sim">Para os recursos</option>
+            <option value="nao">Só apresentação</option>
+          </select>
+        </label>
+
+        <label className="campo">
+          <span className="campo-rot">Quanto do dia</span>
+          <input type="text" inputMode="decimal" value={impacto}
+                 placeholder="1"
+                 onFocus={(e) => e.target.select()}
+                 onChange={(e) => setImpacto(e.target.value)}
+                 title="1 é o dia inteiro, 0,5 é meio dia" />
         </label>
 
         <label className="campo campo-largo">
@@ -116,14 +145,27 @@ export default function EditorExcecao({
       </div>
 
       <p className="rodape">
+        <strong>Efeito</strong> separa duas coisas que andavam juntas.
+        {' '}<em>Para os recursos</em>{' '}
         {oTipo?.dia_util
-          ? 'Dia extraordinário habilita um dia normalmente parado — é como se cadastra trabalho em feriado ou domingo.'
-          : 'Zera o dia nos calendários marcados. Calendário desmarcado continua trabalhando normalmente nessa data.'}
+          ? 'habilita um dia normalmente parado — é como se cadastra trabalho em feriado ou domingo.'
+          : 'zera o dia nos calendários marcados; calendário desmarcado continua trabalhando normalmente nessa data.'}
+        {' '}<em>Só apresentação</em> deixa a capacidade intacta: o dia produz
+        igual, a parada aparece na grade do ano e entra na contagem de dias
+        úteis. É para a parada que existe e precisa ser vista, mas que não tira
+        máquina de operação.
+      </p>
+      <p className="rodape">
+        <strong>Quanto do dia</strong> é o que essa parada consome na contagem
+        de dias úteis: <code>1</code> é o dia inteiro, <code>0,5</code> é meio
+        dia. Num sábado que já vale 0,5, uma parada de dia inteiro zera o
+        sábado — não desconta do dia seguinte.
       </p>
 
       <div className="acoes" style={{ marginTop: 12 }}>
         <button className="btn btn-primario" onClick={salvar}
-                disabled={ocupado || marcados.size === 0 || areasMarcadas.size === 0}>
+                disabled={ocupado || marcados.size === 0
+                          || areasMarcadas.size === 0 || !impactoOk || inutil}>
           {ocupado ? 'Salvando…' : excecao ? 'Salvar' : 'Cadastrar'}
         </button>
         {excecao && (
@@ -136,6 +178,17 @@ export default function EditorExcecao({
           <span className="muted">
             marque ao menos uma área e um regime — sem os dois, a exceção não
             alcança ninguém
+          </span>
+        )}
+        {!impactoOk && (
+          <span className="muted">
+            &ldquo;quanto do dia&rdquo; tem que ser um número de 0 a 1
+          </span>
+        )}
+        {inutil && (
+          <span className="muted">
+            só apresentação consumindo 0 do dia não faria nada — ou afeta os
+            recursos, ou consome parte do dia
           </span>
         )}
         {erro && <span className="erro" style={{ margin: 0 }}>{erro}</span>}

@@ -42,11 +42,18 @@ export default function Ano({ ano, dias, selecionada, href, uteis }) {
 
                 // Prioridade da cor, na mesma ordem em que o motor decide:
                 // exceção primeiro, depois o padrão semanal.
+                //
+                // Parada de apresentação é o caso à parte: ela tem exceção,
+                // mas o dia produz. Pintá-la como feriado diria que a máquina
+                // parou, que é justamente o contrário do que foi cadastrado —
+                // então ela ganha uma marca própria, discreta.
+                const soMostra = d?.excecao_id && d.afeta_capacidade === false;
                 const classe = [
                   'dia',
-                  d?.excecao_id
-                    ? (d.excecao_util ? 'dia-extra' : `dia-${d.tipo.toLowerCase()}`)
-                    : d?.trabalha === false ? 'dia-parado' : '',
+                  soMostra ? 'dia-apresenta'
+                    : d?.excecao_id
+                      ? (d.excecao_util ? 'dia-extra' : `dia-${d.tipo.toLowerCase()}`)
+                      : d?.trabalha === false ? 'dia-parado' : '',
                   data === selecionada ? 'dia-aberto' : '',
                 ].filter(Boolean).join(' ');
 
@@ -64,11 +71,16 @@ export default function Ano({ ano, dias, selecionada, href, uteis }) {
   );
 }
 
+// Vírgula decimal: 0.5 na tela brasileira é 0,5.
+const num = (v) => String(Number(v ?? 0)).replace('.', ',');
+
 function titulo(d, data) {
   if (!d) return data;
   if (d.excecao_id) {
-    return `${data} — ${d.descricao ?? d.tipo}` +
-           (d.excecao_util ? ' (trabalha)' : ' (parado)');
+    const o = d.afeta_capacidade === false
+      ? `produz normal, consome ${num(d.impacto_dia)} dia útil`
+      : d.excecao_util ? 'trabalha' : 'parado';
+    return `${data} — ${d.descricao ?? d.tipo} (${o})`;
   }
   return d.trabalha ? data : `${data} — sem turno neste dia da semana`;
 }
