@@ -15,15 +15,28 @@ eu faço", e ela só fecha com uma premissa de mix — que produto vai rodar.
 
 ### A base de demanda resolve isso sozinha
 
-A empresa já produz uma base de demanda orçada (`Demanda Orçamento 2026`),
-96.774 linhas, com estas colunas:
+A empresa já produz uma base de demanda orçada. A extração definitiva é um
+**parquet** (`DemandaAP_CapacityTool.parquet`): 116.407 linhas, 15 colunas,
+1,2 MB, GZIP com dicionário, escrito por `parquet-cpp-arrow 18.1.0`.
 
 ```
-Cenário · Grupo Estoque · Nível Estoque · Linha Produto Agrupada ·
-Família Produto · Família Tecelagem · Tecido Base · UM · CT · Período ·
-Depósito Localidade SKUs · Total Produção (M\Kg) · Total Produção (Un) ·
-Duração (Min)
+cenario · grupo_estoque · nivel_estoque · linha_produto_agrupada ·
+familia_produto · familia_tecelagem · tecido_base · um · ct · periodo ·
+periodo_data · producao_quantidade · producao_metros_kg · duracao_minutos ·
+data_extracao
 ```
+
+A primeira análise foi feita sobre um `.xlsx` de 6,4 MB e 96.774 linhas, com os
+mesmos dados em outra roupa. O parquet é melhor em tudo que importa: nomes já
+em snake_case, `NULL` em vez de `'-'`, números como DOUBLE em vez de texto,
+`periodo_data` como DATE de verdade e `data_extracao` carimbando a carga. E
+`Depósito Localidade SKUs` saiu — o que reduziu a chave repetida de 718 para
+524 combinações.
+
+A validação de que é a mesma base: a fatia de 2026 reproduz a cobertura do
+xlsx na casa decimal (58,2% / 22,0% / 19,7% / 0,0%). As diferenças que
+sobraram são de refresh, não de estrutura — a extração é seis dias mais nova,
+o que dá 429 linhas e 8.323 minutos a menos, 0,007% do total.
 
 **`Duração (Min)` é o tempo do roteiro já explodido**, não uma taxa. O mesmo
 item na mesma quantidade tem durações diferentes em CTs diferentes (pano copa
@@ -89,8 +102,8 @@ realidade é 66,7.
 
 ### O vínculo com o recurso é derivado, não cadastrado
 
-O `CT` da base é o `CC-CT` do nosso cadastro — 100% das 70.956 linhas seguem o
-formato `\d+-\d+`. Como `recurso.codigo` é `CC-CT-Patrimônio`, a máquina
+O `CT` da base é o `CC-CT` do nosso cadastro — 100% das 72.934 linhas com CT
+seguem o formato `\d+-\d+`, em 123 CTs distintos. Como `recurso.codigo` é `CC-CT-Patrimônio`, a máquina
 pertence ao CT formado pelos próprios `maquina_fisica.cc` e `.ct`. Nenhuma
 tabela de-para para manter desatualizada.
 
@@ -116,6 +129,12 @@ Taxas que saem, para conferência de sanidade em tear de felpudo:
 
 - Guardar a base **crua**, não só o agregado — ela vai responder perguntas que
   ainda não foram feitas
+- **Importar todos os períodos**, sem filtrar por ano. O horizonte da carga é
+  decisão de quem monta a demanda, não da ferramenta: se a capacidade de um
+  ano não interessar, ele é simplesmente ignorado na leitura
+- **Guardar também as linhas zeradas.** São 20.062 (17%) — 2025 e 2027 inteiros
+  vêm sem valor nenhum. Elas dizem quais períodos o plano contempla, e essa é
+  informação que some se a importação as descartar
 - `Cenário` é o nome da versão da carga (`Orçamento_2026_v3_Plano_Compras`);
   cada carga é uma versão, nunca uma sobrescrita
 - O painel mostra a **cesta inteira**; o usuário não escolhe várias UMs
@@ -131,28 +150,44 @@ Taxas que saem, para conferência de sanidade em tear de felpudo:
   que assume mix uniforme dentro do mês. É premissa, não defeito — mas tem que
   estar escrita na tela quando o painel estiver no nível de dia.
 
+### Formato de entrada: parquet, lido sem dependência
+
+1,2 MB cabe folgado no limite de ~4,5 MB de corpo da Vercel, então o arquivo
+sobe inteiro — some a etapa de processar no navegador antes de enviar, que era
+obrigatória com o xlsx de 6,4 MB.
+
+O leitor é escrito à mão, sem biblioteca: Node tem `zlib` nativo e o navegador
+tem `DecompressionStream('gzip')`; Thrift compact, RLE e dicionário são lógica
+comum. Já existe uma prova de conceito em Python, com biblioteca padrão só, que
+lê este arquivo inteiro — cerca de 200 linhas.
+
+Isso só se sustenta porque **a configuração da exportação é estável**: GZIP,
+`RLE_DICTIONARY` e `PLAIN`. Se um dia sair em SNAPPY ou ZSTD — que são padrões
+comuns do Arrow e não estão na biblioteca padrão de lugar nenhum — o leitor não
+tenta adivinhar: recusa a carga dizendo qual compressão veio e qual é a
+esperada. Errar em silêncio aqui seria importar número errado.
+
 ### Em aberto
 
-- Formato de entrada: hoje só existe `.xlsx` pré-pronto; está sendo avaliada
-  extração em `.csv` ou `.qvd`
-- O `.xlsx` tem 6,4 MB e função serverless da Vercel aceita ~4,5 MB de corpo.
-  O caminho é ler o arquivo no navegador e enviar já processado — `.xlsx` é um
-  zip de XML e o navegador tem `DecompressionStream` nativo, então dá para ler
-  sem dependência nova
+- 2027 vem com 17.196 linhas e **zero minutos**: o período existe no plano mas
+  a demanda dele ainda não foi calculada na origem
 
 ### Regra de leitura do período
 
-O formato `AAAA.MM` vem da base e não pode ser alterado na origem. A tradução
-mora na importação: guarda-se o texto original como veio, para rastreabilidade
-e extração, e o par `(ano, mês)` normalizado, que é por onde o join com a
-capacidade acontece. Nenhuma das duas pontas precisa saber do formato da outra.
+O parquet traz as duas formas: `periodo` como texto `AAAA.MM` e `periodo_data`
+como DATE no primeiro dia do mês. **Conferido: batem em 100% das 116.407
+linhas, zero divergência.**
 
-**Cuidado com `2026.10`.** O valor parece um número, e no `.xlsx` ele vem como
-texto — conferido, o zero está lá. No caminho do CSV isso é um clássico: se
-qualquer ferramenta no meio tratar a coluna como numérica, `2026.10` vira
-`2026.1` e passa a colidir com janeiro. Duas linhas somadas no mês errado, sem
-erro nenhum na tela. A importação tem que recusar período que não case com
-`\d{4}\.\d{2}` em vez de tentar adivinhar.
+O join com a capacidade usa `periodo_data`, que é uma data tipada e não depende
+de formatação. O texto fica guardado como veio, para rastreabilidade e para a
+extração de volta.
+
+Isso mata uma armadilha que existia no caminho do CSV: `2026.10` parece um
+número, e qualquer ferramenta que tratasse a coluna como numérica o
+transformaria em `2026.1`, colidindo com janeiro — duas linhas somadas no mês
+errado, sem erro na tela. Com a data tipada não há o que adivinhar. Se um dia a
+origem voltar a ser texto, a importação recusa período que não case com
+`\d{4}\.\d{2}` em vez de tentar consertar.
 
 ---
 
@@ -167,14 +202,15 @@ Nenhum dos dois é erro: o primeiro costuma ser cadastro faltando ou zero à
 esquerda, o segundo é máquina fora do plano. Mas os dois calados viram número
 errado que ninguém percebe.
 
-Como demanda e capacidade já estão na mesma moeda — a base traz 121.179.675
-minutos no ano —, a comparação "cabe?" sai de graça junto, sem depender da
+Como demanda e capacidade já estão na mesma moeda — a base traz 121.171.353
+minutos em 2026 —, a comparação "cabe?" sai de graça junto, sem depender da
 conversão para unidade.
 
-Da primeira leitura da base, o que a validação vai encontrar:
+Da leitura do parquet, o que a validação vai encontrar:
 
-- 24.342 linhas (25%) sem CT — itens comprados ou de revenda, coerentemente
-  sem duração; devem ser ignoradas
+- 43.473 linhas (37%) sem CT — itens comprados ou de revenda, coerentemente sem
+  duração; entram na carga mas ficam fora da conta
+- 20.062 linhas (17%) de 2025 e 2027 sem valor nenhum
 - 2 linhas com quantidade e sem tempo
 - 718 combinações de `(CT, período, família, tecido, UM)` repetidas em 69.543 —
   ou falta uma coluna na chave, ou basta somar
