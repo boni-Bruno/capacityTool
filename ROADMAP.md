@@ -222,7 +222,145 @@ Da leitura do parquet, o que a validação vai encontrar:
 
 ---
 
-## 3. Dívidas conhecidas do motor
+## 3. DE/PARA e regras de classificação da demanda
+
+A base fala a língua do sistema de origem; cada área da empresa fala a sua. E um
+mesmo CT produz mais de uma linha de produto — 52 dos 123 —, com índices que
+diferem de verdade: no CT 455-001, BANHO rende 4,417 m/min e PRAIA 8,378, quase
+o dobro.
+
+Então o DE/PARA não é enfeite de nomenclatura: é o que permite filtrar por linha
+de produto e ler um número que faça sentido para quem está olhando.
+
+### Renomear e agrupar, os dois
+
+Renomear é 1:1 — `BANHO` vira `Banho`. Agrupar é N:1 — `TECIDO PREPARADO
+FELPUDO`, `LISO` e `VELUDO` viram `Preparação`. A mesma tabela faz os dois; o
+que muda é o efeito, e agrupar **muda a agregação**.
+
+Consequência a não esquecer: agrupando os três acima, o índice do grupo vira a
+média ponderada, e o LISO — que é 27% mais rápido — some dentro da média. Está
+certo, é o que agrupar significa. Mas a tela deve permitir **abrir o grupo**,
+senão a diferença fica invisível.
+
+### SE...E / SE...OU sem parênteses: blocos
+
+```
+regra "Banho Jacquard"  →  linha_produto = "Banho Jacquard"
+
+  bloco 1   linha_produto_agrupada = TECIDO CRU FELPUDO
+        E   familia_tecelagem      = 225
+     OU
+  bloco 2   ct = 515-004
+```
+
+Dentro do bloco, tudo é **E**. Entre blocos, é **OU**. Cobre qualquer combinação
+sem parser, sem precedência de operador e sem regra ambígua. Na tela são dois
+botões: *adicionar condição* e *adicionar bloco OU*.
+
+### Atributos que podem ser condição
+
+Os cinco de baixa cardinalidade, mais os dois de contexto — todos opcionais em
+cada regra:
+
+```
+grupo_estoque (4) · um (12) · nivel_estoque (17) ·
+linha_produto_agrupada (24) · familia_tecelagem (27) · ct · area
+```
+
+`familia_produto` (167) e `tecido_base` (508) ficam de fora: cadastro que
+ninguém mantém é pior que cadastro nenhum, porque parece certo. É a mesma razão
+que descartou o grão de SKU.
+
+`area` entra pelo caminho que já existe — o CT vira recurso, o recurso tem área.
+Era a motivação original: é por área que a linguagem muda.
+
+### Nível impede regra circular
+
+Cada atributo derivado declara um **nível**. Uma regra só enxerga atributos de
+origem ou derivados de nível MENOR. Assim ciclo é impossível por construção, em
+vez de precisar ser detectado — e detectar ciclo em tempo de execução daria erro
+no meio de uma importação.
+
+### Primeira regra que casa ganha, e a prévia é obrigatória
+
+Ordem explícita, primeira que casa vence. É previsível, mas o modo clássico de
+errar é regra fora de ordem ou valor digitado errado, e os dois são invisíveis.
+
+Por isso duas coisas não são opcionais:
+
+- **Prévia antes de gravar**: quantas linhas a regra pega, quais valores de
+  origem caem nela, e uma amostra
+- **Contador de acertos por regra** na listagem: regra que pega 0 linhas é typo
+
+O exemplo real de por que isso importa:
+
+```
+linha_produto = TECIDO CRU FELPUDO  E  familia_tecelagem = 225
+    →  2.278 linhas ·  128.565 h  ·  6,4% do tempo
+
+só linha_produto = TECIDO CRU FELPUDO
+    →  5.260 linhas ·  651.218 h   (5x mais)
+
+só familia_tecelagem = 225
+    →  espalhada em CRU FELPUDO, PREPARADO FELPUDO, BANHO (39.201 h),
+       VELUDO, PRAIA
+```
+
+Sem a prévia, a diferença entre 128.565 h e 651.218 h é invisível até alguém
+conferir na mão. E quem escrevesse só `familia = 225` classificaria 39.201 h de
+BANHO como jacquard sem perceber.
+
+### Linha sem regra nunca some
+
+Fica com o valor de origem e aparece assim no painel, e entra no relatório da
+carga como "sem regra". Esconder linha por falta de cadastro apagaria demanda do
+painel, que é o pior desfecho possível.
+
+### Reclassificação é retroativa, por decisão
+
+Alterar uma regra reclassifica **todas as cargas**, inclusive as antigas. A
+alternativa — carimbar a carga com a versão das regras e só reaplicar sob
+comando — foi considerada e descartada.
+
+A consequência, que é real e foi aceita: um número visto mês passado pode mudar
+sem ninguém tocar na carga. Para rótulo isso é inofensivo e até desejável, já
+que a história inteira passa a falar a língua atual. Para **agrupamento** é
+diferente — juntar ou separar valores muda a soma de um recorte.
+
+Como não há versionamento para explicar a mudança, o rastro tem que estar em
+outro lugar: a tela de regras registra quem criou e alterou cada regra e quando,
+e a prévia impede que a alteração seja feita às cegas.
+
+Implicação de mecânica: o valor derivado é materializado na linha, e salvar uma
+regra dispara a reaplicação sobre todas as cargas. Não é calculado a cada
+leitura — isso custaria em toda consulta do painel.
+
+### Filtrar por linha de produto é rateio, não capacidade dedicada
+
+Não existe "a capacidade de BANHO no CT 455-001" — a máquina não é exclusiva. O
+que existe é rateio, pela mesma lógica de cesta já decidida para a UM:
+
+```
+capacidade_linha = disponível_min(CT, mês) × fatia_do_tempo × índice_da_linha
+```
+
+O índice tem que ser **o da linha**, não o do CT: com BANHO a 4,417 e PRAIA a
+8,378 m/min, ratear pelo índice do CT erraria por um fator de 2. E a tela precisa
+dizer que é rateio, senão alguém lê o número como capacidade dedicada.
+
+### As tabelas
+
+```
+demanda_atributo    atributos derivados e o nível de cada um
+demanda_regra       atributo_destino · rótulo · ordem · ativa
+demanda_regra_cond  regra_id · bloco · atributo · operador · valor
+                    mesmo bloco = E · blocos diferentes = OU
+```
+
+---
+
+## 4. Dívidas conhecidas do motor
 
 Levantadas, aceitas na época e ainda abertas.
 
@@ -237,7 +375,7 @@ disponível" deve significar na cadeia.
 
 ---
 
-## 4. Fora de escopo até alguém precisar
+## 5. Fora de escopo até alguém precisar
 
 - Usuários com perfil e escopo por área (hoje é senha única via `APP_SENHA`)
 - Multi-empresa com Row Level Security
