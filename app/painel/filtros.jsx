@@ -42,6 +42,8 @@ function useMuda() {
     }
     // Trocar de ano invalida um recorte que era de outro ano.
     if (chaves.includes('ano')) { p.delete('de'); p.delete('ate'); }
+    // O regime escolhido é da área; trocar de área invalida a escolha.
+    if (chaves.includes('area')) p.delete('cal');
 
     router.push('?' + p.toString());
   };
@@ -129,6 +131,9 @@ export function FiltrosTopo({ areas, areaId, ano, origem }) {
 
 export function FiltrosRecurso({
   ano, anos, unidade, subAreas = [], sub = null, tipo = null, periodo = null,
+  // Capacidade por dia útil. Só existe no nível de mês: dividir a capacidade de
+  // um dia pelos dias úteis do mês não significaria nada.
+  porDiaUtil = false, calendarios = [], cal = null, podeDiaUtil = false,
   // A lista chega de fora porque as unidades físicas só existem quando há
   // carga de demanda no ar. Oferecer "metros" e mostrar zero seria pior do que
   // não oferecer.
@@ -170,6 +175,27 @@ export function FiltrosRecurso({
             </button>
           )}
         </>
+      )}
+
+      {podeDiaUtil && cal && (
+        <label className="campo-inline">
+          <input type="checkbox" checked={porDiaUtil}
+                 onChange={(e) => muda('dia_util', e.target.checked ? '1' : '')} />
+          <span className="campo-rot">por dia útil</span>
+        </label>
+      )}
+
+      {/* O seletor de regime só aparece quando a área tem recurso em mais de
+          um: aí não existe "o dia útil da área", e escolher em silêncio seria
+          dividir por um número que ninguém pediu. */}
+      {porDiaUtil && calendarios.length > 1 && (
+        <select value={cal?.id ?? ''} onChange={(e) => muda('cal', e.target.value)}>
+          {calendarios.map((c) => (
+            <option key={c.id} value={c.id}>
+              dias úteis de {c.codigo} ({c.recursos})
+            </option>
+          ))}
+        </select>
       )}
 
       {subAreas.length > 0 && (

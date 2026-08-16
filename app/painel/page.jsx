@@ -15,6 +15,10 @@ import {
   detalhe, eFisica, formataUnidade, sufixoCampo, sufixoUnidade, UNIDADES,
 } from '../../lib/formato';
 import { cargaCorrente } from '../../lib/demanda';
+import {
+  calendariosDaArea, diasTrabalhadosPorMes, pesosDoCalendario,
+} from '../../lib/calendario';
+import { diasUteisPorMes, formataDiasUteis } from '../../lib/dia-util';
 import Grafico from './grafico';
 import { FiltrosTopo, FiltrosRecurso } from './filtros';
 import TabelaMes from './tabela-mes';
@@ -90,6 +94,27 @@ export default async function Page({ searchParams }) {
   // recalcula. Default META, que é o cenário oficial.
   const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
   const area = listaAreas.find((a) => a.id === areaId);
+
+  // CAPACIDADE POR DIA ÚTIL
+  //
+  // A contagem de dias úteis é por CALENDÁRIO, não por área — e uma área pode
+  // ter máquina em rodízio e máquina em padrão ao mesmo tempo. Quando isso
+  // acontece não existe "o dia útil da área", existem dois, e a tela oferece a
+  // escolha em vez de decidir em silêncio.
+  //
+  // As paradas de apresentação já entram no divisor: `diasUteisPorMes` desconta
+  // o impacto delas, que é justamente o que elas existem para fazer.
+  const calendarios = await calendariosDaArea(areaId, `${ano}-12-31`);
+  const calPedido = Number(searchParams?.cal);
+  const cal = calendarios.find((c) => c.id === calPedido) ?? calendarios[0] ?? null;
+
+  const porDiaUtil = searchParams?.dia_util === '1' && cal !== null;
+
+  const uteis = cal
+    ? diasUteisPorMes(
+        await diasTrabalhadosPorMes(cal.id, ano, areaId),
+        await pesosDoCalendario(cal.id))
+    : null;
 
   const exec = await ultimaExecucao(areaId, ano, origem);
 
@@ -190,6 +215,8 @@ export default async function Page({ searchParams }) {
     if (sub !== null) p.set('sub', sub);
     if (tipo !== null) p.set('tipo', tipo);
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
+    if (porDiaUtil) p.set('dia_util', '1');
+    if (cal && calendarios.length > 1) p.set('cal', String(cal.id));
     // Ano inteiro é a ausência de recorte, e some do endereço: parâmetro que
     // repete o padrão só atrapalha quem lê a URL.
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
@@ -244,20 +271,46 @@ export default async function Page({ searchParams }) {
     const linhas = await porMes(exec.id, areaId, periodo.de, periodo.ate, listaIds,
                                 carga?.id ?? null);
     dados = serieDeMeses(linhas, mesesNoIntervalo(periodo.de, periodo.ate), cmp)
-      .map((m) => ({
-        // O asterisco avisa que a barra é de um mês cortado pelo recorte, e
-        // não do mês inteiro — senão a comparação com os vizinhos engana.
-        rotulo: MESES[m.mes] + (m.parcial ? '*' : ''),
-        instalada: m.instalada,
-        planejada: m.planejada,
-        disponivel: m.disponivel,
-        href: url({ de: m.de, ate: m.ate }),
-      }));
+      .map((m) => {
+        // Dividir por dia útil é decisão de LEITURA, feita o mais tarde
+        // possível: o total lá embaixo continua saindo da capacidade cheia
+        // dividida pelos dias cheios, e não da média das médias.
+        const du = porDiaUtil ? Number(uteis?.[m.mes] ?? 0) : 1;
+        const por = (v) => (porDiaUtil ? (du > 0 ? Number(v) / du : 0) : Number(v));
+        return {
+          // O asterisco avisa que a barra é de um mês cortado pelo recorte, e
+          // não do mês inteiro — senão a comparação com os vizinhos engana.
+          // O divisor entra no rótulo: sem ele, um mês render mais por dia
+          // útil que o vizinho parece mistério, quando quase sempre é só o
+          // feriado que ele tem e o outro não.
+          rotulo: MESES[m.mes] + (m.parcial ? '*' : '')
+                + (porDiaUtil ? ` (${formataDiasUteis(du)})` : ''),
+          instalada: por(m.instalada),
+          planejada: por(m.planejada),
+          disponivel: por(m.disponivel),
+          // O divisor viaja junto: é ele que permite o total certo e a
+          // explicação de por que um mês rende mais que o vizinho.
+          dias: du,
+          bruto: { instalada: m.instalada, planejada: m.planejada,
+                   disponivel: m.disponivel },
+          href: url({ de: m.de, ate: m.ate }),
+        };
+      });
   }
 
   // Os indicadores somam o que está no gráfico, então eles nunca discordam da
   // tabela logo abaixo. No nível de turno a instalada vem do teto do dia.
   const soma = (campo) => dados.reduce((s, x) => s + Number(x[campo] ?? 0), 0);
+
+  // Em capacidade por dia útil o total NÃO é a soma das colunas — somar médias
+  // não dá média. É a capacidade cheia do período dividida pelos dias úteis do
+  // período, que é a mesma regra de sempre: divisão de somas, nunca média de
+  // divisões.
+  const somaBruta = (campo) =>
+    dados.reduce((t, x) => t + Number(x.bruto?.[campo] ?? 0), 0);
+  const totalDias = dados.reduce((t, x) => t + Number(x.dias ?? 0), 0);
+  const porDia = (campo) =>
+    (totalDias > 0 ? somaBruta(campo) / totalDias : 0);
   // Em unidade física o gráfico já traz metros; para dizer "de X h de
   // capacidade" ainda é preciso o tempo, então ele vem da tabela por recurso,
   // que carrega as duas leituras lado a lado.
@@ -266,11 +319,26 @@ export default async function Page({ searchParams }) {
   // Recurso cujo CT não está na carga converte para zero e baixa o total sem
   // dizer por quê. Em unidade física isso precisa aparecer.
   const semIndice = visiveis.filter((r) => !r.tem_demanda);
-  const tot = {
-    instalada: mostrarInstalada ? soma('instalada') : teto,
-    planejada: soma('planejada'),
-    disponivel: soma('disponivel'),
-  };
+  const tot = porDiaUtil
+    ? {
+        instalada: mostrarInstalada ? porDia('instalada') : teto,
+        planejada: porDia('planejada'),
+        disponivel: porDia('disponivel'),
+      }
+    : {
+        instalada: mostrarInstalada ? soma('instalada') : teto,
+        planejada: soma('planejada'),
+        disponivel: soma('disponivel'),
+      };
+
+  // O rótulo tem que dizer que o número é por dia útil: a capacidade de um mês
+  // e a capacidade por dia útil são a mesma medida com uma ordem de grandeza de
+  // diferença, e trocá-las passa despercebido.
+  const sufixo = sufixoUnidade(unidade, porDiaUtil);
+  const totais = porDiaUtil
+    ? { instalada: porDia('instalada'), planejada: porDia('planejada'),
+        disponivel: porDia('disponivel') }
+    : null;
 
   const oeeMedio = tot.planejada === 0
     ? null
@@ -302,7 +370,7 @@ export default async function Page({ searchParams }) {
         <div className="kpi">
           <p className="rot">Instalada</p>
           <p className="val" title={detalhe(tot.instalada, unidade)}>
-            {formataUnidade(tot.instalada, unidade)} {sufixoUnidade(unidade)}
+            {formataUnidade(tot.instalada, unidade)} {sufixo}
           </p>
           {/* O teto de máquina é físico (24/7); o de pessoa é o turno
               escalado, e nesse caso ele é igual à planejada. Dizer "físico
@@ -318,7 +386,7 @@ export default async function Page({ searchParams }) {
         <div className="kpi">
           <p className="rot">Planejada</p>
           <p className="val" title={detalhe(tot.planejada, unidade)}>
-            {formataUnidade(tot.planejada, unidade)} {sufixoUnidade(unidade)}
+            {formataUnidade(tot.planejada, unidade)} {sufixo}
           </p>
           <p className="sub">
             {fisica ? `de ${formataUnidade(somaMin('planejada'), 'h')} h de capacidade`
@@ -328,7 +396,7 @@ export default async function Page({ searchParams }) {
         <div className="kpi">
           <p className="rot">Disponível</p>
           <p className="val" title={detalhe(tot.disponivel, unidade)}>
-            {formataUnidade(tot.disponivel, unidade)} {sufixoUnidade(unidade)}
+            {formataUnidade(tot.disponivel, unidade)} {sufixo}
           </p>
           {/* O % do teto vem antes: é o número comparável entre recursos.
               O OEE explica de onde veio a diferença para a planejada. */}
@@ -368,6 +436,11 @@ export default async function Page({ searchParams }) {
           <h2>
             {periodo.nivel === 'TURNO' ? 'Turno a turno'
               : periodo.nivel === 'DIA' ? 'Dia a dia' : 'Mês a mês'}
+            {porDiaUtil && (
+              <span className="muted" style={{ fontWeight: 400 }}>
+                {' '}· por dia útil de {cal.codigo}
+              </span>
+            )}
             {foco && <span className="foco"> · {foco.nome}</span>}
           </h2>
 
@@ -396,8 +469,33 @@ export default async function Page({ searchParams }) {
           </nav>
         </div>
 
-        <Grafico dados={dados} mostrarInstalada={mostrarInstalada} unidade={unidade} />
-        <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada} unidade={unidade} />
+        <Grafico dados={dados} mostrarInstalada={mostrarInstalada}
+                 unidade={unidade} sufixo={sufixo} />
+        <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada}
+                   unidade={unidade} sufixo={sufixo} totais={totais} />
+
+        {porDiaUtil && (
+          <p className="rodape">
+            Cada barra é a capacidade do mês <strong>dividida pelos dias úteis
+            daquele mês</strong> no calendário <strong>{cal.codigo}</strong>,
+            contados para {rotuloArea(area)} — o mesmo número que aparece em
+            Calendários, com o peso de cada dia da semana e o desconto das
+            paradas de apresentação.
+            {' '}Fevereiro rende mais por dia útil que um mês de 22 dias sem
+            render mais no total: é para isso que esta leitura serve.
+            {' '}O <strong>total</strong> não é a soma das colunas — somar médias
+            não dá média. Ele é a capacidade cheia do período dividida pelos dias
+            úteis do período.
+            {calendarios.length > 1 && (
+              <>
+                {' '}Esta área tem recurso em mais de um regime
+                ({calendarios.map((c) => c.codigo).join(' e ')}), então não
+                existe um dia útil só — o seletor ao lado do ano escolhe qual
+                divide.
+              </>
+            )}
+          </p>
+        )}
 
         {fisica && (
           <p className="rodape">
@@ -484,7 +582,9 @@ export default async function Page({ searchParams }) {
           <Suspense>
             <FiltrosRecurso ano={ano} anos={anos} unidade={unidade}
                             unidades={unidades} periodo={periodo}
-                            subAreas={subAreas} sub={sub} tipo={tipo} />
+                            subAreas={subAreas} sub={sub} tipo={tipo}
+                            porDiaUtil={porDiaUtil} calendarios={calendarios}
+                            cal={cal} podeDiaUtil={periodo.nivel === 'MES'} />
           </Suspense>
         </div>
         <p className="rodape" style={{ margin: '0 0 1rem' }}>

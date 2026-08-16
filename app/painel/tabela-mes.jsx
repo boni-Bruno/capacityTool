@@ -6,7 +6,15 @@
 // instalada é grão dia e não se reparte por turno.
 import { detalhe, eFisica, formataUnidade, sufixoUnidade } from '../../lib/formato';
 
-export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'min' }) {
+export default function TabelaMes({
+  dados, mostrarInstalada = true, unidade = 'min',
+  // `sufixo` pode dizer mais que a unidade — "m/dia útil". E `totais` chega de
+  // fora quando somar as colunas daria a resposta errada: em capacidade por dia
+  // útil o total é a capacidade cheia sobre os dias cheios, nunca a soma das
+  // médias mensais.
+  sufixo = null, totais = null,
+}) {
+  const suf = sufixo ?? sufixoUnidade(unidade);
   const linhas = [
     ...(mostrarInstalada
       ? [{ rot: 'Instalada', campo: 'instalada', classe: 'med-inst' }]
@@ -25,7 +33,9 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'm
 
   // Os valores chegam em minutos; a célula mostra hora com uma casa e o
   // title traz a leitura exata em hora e minuto.
-  const total = (campo) => dados.reduce((s, x) => s + Number(x[campo] ?? 0), 0);
+  const total = (campo) =>
+    (totais ? Number(totais[campo] ?? 0)
+            : dados.reduce((s, x) => s + Number(x[campo] ?? 0), 0));
 
   // Arredonda o total de verdade, e não a soma dos já arredondados: a coluna
   // total tem que bater com o indicador lá em cima.
@@ -39,7 +49,7 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'm
       <table className="tabela-mes">
         <thead>
           <tr>
-            <th>Capacidade ({sufixoUnidade(unidade)})</th>
+            <th>Capacidade ({suf})</th>
             {dados.map((x) => <th key={x.rotulo} className="num">{x.rotulo}</th>)}
             <th className="num">total</th>
           </tr>

@@ -19,10 +19,19 @@ que continua valendo depois de pronta.
 | Índice de conversão por CT e mês | `20` | `vw_demanda_indice` |
 | Herança de índice: CT irmão, média do CC, ou nenhum | `21` | Cadastros › Demanda |
 | Índice guardado, refeito nos gatilhos conhecidos | `22` | `mv_demanda_indice` |
+| Capacidade por dia útil, mês a mês | — | Painel |
 | Painel em metro de tecelagem e em UM do material | — | Painel |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
+
+Sobre a capacidade por dia útil: o divisor sai da mesma contagem que a tela de
+Calendários mostra, com o peso de cada dia da semana e o desconto das paradas de
+apresentação. Ele é por **calendário**, não por área — e uma área pode ter
+recurso em rodízio e em padrão ao mesmo tempo. Quando isso acontece a tela
+oferece a escolha em vez de dividir por um número que ninguém pediu. O total não
+é a soma das colunas: é a capacidade cheia do período sobre os dias úteis do
+período, porque somar médias não dá média.
 
 Sobre a `22`: o índice era uma view, e view recalcula a cada leitura. Toda
 abertura do painel refazia o agrupamento sobre as 116 mil linhas da demanda —

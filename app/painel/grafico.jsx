@@ -17,7 +17,13 @@ import {
 //
 // `mostrarInstalada` é falso no nível de turno: instalada é grão dia, e
 // repeti-la em cada barra de turno era o que inflava o total no Qlik antigo.
-export default function Grafico({ dados, mostrarInstalada = true, unidade = 'min' }) {
+// `sufixo` chega pronto porque ele pode dizer mais que a unidade: em capacidade
+// por dia útil vira "m/dia útil", e sem isso o gráfico mostraria uma ordem de
+// grandeza a menos com o mesmo rótulo de antes.
+export default function Grafico({
+  dados, mostrarInstalada = true, unidade = 'min', sufixo = null,
+}) {
+  const suf = sufixo ?? sufixoUnidade(unidade);
   const router = useRouter();
 
   // A barra guarda o número já na unidade escolhida, e o rótulo precisa
@@ -62,15 +68,20 @@ export default function Grafico({ dados, mostrarInstalada = true, unidade = 'min
                tickFormatter={(v) =>
                  v >= 1000
                    ? (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
-                     + 'k ' + sufixoUnidade(unidade)
-                   : formataUnidade(desfaz(v), unidade) + ' ' + sufixoUnidade(unidade)} />
+                     + 'k ' + suf
+                   : formataUnidade(desfaz(v), unidade) + ' ' + suf} />
         <Tooltip
           cursor={{ fill: 'rgba(42,120,214,.06)' }}
           formatter={(v, n) => [
             // `detalhe` já sabe o que a leitura exata significa em cada
             // unidade: hora e minuto no tempo, o número cheio no metro. Não
             // existe "70 h 55 min" de metro de tecelagem.
-            detalhe(desfaz(v), unidade), n,
+            // Em tempo, `detalhe` traz a leitura exata em hora e minuto, que
+            // já carrega a unidade. Fora disso o número precisa do sufixo —
+            // sobretudo em capacidade por dia útil, onde ele é a única coisa
+            // que distingue 70,9 m de 70,9 m/dia útil.
+            sufixo ? `${formataUnidade(desfaz(v), unidade)} ${suf}`
+                   : detalhe(desfaz(v), unidade), n,
           ]}
           contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e3dd' }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
