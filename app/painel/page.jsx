@@ -9,7 +9,7 @@ import {
   diaDaSemana, diasNoIntervalo, iso, mesesNoIntervalo, resolvePeriodo,
   rotuloPeriodo,
 } from '../../lib/periodo';
-import { MESES, DIAS, DIAS_CURTO } from '../../lib/dias';
+import { MESES, DIAS, DIAS_CURTO, rotuloArea } from '../../lib/dias';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
   detalhe, eFisica, formataUnidade, sufixoCampo, sufixoUnidade, UNIDADES,
@@ -100,7 +100,14 @@ export default async function Page({ searchParams }) {
     return (
       <Shell>
         <div className="topo">
-          <h1 className="titulo">Capacidade</h1>
+          <h1 className="titulo">
+            Capacidade
+            {area && (
+              <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
+                {' '}· {rotuloArea(area)}
+              </span>
+            )}
+          </h1>
           <Suspense>
             <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} origem={origem} />
           </Suspense>
@@ -108,7 +115,7 @@ export default async function Page({ searchParams }) {
         <div className="aviso">
           <strong>
             Nenhum cálculo do OEE {rotuloOrigem(origem)} para{' '}
-            {area?.nome ?? 'esta área'} em {ano}.
+            {area ? rotuloArea(area) : 'esta área'} em {ano}.
           </strong>
           <p style={{ margin: '8px 0 12px' }}>
             Clique em <strong>Recalcular</strong> aí em cima. O motor roda por
@@ -272,7 +279,17 @@ export default async function Page({ searchParams }) {
   return (
     <Shell>
       <div className="topo">
-        <h1 className="titulo">Capacidade</h1>
+        <h1 className="titulo">
+          Capacidade
+          {/* A área no título, com a planta junto. Sem isso, trocar entre duas
+              áreas de mesmo nome — Ibirama e Matriz têm as duas uma Confecção —
+              não mudava nada visível quando as duas estavam sem rodada. */}
+          {area && (
+            <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
+              {' '}· {rotuloArea(area)}
+            </span>
+          )}
+        </h1>
         <Suspense>
           <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} origem={origem} />
         </Suspense>

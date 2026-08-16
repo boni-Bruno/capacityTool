@@ -2,16 +2,33 @@
 
 O que ainda não existe, e o que já foi decidido sobre cada coisa.
 
-**Nada neste arquivo está implementado.** Ele existe para a decisão não se
-perder entre uma conversa e a próxima — quando um item for construído, sai
-daqui e vira comentário no código ou no arquivo de migração.
+Ele existe para a decisão não se perder entre uma conversa e a próxima. Item
+construído sai daqui e vira comentário no código ou no arquivo de migração — o
+que fica é o desenho ainda por fazer, mais o registro do porquê de cada escolha,
+que continua valendo depois de pronta.
 
 ---
 
-## 1. Conversão de minutos para unidade (peça, metro, kg)
+## 0. O que já está no ar
 
-A capacidade é calculada em minutos. A pergunta que falta responder é "quanto
-eu faço", e ela só fecha com uma premissa de mix — que produto vai rodar.
+| | migração | onde |
+|---|---|---|
+| Leitor de parquet, sem dependência | — | `lib/parquet.js` |
+| Importação da base de demanda, em lotes | `19` | Cadastros › Demanda |
+| Conferência: demanda sem capacidade, e o contrário | `19` | Cadastros › Demanda |
+| Índice de conversão por CT e mês | `20` | `vw_demanda_indice` |
+| Herança de índice: CT irmão, média do CC, ou nenhum | `21` | Cadastros › Demanda |
+| Painel em metro de tecelagem e em UM do material | — | Painel |
+
+O que sobrou da conversão está na seção 3 — as regras de classificação e o
+filtro por atributo derivado.
+
+---
+
+## 1. Conversão de minutos para unidade — CONSTRUÍDA
+
+Fica registrado o desenho, porque ele explica os números que a ferramenta
+mostra hoje. O que ainda não existe está na seção 3.
 
 ### A base de demanda resolve isso sozinha
 
@@ -171,6 +188,9 @@ esperada. Errar em silêncio aqui seria importar número errado.
 
 - 2027 vem com 17.196 linhas e **zero minutos**: o período existe no plano mas
   a demanda dele ainda não foi calculada na origem
+- `produto`, `recurso_taxa` e `recurso_taxa.min_setup` ficaram **sem uso** — a
+  base de demanda tornou o cadastro de taxa desnecessário. Estão no banco
+  prometendo uma coisa que não acontece, e vale uma migração que as apague
 
 ### Regra de leitura do período
 
@@ -191,9 +211,9 @@ origem voltar a ser texto, a importação recusa período que não case com
 
 ---
 
-## 2. Tabela de validação demanda × capacidade
+## 2. Validação demanda × capacidade — CONSTRUÍDA
 
-Sai da importação e responde as duas pontas soltas:
+Está em Cadastros › Demanda. Responde as duas pontas soltas:
 
 - **Demanda sem capacidade** — CT na base que não casa com recurso nenhum
 - **Capacidade sem demanda** — recurso cujo CT não aparece na base
@@ -253,7 +273,7 @@ dígitos futuro entrar como veio.
 
 ---
 
-## 3. DE/PARA e regras de classificação da demanda
+## 3. DE/PARA e regras de classificação da demanda — A FAZER, é o próximo
 
 A base fala a língua do sistema de origem; cada área da empresa fala a sua. E um
 mesmo CT produz mais de uma linha de produto — 52 dos 123 —, com índices que
@@ -391,7 +411,22 @@ demanda_regra_cond  regra_id · bloco · atributo · operador · valor
 
 ---
 
-## 4. Dívidas conhecidas do motor
+## 4. Capacidade contra demanda — o "cabe?"
+
+As duas pontas já estão na mesma moeda: a base traz 2.019.523 h de demanda e o
+motor calcula a capacidade em minuto. O vínculo por CT está resolvido e a
+herança de índice também. Falta pôr as duas séries lado a lado.
+
+É a pergunta que a fábrica realmente faz, e a que exige menos código novo de
+tudo que sobrou.
+
+Um cuidado que já está registrado na seção 3 e vale repetir aqui: CT que herda
+índice **não herda demanda**. Somar a carga do irmão dobraria o total da
+fábrica.
+
+---
+
+## 5. Dívidas conhecidas do motor
 
 Levantadas, aceitas na época e ainda abertas.
 
@@ -406,7 +441,7 @@ disponível" deve significar na cadeia.
 
 ---
 
-## 5. Fora de escopo até alguém precisar
+## 6. Fora de escopo até alguém precisar
 
 - Usuários com perfil e escopo por área (hoje é senha única via `APP_SENHA`)
 - Multi-empresa com Row Level Security
