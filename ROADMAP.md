@@ -293,9 +293,19 @@ dígitos futuro entrar como veio.
 
 ## 3. DE/PARA e regras de classificação da demanda — EM CONSTRUÇÃO
 
-O motor está pronto e testado em `lib/regras.js`, e as três tabelas estão na
-migração `23`. Falta a tela: cadastro dos atributos, das regras com blocos, e a
-prévia.
+O motor está em `lib/regras.js`, as três tabelas na migração `23`, e a tela em
+`/cadastros/de-para`: os atributos derivados em cima, as regras do atributo
+aberto com quantas linhas e quantas horas cada uma pega, e o editor com blocos
+SE / OU SE.
+
+**A prévia anda a cada tecla e é exata**, não amostra. O modo de errar aqui é a
+regra pegar mais ou menos do que se imaginava, e isso não dá erro em lugar
+nenhum — vira um número torto no painel semanas depois. Por isso o contador está
+colado no editor e os valores vêm em lista em vez de campo livre: valor digitado
+errado é regra que fica quieta.
+
+Falta a etapa 5: filtrar o painel por atributo derivado, com o rateio
+`fatia_do_tempo × índice_da_linha`.
 
 **O motor não roda sobre as 116 mil linhas.** Os seis atributos que as regras
 enxergam formam **1.279 combinações distintas** na base inteira — 91 vezes

@@ -29,6 +29,7 @@ const GRUPOS = [
     itens: [
       { href: '/cadastros/turnos-do-recurso', rotulo: 'Turnos do recurso' },
       { href: '/cadastros/demanda',           rotulo: 'Demanda' },
+      { href: '/cadastros/de-para',           rotulo: 'DE/PARA' },
       { href: '/cadastros/oee',               rotulo: 'OEE' },
       { href: '/cadastros/paradas',           rotulo: 'Paradas' },
     ],

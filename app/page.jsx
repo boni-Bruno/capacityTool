@@ -60,6 +60,12 @@ const CADASTRAR = [
            'cada centro de trabalho o plano pede, e em que ritmo.',
   },
   {
+    href: '/cadastros/de-para',
+    titulo: 'DE/PARA',
+    texto: 'A lingua da base traduzida para a da empresa: rotulos e ' +
+           'agrupamentos por regra, com a previa de quanto cada uma pega.',
+  },
+  {
     href: '/cadastros/oee',
     titulo: 'OEE',
     texto: 'O rendimento que transforma capacidade planejada em disponível, ' +
