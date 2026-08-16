@@ -395,11 +395,19 @@ export default async function Page({ searchParams }) {
 
         <p className="rodape">
           {dataISO
-            ? `Teto do dia: ${formataUnidade(teto, unidade)} ${sufixoUnidade(unidade)}. ` +
-              `Instalada é grão dia — 24 h por dia, ` +
-              `todo dia — e por isso não aparece repartida entre os turnos. ` +
-              `Turno que vira a meia-noite conta no dia em que termina: o da ` +
-              `noite anterior aparece aqui, inteiro.`
+            // O teto é minuto, sempre. Em metro ele sairia como "1.440 m", que
+            // é o número de minutos com o rótulo de outra unidade — então ali
+            // ele aparece em hora, dito com todas as letras.
+            ? (fisica
+                ? `Teto do dia: ${formataUnidade(teto, 'h')} h de capacidade. `
+                  + `O teto não é convertido: ele é o de 24 h por dia, e não tem `
+                  + `quantidade correspondente na demanda. `
+                  + `Turno que vira a meia-noite conta no dia em que termina.`
+                : `Teto do dia: ${formataUnidade(teto, unidade)} ${sufixoUnidade(unidade)}. ` +
+                  `Instalada é grão dia — 24 h por dia, ` +
+                  `todo dia — e por isso não aparece repartida entre os turnos. ` +
+                  `Turno que vira a meia-noite conta no dia em que termina: o da ` +
+                  `noite anterior aparece aqui, inteiro.`)
             : periodo.nivel === 'DIA'
               ? 'Clique numa coluna para ver os turnos daquele dia. Os campos '
                 + 'De e Até, ao lado do ano, mudam o recorte sem passar por aqui.'

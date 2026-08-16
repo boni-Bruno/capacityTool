@@ -6,7 +6,7 @@ import {
   Legend, ResponsiveContainer,
 } from 'recharts';
 import {
-  emUnidade, formataUnidade, horasEMinutos, sufixoUnidade, eMinuto,
+  detalhe, eFisica, emUnidade, formataUnidade, sufixoUnidade, eMinuto,
 } from '../../lib/formato';
 
 // Um gráfico para os três níveis do drill-down: mês, dia e turno.
@@ -20,11 +20,16 @@ import {
 export default function Grafico({ dados, mostrarInstalada = true, unidade = 'min' }) {
   const router = useRouter();
 
-  // Os dados chegam em minutos, que é a moeda base do projeto. A barra precisa
-  // de número, então converte aqui — sem arredondar, para o tooltip poder
-  // reconstruir o minuto exato.
-  const emMin = eMinuto(unidade);
-  const paraMin = (v) => (emMin ? Number(v) : Number(v) * 60);
+  // A barra guarda o número já na unidade escolhida, e o rótulo precisa
+  // desfazer essa conversão para formatar.
+  //
+  // Em HORA a barra guarda hora e o x60 recupera o minuto de origem. Em MINUTO
+  // não há o que desfazer. Em unidade FÍSICA também não: metro não vira minuto,
+  // e multiplicar por 60 ali imprimia 4.254,9 m onde a tabela — certa —
+  // mostrava 70,9. Era o mesmo número lido de dois jeitos na mesma tela.
+  const desfaz = (eMinuto(unidade) || eFisica(unidade))
+    ? (v) => Number(v)
+    : (v) => Number(v) * 60;
 
   const d = dados.map((x) => ({
     rotulo: x.rotulo,
@@ -58,12 +63,14 @@ export default function Grafico({ dados, mostrarInstalada = true, unidade = 'min
                  v >= 1000
                    ? (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
                      + 'k ' + sufixoUnidade(unidade)
-                   : formataUnidade(paraMin(v), unidade) + ' ' + sufixoUnidade(unidade)} />
+                   : formataUnidade(desfaz(v), unidade) + ' ' + sufixoUnidade(unidade)} />
         <Tooltip
           cursor={{ fill: 'rgba(42,120,214,.06)' }}
           formatter={(v, n) => [
-            `${formataUnidade(paraMin(v), unidade)} ${sufixoUnidade(unidade)}` +
-            `  (${horasEMinutos(paraMin(v))})`, n,
+            // `detalhe` já sabe o que a leitura exata significa em cada
+            // unidade: hora e minuto no tempo, o número cheio no metro. Não
+            // existe "70 h 55 min" de metro de tecelagem.
+            detalhe(desfaz(v), unidade), n,
           ]}
           contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e3dd' }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
