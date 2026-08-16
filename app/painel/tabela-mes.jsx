@@ -4,7 +4,7 @@
 //
 // Serve aos três níveis do drill-down. No de turno `mostrarInstalada` é falso:
 // instalada é grão dia e não se reparte por turno.
-import { formataUnidade, horasEMinutos, sufixoUnidade } from '../../lib/formato';
+import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
 
 export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'min' }) {
   const linhas = [
@@ -47,11 +47,11 @@ export default function TabelaMes({ dados, mostrarInstalada = true, unidade = 'm
                 {l.rot}
               </td>
               {dados.map((x) => (
-                <td key={x.rotulo} className="num" title={horasEMinutos(x[l.campo])}>
+                <td key={x.rotulo} className="num" title={detalhe(x[l.campo], unidade)}>
                   {formataUnidade(mostra(x[l.campo], l.inteiro), unidade)}
                 </td>
               ))}
-              <td className="num forte" title={horasEMinutos(total(l.campo))}>
+              <td className="num forte" title={detalhe(total(l.campo), unidade)}>
                 {formataUnidade(mostra(total(l.campo), l.inteiro), unidade)}
               </td>
             </tr>

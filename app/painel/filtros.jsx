@@ -129,6 +129,10 @@ export function FiltrosTopo({ areas, areaId, ano, origem }) {
 
 export function FiltrosRecurso({
   ano, anos, unidade, subAreas = [], sub = null, tipo = null, periodo = null,
+  // A lista chega de fora porque as unidades físicas só existem quando há
+  // carga de demanda no ar. Oferecer "metros" e mostrar zero seria pior do que
+  // não oferecer.
+  unidades = UNIDADES,
 }) {
   const muda = useMuda();
 
@@ -183,7 +187,7 @@ export function FiltrosRecurso({
 
       {/* A unidade muda só a leitura: o dado trafega sempre em minutos. */}
       <select value={unidade} onChange={(e) => muda('unidade', e.target.value)}>
-        {UNIDADES.map((u) => (
+        {unidades.map((u) => (
           <option key={u.valor} value={u.valor}>{u.rotulo}</option>
         ))}
       </select>
