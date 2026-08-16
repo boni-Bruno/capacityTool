@@ -291,7 +291,21 @@ dígitos futuro entrar como veio.
 
 ---
 
-## 3. DE/PARA e regras de classificação da demanda — A FAZER, é o próximo
+## 3. DE/PARA e regras de classificação da demanda — EM CONSTRUÇÃO
+
+O motor está pronto e testado em `lib/regras.js`, e as três tabelas estão na
+migração `23`. Falta a tela: cadastro dos atributos, das regras com blocos, e a
+prévia.
+
+**O motor não roda sobre as 116 mil linhas.** Os seis atributos que as regras
+enxergam formam **1.279 combinações distintas** na base inteira — 91 vezes
+menos. Classificar a combinação e multiplicar pelas linhas dá o mesmo resultado,
+e é isso que permite a prévia ser exata e instantânea em vez de uma amostra.
+
+Por isso ele é JavaScript puro e não SQL: é o mesmo código na tela, para a
+prévia, e no servidor, para valer. Duas implementações da mesma regra
+divergiriam, e a divergência apareceria como um número diferente do que a prévia
+prometeu.
 
 A base fala a língua do sistema de origem; cada área da empresa fala a sua. E um
 mesmo CT produz mais de uma linha de produto — 52 dos 123 —, com índices que
