@@ -206,6 +206,10 @@ export default async function Page({ searchParams }) {
     recurso = foco?.id ?? null,
     de: d1 = periodo.de,
     ate: d2 = periodo.ate,
+    // Os dois entram por parâmetro para os botões de modo poderem ligar e
+    // desligar sem perder o resto do recorte.
+    diaUtil = porDiaUtil,
+    calId = cal?.id ?? null,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
@@ -215,8 +219,8 @@ export default async function Page({ searchParams }) {
     if (sub !== null) p.set('sub', sub);
     if (tipo !== null) p.set('tipo', tipo);
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
-    if (porDiaUtil) p.set('dia_util', '1');
-    if (cal && calendarios.length > 1) p.set('cal', String(cal.id));
+    if (diaUtil) p.set('dia_util', '1');
+    if (calId && calendarios.length > 1) p.set('cal', String(calId));
     // Ano inteiro é a ausência de recorte, e some do endereço: parâmetro que
     // repete o padrão só atrapalha quem lê a URL.
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
@@ -363,7 +367,8 @@ export default async function Page({ searchParams }) {
         </Suspense>
       </div>
 
-      <div className="kpis">
+      <div className="kpis-linha">
+        <div className="kpis">
         {/* Instalada só existe em tempo: ela é o teto de 24 h por dia, e não
             tem quantidade correspondente na demanda para virar metro. */}
         {!fisica && (
@@ -405,6 +410,41 @@ export default async function Page({ searchParams }) {
             {oeeMedio && `${fisica ? '' : ' '}com OEE ${oeeMedio}%`}
           </p>
         </div>
+      </div>
+
+      {/* Mês inteiro ou por dia útil. Era uma caixinha perdida entre os filtros
+          lá embaixo, e ninguém achava — é uma troca de leitura, não um filtro,
+          e por isso fica junto do número que ela muda.
+
+          Só no nível de mês: dividir a capacidade de um dia pelos dias úteis do
+          mês não significaria nada. */}
+      {periodo.nivel === 'MES' && cal && (
+        <div className="modo-caixa">
+          <nav className="modo">
+            <Link href={url({ diaUtil: false })}
+                  className={porDiaUtil ? '' : 'modo-on'}>Mês inteiro</Link>
+            <Link href={url({ diaUtil: true })}
+                  className={porDiaUtil ? 'modo-on' : ''}>Por dia útil</Link>
+          </nav>
+          {porDiaUtil && calendarios.length > 1 && (
+            <p className="modo-regime">
+              dias úteis de{' '}
+              {calendarios.map((c, i) => (
+                <span key={c.id}>
+                  {i > 0 && ' · '}
+                  <Link href={url({ diaUtil: true, calId: c.id })}
+                        className={c.id === cal.id ? 'modo-regime-on' : ''}>
+                    {c.codigo}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          )}
+          {porDiaUtil && calendarios.length === 1 && (
+            <p className="modo-regime">dias úteis de {cal.codigo}</p>
+          )}
+        </div>
+      )}
       </div>
 
       {/* O que o "% do teto" quer dizer muda com o que está selecionado, e
@@ -582,9 +622,7 @@ export default async function Page({ searchParams }) {
           <Suspense>
             <FiltrosRecurso ano={ano} anos={anos} unidade={unidade}
                             unidades={unidades} periodo={periodo}
-                            subAreas={subAreas} sub={sub} tipo={tipo}
-                            porDiaUtil={porDiaUtil} calendarios={calendarios}
-                            cal={cal} podeDiaUtil={periodo.nivel === 'MES'} />
+                            subAreas={subAreas} sub={sub} tipo={tipo} />
           </Suspense>
         </div>
         <p className="rodape" style={{ margin: '0 0 1rem' }}>

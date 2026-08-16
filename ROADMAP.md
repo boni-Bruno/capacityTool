@@ -19,7 +19,7 @@ que continua valendo depois de pronta.
 | Índice de conversão por CT e mês | `20` | `vw_demanda_indice` |
 | Herança de índice: CT irmão, média do CC, ou nenhum | `21` | Cadastros › Demanda |
 | Índice guardado, refeito nos gatilhos conhecidos | `22` | `mv_demanda_indice` |
-| Capacidade por dia útil, mês a mês | — | Painel |
+| Capacidade por dia útil, mês a mês | — | Painel, ao lado dos indicadores |
 | Painel em metro de tecelagem e em UM do material | — | Painel |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
