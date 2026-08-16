@@ -1,11 +1,12 @@
 import { sql } from '../../../lib/db';
 import {
   cargas, cargaCorrente, resumoCarga, demandaSemCapacidade, capacidadeSemDemanda,
-  indicePorCt,
+  indicePorCt, ctsOrfaos, ctsDoadores, heranciasComDemandaPropria,
 } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import EnviarDemanda from './enviar';
 import Cargas from './cargas';
+import OrigemDoIndice from './origem';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,12 +37,13 @@ export default async function Page() {
   }
 
   const resumo = corrente ? await resumoCarga(corrente.id) : null;
-  const [semCap, semDem, indice] = corrente
+  const [semCap, semDem, indice, orfaos, doadores, obsoletas] = corrente
     ? await Promise.all([
         demandaSemCapacidade(corrente.id), capacidadeSemDemanda(corrente.id),
-        indicePorCt(corrente.id),
+        indicePorCt(corrente.id), ctsOrfaos(corrente.id),
+        ctsDoadores(corrente.id), heranciasComDemandaPropria(corrente.id),
       ])
-    : [[], [], []];
+    : [[], [], [], [], [], []];
 
   const cobertura = resumo && Number(resumo.horas)
     ? (Number(resumo.casados.horas) * 100 / Number(resumo.horas)) : 0;
@@ -163,6 +165,11 @@ export default async function Page() {
             </p>
           )}
         </div>
+      )}
+
+      {corrente && (
+        <OrigemDoIndice cargaId={corrente.id} orfaos={orfaos}
+                        doadores={doadores} obsoletas={obsoletas} />
       )}
 
       {indice.length > 0 && (
