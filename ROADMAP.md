@@ -18,10 +18,19 @@ que continua valendo depois de pronta.
 | Conferência: demanda sem capacidade, e o contrário | `19` | Cadastros › Demanda |
 | Índice de conversão por CT e mês | `20` | `vw_demanda_indice` |
 | Herança de índice: CT irmão, média do CC, ou nenhum | `21` | Cadastros › Demanda |
+| Índice guardado, refeito nos gatilhos conhecidos | `22` | `mv_demanda_indice` |
 | Painel em metro de tecelagem e em UM do material | — | Painel |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
+
+Sobre a `22`: o índice era uma view, e view recalcula a cada leitura. Toda
+abertura do painel refazia o agrupamento sobre as 116 mil linhas da demanda —
+dentro de um lateral por recurso, no `porRecurso` — e pagava isso mesmo em
+minutos, quando ninguém pediu conversão. Materializada, a definição continua num
+lugar só e a leitura vira busca por índice. Os gatilhos do refresh são três e
+todos passam por `atualizarIndice()`: concluir carga, apagar carga e mexer nas
+regras de herança.
 
 ---
 
