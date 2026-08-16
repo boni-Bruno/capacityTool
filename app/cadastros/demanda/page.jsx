@@ -1,6 +1,7 @@
 import { sql } from '../../../lib/db';
 import {
   cargas, cargaCorrente, resumoCarga, demandaSemCapacidade, capacidadeSemDemanda,
+  indicePorCt,
 } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import EnviarDemanda from './enviar';
@@ -35,11 +36,12 @@ export default async function Page() {
   }
 
   const resumo = corrente ? await resumoCarga(corrente.id) : null;
-  const [semCap, semDem] = corrente
+  const [semCap, semDem, indice] = corrente
     ? await Promise.all([
         demandaSemCapacidade(corrente.id), capacidadeSemDemanda(corrente.id),
+        indicePorCt(corrente.id),
       ])
-    : [[], []];
+    : [[], [], []];
 
   const cobertura = resumo && Number(resumo.horas)
     ? (Number(resumo.casados.horas) * 100 / Number(resumo.horas)) : 0;
@@ -160,6 +162,67 @@ export default async function Page() {
               minutos.
             </p>
           )}
+        </div>
+      )}
+
+      {indice.length > 0 && (
+        <div className="painel">
+          <h2>Índice de conversão</h2>
+          <p className="rodape" style={{ margin: '0 0 12px' }}>
+            Quanto cada centro de trabalho produz por hora de capacidade, no
+            plano desta carga. É a <strong>soma da quantidade dividida pela soma
+            dos minutos</strong> — o mix entra ponderado sozinho, cada material
+            pelo tempo que ele ocupa.
+            {' '}Ponderar as taxas pela participação em quantidade, que é o erro
+            natural, infla a capacidade: o produto lento come mais tempo do que
+            a quantidade sugere.
+          </p>
+
+          <div className="grade-rolagem">
+            <table>
+              <thead>
+                <tr>
+                  <th>CT</th>
+                  <th>Unidade</th>
+                  <th className="num">Demanda (h)</th>
+                  <th className="num">m/h de tecelagem</th>
+                  <th className="num">UM do material /h</th>
+                  <th className="num">Meses</th>
+                  <th>Recurso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {indice.map((x) => (
+                  <tr key={x.ct} className={x.tem_recurso ? '' : 'linha-vazia'}>
+                    <td><code>{x.ct}</code></td>
+                    <td>
+                      <span className={'selo ' + (x.unidade === 'KG' ? 'padrao' : 'rodizio')}>
+                        {x.unidade === 'KG' ? 'kg · fiação' : 'metro'}
+                      </span>
+                    </td>
+                    <td className="num">{fmt(x.horas)}</td>
+                    <td className="num forte">{fmt(x.metros_por_hora)}</td>
+                    <td className="num muted">{fmt(x.qtd_por_hora)}</td>
+                    <td className="num muted">{fmt(x.meses)}</td>
+                    <td className="muted">
+                      {x.tem_recurso ? 'cadastrado' : 'falta cadastrar'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="rodape">
+            <strong>Conferência de sanidade:</strong> tear de felpudo fica na
+            casa de 11 a 51 m/h. Número muito fora disso costuma ser CT com
+            roteiro em outra unidade, não erro de conta.
+            {' '}Linha em cinza é CT sem recurso cadastrado: o índice existe e
+            está certo, só não tem em que capacidade se apoiar ainda.
+            {' '}A coluna <strong>m/h de tecelagem</strong> é a régua comum da
+            fábrica; a de <strong>UM do material</strong> conta peça, jogo ou
+            metro de produto, e por isso não soma entre CTs diferentes.
+          </p>
         </div>
       )}
 
