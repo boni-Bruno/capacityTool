@@ -220,6 +220,37 @@ Da leitura do parquet, o que a validação vai encontrar:
   isso deixa de ser problema — todas viram a mesma régua —, mas na leitura por
   UM do material continua valendo o cuidado de não somar peça com jogo
 
+### Estado do casamento em 15/08/2026
+
+O `CONFERE_CT.sql` foi rodado no Neon. O cadastro tinha 20 CTs, todos de teste.
+
+**Zero casaram, e a causa era o zero à esquerda.** A base é uniformemente
+`3-3`: o CC vai de 100 a 800 e nunca precisa de preenchimento, o CT sempre tem
+(`001`, `016`). O cadastro estava com `313-3` onde a base traz `313-003`.
+
+Acertado o zero, **12 dos 20 casam** — 47.323 h de 2.019.523 h, 2,3%. Baixo e
+esperado: são 20 CTs de teste num universo de 123.
+
+A correção é no **cadastro**, não na comparação. Dois motivos:
+
+- O CC-CT vem da controladoria, e a base é a extração dela. O CT verdadeiro
+  daquela máquina **é** `003`. O cadastro não estava noutro formato, estava
+  errado — e `recurso.codigo`, que é a trinca concatenada, estava errado junto.
+- Comparação por `=` puro não se esquece. Função de normalização precisa ser
+  lembrada em toda consulta, e esquecer uma vez dá divergência silenciosa.
+
+### Pendências do casamento, para o fim
+
+**Oito CTs cadastrados sem par na base:** `226-2`, `313-1`, `313-2`, `313-7`,
+`313-9`, `401-3`, `401-4`, `401-5`. O CC existe, aquele CT não. São máquinas
+cadastradas que o plano não usa, ou numeração que ainda vai mudar — resolver
+quando o cadastro sair do estágio de teste.
+
+**Validar o CT na entrada do cadastro.** Os zeros de agora foram acertados à
+mão; nada impede alguém de digitar `5` de novo amanhã. Ao salvar um recurso, CT
+numérico deveria ser gravado com 3 dígitos — sem truncar, para um CT de 4
+dígitos futuro entrar como veio.
+
 ---
 
 ## 3. DE/PARA e regras de classificação da demanda
