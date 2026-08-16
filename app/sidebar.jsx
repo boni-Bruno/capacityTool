@@ -28,6 +28,7 @@ const GRUPOS = [
     nome: 'Planejamento',
     itens: [
       { href: '/cadastros/turnos-do-recurso', rotulo: 'Turnos do recurso' },
+      { href: '/cadastros/demanda',           rotulo: 'Demanda' },
       { href: '/cadastros/oee',               rotulo: 'OEE' },
       { href: '/cadastros/paradas',           rotulo: 'Paradas' },
     ],

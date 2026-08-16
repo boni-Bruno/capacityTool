@@ -54,6 +54,12 @@ const CADASTRAR = [
            '(rodízio ou padrão).',
   },
   {
+    href: '/cadastros/demanda',
+    titulo: 'Demanda',
+    texto: 'A base orçada importada da controladoria. É ela que diz quanto de ' +
+           'cada centro de trabalho o plano pede, e em que ritmo.',
+  },
+  {
     href: '/cadastros/oee',
     titulo: 'OEE',
     texto: 'O rendimento que transforma capacidade planejada em disponível, ' +
