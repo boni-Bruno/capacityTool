@@ -56,8 +56,8 @@ export default async function Page() {
           </p>
         </div>
       ) : (
-        <Editor cargaId={corrente.id} cenario={corrente.cenario}
-                combinacoes={combinacoes} atributos={attrs} regras={regras} />
+        <Editor cenario={corrente.cenario} combinacoes={combinacoes}
+                atributos={attrs} regras={regras} />
       )}
     </>
   );

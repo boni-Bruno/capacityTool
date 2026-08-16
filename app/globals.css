@@ -570,6 +570,8 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 .chip:hover { border-color: var(--accent); }
 .chip-on { border-color: var(--accent); background: var(--accent); color: #fff; }
 .chip-on .muted { color: rgba(255,255,255,.75); }
+.chip-acao { border-style: dashed; color: var(--accent); }
+.chip-acao:disabled { opacity: .45; cursor: default; border-color: var(--border); }
 
 /* A linha de uma condicao: atributo, operador, valor. Envolve no celular em vez
    de rolar, porque a condicao inteira precisa ser lida de uma vez. */
@@ -594,6 +596,22 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
   font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--muted);
   text-transform: uppercase; margin: 0 0 8px;
 }
+
+/* O "e" entre duas condicoes do mesmo bloco. Escrito, nao subentendido: ler a
+   regra e o que impede escrever a errada. */
+.cond-e {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  margin: 0 0 8px; padding-left: 2px;
+}
+
+/* O PARA fecha a regra, entao ele se distingue das condicoes. */
+.bloco-para { border-left-color: var(--accent); margin-top: 1.25rem; }
+
+/* O valor tem a lista inteira da base dentro; ele precisa de espaco. */
+.campo-valor { flex: 2 1 260px; min-width: 0; }
+.campo-valor select { max-width: 100%; }
+
+.vazio { color: var(--muted); font-size: 14px; margin: .5rem 0; }
 
 /* O contador da regra sendo escrita. E a razao de a tela existir: regra que
    pega mais ou menos do que se imaginava nao da erro em lugar nenhum. */

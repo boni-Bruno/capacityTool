@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import {
-  excluirAtributo, excluirRegra, salvarAtributo, salvarRegra,
-} from '../../../lib/demanda';
+import { excluirAtributo, excluirRegra, salvarDePara } from '../../../lib/demanda';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeSessao } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
@@ -22,15 +20,11 @@ export async function POST(req) {
     await exigeSessao();
     const b = await req.json();
 
-    if (b.acao === 'atributo') {
-      const codigo = await salvarAtributo(b);
-      revalidarCadastros();
-      return NextResponse.json({ ok: true, codigo });
-    }
-
-    const id = await salvarRegra(b);
+    // Uma chamada só: a regra e, se ainda não existir, o atributo em que ela
+    // escreve. Duas idas seriam duas chances de gravar metade.
+    const { id, atributo } = await salvarDePara(b);
     revalidarCadastros();
-    return NextResponse.json({ ok: true, id });
+    return NextResponse.json({ ok: true, id, atributo });
   } catch (e) { return falha(e, 'POST'); }
 }
 

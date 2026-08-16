@@ -6,12 +6,18 @@ import {
   ATRIBUTOS_ORIGEM, OPERADORES, podeSerCondicao, previa, valoresDe,
 } from '../../../lib/regras';
 
-// O editor de regras, com a prévia colada nele.
+// O editor de regras DE/PARA, com a prévia colada nele.
 //
-// A prévia não é enfeite e não é opcional: o modo de errar aqui é a regra pegar
-// mais ou menos do que se imaginava, e isso não dá erro em lugar nenhum — vira
-// um número torto no painel semanas depois. Por isso o contador anda a cada
-// tecla, e por isso os valores vêm em lista em vez de campo livre.
+// UMA REGRA É UMA COISA SÓ: as condições e o que elas produzem. O atributo em
+// que a regra escreve nasce junto dela, na própria tela — quem está escrevendo
+// pensa em "isso aqui vira Banho Jacquard", não em "preciso primeiro declarar
+// uma coluna".
+//
+// A PRÉVIA NÃO É ENFEITE. O modo de errar aqui é a regra pegar mais ou menos do
+// que se imaginava, e isso não dá erro em lugar nenhum — vira um número torto no
+// painel semanas depois. Por isso o contador anda a cada tecla, e por isso o
+// valor da condição vem em lista, com o peso de cada um: valor digitado errado é
+// regra que fica quieta.
 //
 // Roda inteiro no navegador sobre as combinações que a página mandou. Nenhuma
 // ida ao banco até alguém clicar em gravar.
@@ -19,16 +25,27 @@ import {
 const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 const horas = (min) => fmt(Math.round(Number(min ?? 0) / 60));
 
-const REGRA_NOVA = (atributo, ordem) => ({
-  id: null, atributo, rotulo: '', ordem, ativa: true, observacao: '',
-  condicoes: [{ bloco: 1, atributo: 'linha_produto_agrupada', operador: '=', valor: '' }],
+// O código que o servidor vai gerar para um atributo novo. Só serve para a
+// prévia saber de quem está falando enquanto nada foi gravado.
+const RASCUNHO = '__novo__';
+
+// A chave existe só para o React: sem uma identidade estável, tirar uma
+// condição de cima faz as de baixo trocarem de campo enquanto a pessoa digita.
+let sequencia = 0;
+const CONDICAO_NOVA = (bloco) => ({
+  k: `n${(sequencia += 1)}`,
+  bloco, atributo: 'linha_produto_agrupada', operador: '=', valor: '',
 });
 
-export default function Editor({ cargaId, cenario, combinacoes, atributos, regras }) {
+const REGRA_NOVA = (atributo, ordem) => ({
+  id: null, atributo: atributo ?? '', para_novo: '', rotulo: '', ordem,
+  ativa: true, observacao: '', condicoes: [CONDICAO_NOVA(1)],
+});
+
+export default function Editor({ cenario, combinacoes, atributos, regras }) {
   const router = useRouter();
   const [alvo, setAlvo] = useState(atributos[0]?.codigo ?? null);
-  const [rascunho, setRascunho] = useState(null);   // a regra sendo editada
-  const [novoAttr, setNovoAttr] = useState(null);
+  const [rascunho, setRascunho] = useState(null);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState(null);
 
@@ -37,37 +54,60 @@ export default function Editor({ cargaId, cenario, combinacoes, atributos, regra
   const totalMin = useMemo(
     () => combinacoes.reduce((s, c) => s + Number(c.minutos ?? 0), 0), [combinacoes]);
 
-  // O que vale para o atributo aberto: as regras gravadas, com a que está sendo
-  // editada substituída pelo rascunho. É o que faz o contador andar enquanto se
-  // digita, sem gravar nada.
-  const regrasAgora = useMemo(() => {
-    const doAlvo = regras.filter((r) => r.atributo === alvo);
-    if (!rascunho || rascunho.atributo !== alvo) return doAlvo;
-    if (!rascunho.id) return [...doAlvo, { ...rascunho, id: -1 }];
-    return doAlvo.map((r) => (r.id === rascunho.id ? rascunho : r));
-  }, [regras, alvo, rascunho]);
+  // Em que atributo o rascunho escreve. Enquanto ele for um atributo novo, o
+  // código ainda não existe — a prévia trabalha com um provisório.
+  const alvoRascunho = rascunho
+    ? (rascunho.atributo || RASCUNHO) : null;
+  const alvoEfetivo = alvoRascunho ?? alvo;
 
-  const todasAgora = useMemo(
-    () => [...regras.filter((r) => r.atributo !== alvo), ...regrasAgora],
-    [regras, alvo, regrasAgora]);
+  // O nível de um atributo novo é consequência de quem a regra lê, não uma
+  // pergunta: quem usa um derivado de nível 2 só pode produzir nível 3.
+  const nivelRascunho = useMemo(() => {
+    if (!rascunho) return 1;
+    let n = 0;
+    for (const c of rascunho.condicoes) {
+      const a = atributos.find((x) => x.codigo === c.atributo);
+      if (a) n = Math.max(n, Number(a.nivel ?? 1));
+    }
+    return Math.min(9, n + 1);
+  }, [rascunho, atributos]);
+
+  const atributosAgora = useMemo(() => (
+    alvoRascunho === RASCUNHO
+      ? [...atributos, { codigo: RASCUNHO, nome: rascunho.para_novo || 'novo atributo',
+                         nivel: nivelRascunho, ordem: 99 }]
+      : atributos
+  ), [atributos, alvoRascunho, rascunho, nivelRascunho]);
+
+  // As regras que valem agora: as gravadas, com a que está sendo editada
+  // substituída pelo rascunho. É o que faz o contador andar sem gravar nada.
+  const regrasAgora = useMemo(() => {
+    const doAlvo = regras.filter((r) => r.atributo === alvoEfetivo);
+    if (!rascunho) return doAlvo;
+    const draft = { ...rascunho, atributo: alvoEfetivo, id: rascunho.id ?? -1 };
+    return rascunho.id
+      ? doAlvo.map((r) => (r.id === rascunho.id ? draft : r))
+      : [...doAlvo, draft];
+  }, [regras, alvoEfetivo, rascunho]);
 
   const conta = useMemo(() => {
-    if (!alvo) return null;
-    return previa(combinacoes, atributos, todasAgora, alvo);
-  }, [combinacoes, atributos, todasAgora, alvo]);
+    if (!alvoEfetivo) return null;
+    const outras = regras.filter((r) => r.atributo !== alvoEfetivo);
+    return previa(combinacoes, atributosAgora, [...outras, ...regrasAgora], alvoEfetivo);
+  }, [combinacoes, atributosAgora, regras, regrasAgora, alvoEfetivo]);
 
   const porId = useMemo(
     () => new Map((conta?.porRegra ?? []).map((p) => [p.id, p])), [conta]);
 
-  // Quem pode ser condição deste atributo: origem sempre, derivado só de nível
-  // menor. É a regra que torna ciclo impossível, e ela vale já na tela.
+  // Quem pode ser condição: origem sempre, derivado só de nível menor. É o que
+  // torna ciclo impossível, e vale já aqui — o servidor recusa o resto de novo.
   const condicionaveis = useMemo(() => {
-    if (!alvo) return ATRIBUTOS_ORIGEM;
     const derivados = atributos
-      .filter((a) => podeSerCondicao(a.codigo, alvo, atributos))
-      .map((a) => ({ codigo: a.codigo, nome: `${a.nome} (nível ${a.nivel})` }));
+      .filter((a) => a.codigo !== alvoEfetivo
+                  && podeSerCondicao(a.codigo, alvoEfetivo ?? RASCUNHO, atributosAgora))
+      .map((a) => ({ codigo: a.codigo, nome: `${a.nome} (DE/PARA)` }));
     return [...ATRIBUTOS_ORIGEM, ...derivados];
-  }, [atributos, alvo]);
+  }, [atributos, atributosAgora, alvoEfetivo]);
 
   async function chamar(metodo, corpo) {
     setOcupado(true);
@@ -96,7 +136,9 @@ export default function Editor({ cargaId, cenario, combinacoes, atributos, regra
     return novo;
   });
 
-  const attrAtual = atributos.find((a) => a.codigo === alvo);
+  const attrAtual = alvoRascunho === RASCUNHO
+    ? { codigo: RASCUNHO, nome: rascunho.para_novo || 'novo atributo', nivel: nivelRascunho }
+    : atributos.find((a) => a.codigo === alvoEfetivo);
 
   return (
     <>
@@ -130,181 +172,159 @@ export default function Editor({ cargaId, cenario, combinacoes, atributos, regra
         </div>
       </div>
 
-      {/* --- os atributos derivados ---------------------------------------- */}
       <div className="painel">
-        <h2>Atributos</h2>
-        <p className="rodape">
-          Cada atributo é um corte pelo qual a capacidade vai poder ser lida. O{' '}
-          <strong>nível</strong> diz quem enxerga quem: uma regra só usa como
-          condição um atributo de origem ou um derivado de nível menor. É o que
-          impede regra circular — não por detecção, mas por construção.
-        </p>
-
         <div className="chips">
           {atributos.map((a) => (
             <button key={a.codigo} type="button"
-                    className={`chip ${a.codigo === alvo ? 'chip-on' : ''}`}
+                    className={`chip ${a.codigo === alvoEfetivo ? 'chip-on' : ''}`}
                     onClick={() => { setAlvo(a.codigo); setRascunho(null); }}>
               {a.nome}
-              <span className="muted"> · nível {a.nivel} · {a.regras} regras</span>
+              <span className="muted"> · {a.regras} regras</span>
             </button>
           ))}
-          <button type="button" className="chip"
-                  onClick={() => setNovoAttr({ codigo: '', nome: '', nivel: 1, ordem: 1 })}>
-            + novo atributo
+          <button type="button" className="chip chip-acao" disabled={!!rascunho}
+                  onClick={() => setRascunho(REGRA_NOVA(alvo, proximaOrdem(regras, alvo)))}>
+            + nova regra DE/PARA
           </button>
         </div>
 
-        {novoAttr && (
-          <form className="linha-form" onSubmit={async (e) => {
-            e.preventDefault();
-            const j = await chamar('POST', { acao: 'atributo', ...novoAttr });
-            // Abre o atributo recém-criado: quem acabou de criar um corte quer
-            // escrever a primeira regra dele, não voltar para uma lista.
-            if (j) { setAlvo(j.codigo); setNovoAttr(null); }
-          }}>
-            <label className="campo">
-              <span className="campo-rot">Nome</span>
-              <input value={novoAttr.nome} required
-                     placeholder="Linha comercial"
-                     onChange={(e) => setNovoAttr({
-                       ...novoAttr,
-                       nome: e.target.value,
-                       // O código acompanha o nome enquanto ninguém mexer nele:
-                       // dois campos para digitar a mesma coisa é um a mais.
-                       codigo: novoAttr.tocou ? novoAttr.codigo
-                         : e.target.value.toLowerCase().normalize('NFD')
-                             .replace(/[\u0300-\u036f]/g, '')
-                             .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''),
-                     })} />
-            </label>
-            <label className="campo">
-              <span className="campo-rot">Código</span>
-              <input value={novoAttr.codigo} required
-                     onChange={(e) => setNovoAttr({
-                       ...novoAttr, codigo: e.target.value, tocou: true })} />
-            </label>
-            <label className="campo">
-              <span className="campo-rot">Nível</span>
-              <input type="number" min="1" max="9" value={novoAttr.nivel}
-                     onChange={(e) => setNovoAttr({
-                       ...novoAttr, nivel: Number(e.target.value) })} />
-            </label>
-            <button type="submit" className="btn btn-primario"
-                    disabled={ocupado}>Criar</button>
-            <button type="button" className="btn"
-                    onClick={() => setNovoAttr(null)}>Cancelar</button>
-          </form>
+        {!atributos.length && !rascunho && (
+          <p className="vazio">
+            Nenhuma regra ainda. Toda a demanda aparece no painel com o valor que
+            veio da base — o que não está errado, só está na língua do sistema de
+            origem.
+          </p>
+        )}
+
+        {rascunho && (
+          <FormRegra rascunho={rascunho} mexe={mexe} ocupado={ocupado}
+                     atributos={atributos} condicionaveis={condicionaveis}
+                     combinacoes={combinacoes} totalMin={totalMin}
+                     nivel={nivelRascunho}
+                     conta={porId.get(rascunho.id ?? -1)}
+                     cancelar={() => setRascunho(null)}
+                     gravar={async () => {
+                       const j = await chamar('POST', rascunho);
+                       if (j) { setAlvo(j.atributo); setRascunho(null); }
+                     }} />
         )}
       </div>
 
-      {/* --- as regras do atributo aberto ----------------------------------- */}
+      {/* --- as regras já gravadas do atributo aberto ----------------------- */}
       {attrAtual && conta && (
         <div className="painel">
-          <h2>
-            Regras de {attrAtual.nome}
-            <span className="muted" style={{ fontWeight: 400 }}>
-              {' '}· a primeira que casa ganha
-            </span>
-          </h2>
+          <div className="painel-topo">
+            <h2>
+              {attrAtual.nome}
+              <span className="muted" style={{ fontWeight: 400 }}>
+                {' '}· a primeira regra que casa ganha
+              </span>
+            </h2>
+            {/* Atributo sem regra nenhuma classifica nada; apagá-lo não perde
+                informação, e é a única forma de desfazer um criado por engano.
+                Com regra ele não sai daqui: apagar em cascata seria apagar
+                trabalho sem pedir. */}
+            {!regrasAgora.length && attrAtual.codigo !== RASCUNHO && (
+              <button type="button" className="btn btn-mini" disabled={ocupado}
+                      onClick={() => {
+                        if (confirm(`Apagar o atributo ${attrAtual.nome}?`)) {
+                          setAlvo(null);
+                          chamar('DELETE', { acao: 'atributo', codigo: attrAtual.codigo });
+                        }
+                      }}>
+                apagar atributo
+              </button>
+            )}
+          </div>
 
-          <table className="tabela-mes">
-            <thead>
-              <tr>
-                <th style={{ width: '3rem' }}>#</th>
-                <th>Vira</th>
-                <th>Quando</th>
-                <th className="num">Linhas</th>
-                <th className="num">Horas</th>
-                <th className="num">%</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {regrasAgora.map((r) => {
-                const p = porId.get(r.id) ?? { linhas: 0, minutos: 0 };
-                return (
-                  <tr key={r.id} className={r.ativa === false ? 'muted' : ''}>
-                    <td>{r.ordem}</td>
-                    <td><strong>{r.rotulo || <span className="muted">sem rótulo</span>}</strong></td>
-                    <td className="muted">{descreve(r, atributos)}</td>
-                    <td className="num">{fmt(p.linhas)}</td>
-                    <td className="num">{horas(p.minutos)}</td>
-                    <td className="num">
-                      {totalMin ? (p.minutos * 100 / totalMin).toFixed(1) : '0,0'}
-                    </td>
-                    <td className="acoes">
-                      {r.id > 0 && (
-                        <>
-                          <button type="button" className="btn btn-mini"
-                                  onClick={() => setRascunho(JSON.parse(JSON.stringify(r)))}>
-                            editar
-                          </button>
-                          <button type="button" className="btn btn-mini"
-                                  disabled={ocupado}
-                                  onClick={() => {
-                                    if (confirm(`Apagar a regra ${r.rotulo}?`)) {
-                                      chamar('DELETE', { id: r.id });
-                                    }
-                                  }}>
-                            apagar
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {!regrasAgora.length && (
-                <tr><td colSpan="7" className="muted">
-                  Nenhuma regra ainda. Toda a demanda cai em &ldquo;sem
-                  regra&rdquo; e continua aparecendo no painel com o valor de
-                  origem.
-                </td></tr>
-              )}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan="3">Sem regra</td>
-                <td className="num">{fmt(conta.semRegra.linhas)}</td>
-                <td className="num">{horas(conta.semRegra.minutos)}</td>
-                <td className="num">
-                  {totalMin ? (conta.semRegra.minutos * 100 / totalMin).toFixed(1) : '0,0'}
-                </td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
+          <div className="grade-rolagem">
+            <table className="tabela-mes">
+              <thead>
+                <tr>
+                  <th style={{ width: '3rem' }}>#</th>
+                  <th>SE</th>
+                  <th>PARA</th>
+                  <th className="num">Linhas</th>
+                  <th className="num">Horas</th>
+                  <th className="num">%</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {regrasAgora.map((r) => {
+                  const p = porId.get(r.id) ?? { linhas: 0, minutos: 0 };
+                  return (
+                    <tr key={r.id} className={r.ativa === false ? 'muted' : ''}>
+                      <td>{r.ordem}</td>
+                      <td className="muted">{descreve(r, atributos)}</td>
+                      <td>
+                        <strong>
+                          {r.rotulo || <span className="muted">sem PARA</span>}
+                        </strong>
+                      </td>
+                      <td className="num">{fmt(p.linhas)}</td>
+                      <td className="num">{horas(p.minutos)}</td>
+                      <td className="num">
+                        {totalMin ? (p.minutos * 100 / totalMin).toFixed(1) : '0,0'}
+                      </td>
+                      <td className="acoes">
+                        {r.id > 0 && !rascunho && (
+                          <>
+                            <button type="button" className="btn btn-mini"
+                                    onClick={() => setRascunho({
+                                      ...JSON.parse(JSON.stringify(r)), para_novo: '',
+                                    })}>
+                              editar
+                            </button>
+                            <button type="button" className="btn btn-mini"
+                                    disabled={ocupado}
+                                    onClick={() => {
+                                      if (confirm(`Apagar a regra ${r.rotulo}?`)) {
+                                        chamar('DELETE', { id: r.id });
+                                      }
+                                    }}>
+                              apagar
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!regrasAgora.length && (
+                  <tr><td colSpan="7" className="vazio">
+                    Nenhuma regra neste atributo — ele não classifica nada ainda.
+                  </td></tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan="3">Sem regra — fica com o valor de origem</td>
+                  <td className="num">{fmt(conta.semRegra.linhas)}</td>
+                  <td className="num">{horas(conta.semRegra.minutos)}</td>
+                  <td className="num">
+                    {totalMin
+                      ? (conta.semRegra.minutos * 100 / totalMin).toFixed(1) : '0,0'}
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
 
-          {!rascunho && (
-            <button type="button" className="btn btn-primario"
-                    onClick={() => setRascunho(
-                      REGRA_NOVA(alvo, (regrasAgora.at(-1)?.ordem ?? 0) + 1))}>
-              Nova regra
-            </button>
-          )}
-
-          {rascunho && (
-            <FormRegra rascunho={rascunho} mexe={mexe} ocupado={ocupado}
-                       condicionaveis={condicionaveis} combinacoes={combinacoes}
-                       conta={porId.get(rascunho.id ?? -1)} totalMin={totalMin}
-                       cancelar={() => setRascunho(null)}
-                       gravar={async () => {
-                         const j = await chamar('POST', rascunho);
-                         if (j) setRascunho(null);
-                       }} />
-          )}
-
-          {/* Os rótulos somados, que é como o painel vai mostrar. Duas regras
-              podem produzir o mesmo rótulo de propósito — caminhos diferentes
-              para o mesmo grupo. */}
-          {conta.porRotulo.length > 0 && (
+          {/* Como o painel vai mostrar. Duas regras podem produzir o mesmo PARA
+              de propósito — caminhos diferentes para o mesmo grupo. */}
+          {conta.porRotulo.length > 1 && (
             <>
-              <h3>Como vai aparecer</h3>
+              <h3>Como vai aparecer no painel</h3>
               <table className="tabela-mes">
                 <thead>
-                  <tr><th>{attrAtual.nome}</th><th className="num">Linhas</th>
-                      <th className="num">Horas</th><th className="num">%</th></tr>
+                  <tr>
+                    <th>{attrAtual.nome}</th>
+                    <th className="num">Linhas</th>
+                    <th className="num">Horas</th>
+                    <th className="num">%</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {conta.porRotulo.map((r) => (
@@ -327,137 +347,230 @@ export default function Editor({ cargaId, cenario, combinacoes, atributos, regra
   );
 }
 
+const proximaOrdem = (regras, atributo) =>
+  Math.max(0, ...regras.filter((r) => r.atributo === atributo)
+                       .map((r) => Number(r.ordem ?? 0))) + 1;
+
+// -----------------------------------------------------------------------------
+// O FORMULÁRIO: SE ... E / OU ... PARA
 // -----------------------------------------------------------------------------
 
-function FormRegra({ rascunho, mexe, condicionaveis, combinacoes, conta,
-                     totalMin, gravar, cancelar, ocupado }) {
-  // Os blocos, na ordem em que aparecem. Dentro do bloco tudo é E; entre blocos
-  // é OU. Sem parênteses e sem precedência para ninguém errar.
-  const blocos = [...new Set(rascunho.condicoes.map((c) => c.bloco))].sort((a, b) => a - b);
-  const proximoBloco = Math.max(0, ...blocos) + 1;
+function FormRegra({ rascunho, mexe, atributos, condicionaveis, combinacoes,
+                     conta, totalMin, nivel, gravar, cancelar, ocupado }) {
+  // Dentro do bloco tudo é E; blocos irmãos são OU. Sem parênteses e sem
+  // precedência de operador — não há como escrever algo ambíguo.
+  const blocos = [...new Set(rascunho.condicoes.map((c) => c.bloco))]
+    .sort((a, b) => a - b);
+
+  const addCondicao = (bloco) => mexe((r) => r.condicoes.push(CONDICAO_NOVA(bloco)));
+
+  const completa = rascunho.condicoes.every(
+    (c) => c.operador === 'VAZIO' || String(c.valor ?? '').trim());
+  const temPara = String(rascunho.rotulo ?? '').trim()
+    && (rascunho.atributo || String(rascunho.para_novo ?? '').trim());
 
   return (
     <div className="painel-interno">
-      <div className="linha-form">
-        <label className="campo">
-          <span className="campo-rot">Vira</span>
-          <input value={rascunho.rotulo} placeholder="Banho Jacquard" autoFocus
-                 onChange={(e) => mexe((r) => { r.rotulo = e.target.value; })} />
-        </label>
-        <label className="campo" style={{ maxWidth: '6rem' }}>
-          <span className="campo-rot">Ordem</span>
-          <input type="number" min="1" value={rascunho.ordem}
-                 onChange={(e) => mexe((r) => { r.ordem = Number(e.target.value); })} />
-        </label>
-        <label className="campo-inline">
-          <input type="checkbox" checked={rascunho.ativa !== false}
-                 onChange={(e) => mexe((r) => { r.ativa = e.target.checked; })} />
-          <span className="campo-rot">ativa</span>
-        </label>
-      </div>
-
       {blocos.map((b, i) => (
         <div key={b} className="bloco">
           <p className="bloco-rot">{i === 0 ? 'SE' : 'OU SE'}</p>
-          {rascunho.condicoes.filter((c) => c.bloco === b).map((c) => {
+
+          {rascunho.condicoes.filter((c) => c.bloco === b).map((c, j) => {
             const idx = rascunho.condicoes.indexOf(c);
-            const valores = valoresDe(combinacoes, c.atributo);
             return (
-              <div key={idx} className="linha-form">
-                <select value={c.atributo}
-                        onChange={(e) => mexe((r) => {
-                          r.condicoes[idx].atributo = e.target.value;
-                          r.condicoes[idx].valor = '';
-                        })}>
-                  {condicionaveis.map((a) => (
-                    <option key={a.codigo} value={a.codigo}>{a.nome}</option>
-                  ))}
-                </select>
-
-                <select value={c.operador}
-                        onChange={(e) => mexe((r) => {
-                          r.condicoes[idx].operador = e.target.value;
-                        })}>
-                  {OPERADORES.map((o) => (
-                    <option key={o.codigo} value={o.codigo}>{o.nome}</option>
-                  ))}
-                </select>
-
-                {c.operador !== 'VAZIO' && (
-                  <>
-                    {/* Lista e campo livre ao mesmo tempo: o valor certo está
-                        quase sempre na lista, mas CONTEM quer um pedaço, que
-                        por definição não está. */}
-                    <input list={`vals-${idx}`} value={c.valor}
-                           placeholder="valor"
-                           onChange={(e) => mexe((r) => {
-                             r.condicoes[idx].valor = e.target.value;
-                           })} />
-                    <datalist id={`vals-${idx}`}>
-                      {valores.slice(0, 200).map((v) => (
-                        <option key={v.valor} value={v.valor}>
-                          {horas(v.minutos)} h
-                        </option>
-                      ))}
-                    </datalist>
-                  </>
-                )}
-
-                <button type="button" className="btn btn-mini"
-                        disabled={rascunho.condicoes.length === 1}
-                        onClick={() => mexe((r) => { r.condicoes.splice(idx, 1); })}>
-                  ×
-                </button>
+              <div key={c.id ?? c.k}>
+                {j > 0 && <p className="cond-e">e</p>}
+                <Condicao c={c} idx={idx} mexe={mexe}
+                          condicionaveis={condicionaveis}
+                          combinacoes={combinacoes}
+                          podeApagar={rascunho.condicoes.length > 1} />
               </div>
             );
           })}
-          <button type="button" className="btn btn-mini"
-                  onClick={() => mexe((r) => r.condicoes.push({
-                    bloco: b, atributo: 'linha_produto_agrupada',
-                    operador: '=', valor: '',
-                  }))}>
-            + E também
-          </button>
         </div>
       ))}
 
-      <button type="button" className="btn btn-mini"
-              onClick={() => mexe((r) => r.condicoes.push({
-                bloco: proximoBloco, atributo: 'linha_produto_agrupada',
-                operador: '=', valor: '',
-              }))}>
-        + OU se
-      </button>
+      {/* Os dois caminhos para a próxima condição, com o conectivo escrito no
+          botão. Escolher "e" ou "ou" DEPOIS de escrever a condição é como se
+          erra a lógica sem perceber. */}
+      <div className="acoes">
+        <button type="button" className="btn btn-mini"
+                onClick={() => addCondicao(blocos.at(-1))}>
+          + novo atributo <strong>e</strong>
+        </button>
+        <button type="button" className="btn btn-mini"
+                onClick={() => addCondicao(Math.max(...blocos) + 1)}>
+          + novo atributo <strong>ou</strong>
+        </button>
+      </div>
 
-      {/* O contador, que é a razão de a tela existir. Ele anda a cada tecla, e
-          é exato: a mesma conta que o servidor faria. */}
+      {/* --- o PARA -------------------------------------------------------- */}
+      <div className="bloco bloco-para">
+        <p className="bloco-rot">PARA</p>
+        <div className="linha-form">
+          <label className="campo">
+            <span className="campo-rot">Atributo — a coluna do painel</span>
+            <select value={rascunho.atributo}
+                    onChange={(e) => mexe((r) => {
+                      r.atributo = e.target.value;
+                      if (e.target.value) r.para_novo = '';
+                    })}>
+              <option value="">+ novo atributo…</option>
+              {atributos.map((a) => (
+                <option key={a.codigo} value={a.codigo}>{a.nome}</option>
+              ))}
+            </select>
+          </label>
+
+          {!rascunho.atributo && (
+            <label className="campo">
+              <span className="campo-rot">Nome do atributo novo</span>
+              <input value={rascunho.para_novo} placeholder="Linha comercial"
+                     onChange={(e) => mexe((r) => { r.para_novo = e.target.value; })} />
+            </label>
+          )}
+
+          <label className="campo">
+            <span className="campo-rot">Vira</span>
+            <input value={rascunho.rotulo} placeholder="Banho Jacquard"
+                   onChange={(e) => mexe((r) => { r.rotulo = e.target.value; })} />
+          </label>
+
+          <label className="campo" style={{ maxWidth: '5.5rem' }}>
+            <span className="campo-rot">Ordem</span>
+            <input type="number" min="1" value={rascunho.ordem}
+                   onChange={(e) => mexe((r) => { r.ordem = Number(e.target.value); })} />
+          </label>
+
+          <label className="campo-inline">
+            <input type="checkbox" checked={rascunho.ativa !== false}
+                   onChange={(e) => mexe((r) => { r.ativa = e.target.checked; })} />
+            <span className="campo-rot">ativa</span>
+          </label>
+        </div>
+
+        {!rascunho.atributo && rascunho.para_novo && nivel > 1 && (
+          <p className="rodape">
+            Esta regra lê outro DE/PARA, então <strong>{rascunho.para_novo}</strong>{' '}
+            nasce no nível {nivel} — ele enxerga os de nível menor, e nenhum
+            deles pode voltar a enxergá-lo. É o que impede regra circular.
+          </p>
+        )}
+      </div>
+
+      {/* O contador, que é a razão de a tela existir. Anda a cada tecla, e é a
+          mesma conta que o servidor faria. */}
       <p className="previa">
-        Esta regra pega <strong>{fmt(conta?.linhas ?? 0)} linhas</strong> e{' '}
-        <strong>{horas(conta?.minutos ?? 0)} h</strong>
-        {totalMin > 0 && (
-          <> — {((conta?.minutos ?? 0) * 100 / totalMin).toFixed(1)}% da carga</>
-        )}
-        {conta?.valores?.length > 0 && (
-          <span className="muted"> · {conta.valores.slice(0, 4).join(' | ')}
-            {conta.valores.length > 4 && ' …'}
-          </span>
-        )}
+        {completa ? (
+          <>
+            Esta regra pega <strong>{fmt(conta?.linhas ?? 0)} linhas</strong> e{' '}
+            <strong>{horas(conta?.minutos ?? 0)} h</strong>
+            {totalMin > 0
+              && <> — {((conta?.minutos ?? 0) * 100 / totalMin).toFixed(1)}% da carga</>}
+            {conta?.valores?.length > 0 && (
+              <span className="muted">
+                {' '}· {conta.valores.slice(0, 3).join('  |  ')}
+                {conta.valores.length > 3 && '  …'}
+              </span>
+            )}
+          </>
+        ) : 'Escolha o valor de cada condição para ver quanto esta regra pega.'}
       </p>
 
-      <div className="linha-form">
+      <div className="acoes">
         <button type="button" className="btn btn-primario" onClick={gravar}
-                disabled={ocupado || !rascunho.rotulo.trim()}>
+                disabled={ocupado || !completa || !temPara}>
           {rascunho.id ? 'Gravar' : 'Criar regra'}
         </button>
-        <button type="button" className="btn" onClick={cancelar}>
-          Cancelar
-        </button>
+        <button type="button" className="btn" onClick={cancelar}>Cancelar</button>
       </div>
     </div>
   );
 }
 
-// A regra em uma linha de texto, para a tabela mostrar o que ela faz sem abrir.
+/**
+ * Uma condição: campo, operador, valor.
+ *
+ * O valor vem em lista com o peso de cada opção — escolher errado é o modo
+ * clássico de a regra não pegar nada, e ele não dá erro em lugar nenhum. Só
+ * "contém" e "começa com" ganham campo livre, porque eles pedem um pedaço, que
+ * por definição não está na lista.
+ */
+function Condicao({ c, idx, mexe, condicionaveis, combinacoes, podeApagar }) {
+  const valores = useMemo(
+    () => valoresDe(combinacoes, c.atributo), [combinacoes, c.atributo]);
+  const livre = c.operador === 'CONTEM' || c.operador === 'COMECA';
+
+  return (
+    <div className="linha-form">
+      <label className="campo">
+        <span className="campo-rot">Campo</span>
+        <select value={c.atributo}
+                onChange={(e) => mexe((r) => {
+                  r.condicoes[idx].atributo = e.target.value;
+                  r.condicoes[idx].valor = '';
+                })}>
+          {condicionaveis.map((a) => (
+            <option key={a.codigo} value={a.codigo}>{a.nome}</option>
+          ))}
+        </select>
+      </label>
+
+      <label className="campo" style={{ maxWidth: '9rem' }}>
+        <span className="campo-rot">É</span>
+        <select value={c.operador}
+                onChange={(e) => mexe((r) => {
+                  r.condicoes[idx].operador = e.target.value;
+                  if (e.target.value === 'VAZIO') r.condicoes[idx].valor = '';
+                })}>
+          {OPERADORES.map((o) => (
+            <option key={o.codigo} value={o.codigo}>{o.nome}</option>
+          ))}
+        </select>
+      </label>
+
+      {c.operador !== 'VAZIO' && (
+        <label className="campo campo-valor">
+          <span className="campo-rot">
+            Valor
+            <span className="muted"> · {fmt(valores.length)} na base</span>
+          </span>
+          {livre ? (
+            <input value={c.valor} placeholder="um pedaço do texto"
+                   onChange={(e) => mexe((r) => {
+                     r.condicoes[idx].valor = e.target.value;
+                   })} />
+          ) : (
+            <select value={c.valor}
+                    onChange={(e) => mexe((r) => {
+                      r.condicoes[idx].valor = e.target.value;
+                    })}>
+              <option value="">— escolha —</option>
+              {/* Valor que não está mais na base continua na lista: a regra é
+                  de antes da carga, e sumir com ele esconderia o que ela faz. */}
+              {c.valor && !valores.some((v) => v.valor === c.valor) && (
+                <option value={c.valor}>{c.valor} (fora desta carga)</option>
+              )}
+              {valores.map((v) => (
+                <option key={v.valor} value={v.valor}>
+                  {v.valor} — {horas(v.minutos)} h
+                </option>
+              ))}
+            </select>
+          )}
+        </label>
+      )}
+
+      <button type="button" className="btn btn-mini" disabled={!podeApagar}
+              title="tirar esta condição"
+              onClick={() => mexe((r) => { r.condicoes.splice(idx, 1); })}>
+        ×
+      </button>
+    </div>
+  );
+}
+
+// A regra em uma linha de texto, para a tabela dizer o que ela faz sem abrir.
 function descreve(regra, atributos) {
   const nome = (c) =>
     ATRIBUTOS_ORIGEM.find((a) => a.codigo === c)?.nome

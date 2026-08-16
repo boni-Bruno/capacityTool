@@ -294,9 +294,17 @@ dígitos futuro entrar como veio.
 ## 3. DE/PARA e regras de classificação da demanda — EM CONSTRUÇÃO
 
 O motor está em `lib/regras.js`, as três tabelas na migração `23`, e a tela em
-`/cadastros/de-para`: os atributos derivados em cima, as regras do atributo
-aberto com quantas linhas e quantas horas cada uma pega, e o editor com blocos
-SE / OU SE.
+`/cadastros/de-para`.
+
+**Uma regra é uma coisa só.** O atributo em que ela escreve nasce junto dela, no
+mesmo formulário — não existe "cadastrar a coluna primeiro". Quem está
+escrevendo pensa em "isso aqui vira Banho Jacquard", e a tela segue esse
+pensamento: SE campo é valor, e/ou outro campo é valor, PARA isto.
+
+O nível do atributo também não é pergunta: ele sai de quem a regra lê. Regra que
+usa um DE/PARA de nível 2 só pode produzir nível 3, e a tela calcula isso
+sozinha. Perguntar seria pedir que alguém resolvesse à mão uma conta que a
+própria regra já respondeu.
 
 **A prévia anda a cada tecla e é exata**, não amostra. O modo de errar aqui é a
 regra pegar mais ou menos do que se imaginava, e isso não dá erro em lugar
