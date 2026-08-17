@@ -66,11 +66,12 @@ export default function OrigemDoIndice({ cargaId, orfaos, doadores, comDemanda }
   const ccsComOrfao = [...new Set(orfaos.filter((o) => !o.tipo && o.cc_irmaos > 0)
                                         .map((o) => o.cc))];
 
-  if (!orfaos.length && !comDemanda.length) return null;
+  if (!orfaos.length && !comDemanda.length) {
+    return <p className="vazio">Nada casa com os filtros escolhidos.</p>;
+  }
 
   return (
-    <div className="painel">
-      <h2>De onde vem o índice</h2>
+    <div>
       <p className="rodape" style={{ margin: '0 0 12px' }}>
         Qualquer centro de trabalho pode usar o mix de outro CT ou a média de um
         CC — não só os sem demanda própria. O caso clássico é a regra de fluxo:

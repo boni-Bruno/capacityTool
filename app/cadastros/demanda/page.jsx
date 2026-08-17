@@ -1,14 +1,20 @@
 import { sql } from '../../../lib/db';
 import {
-  cargas, cargaCorrente, resumoCarga, demandaSemCapacidade, capacidadeSemDemanda,
-  indicePorCt, ctsOrfaos, ctsDoadores, ctsComDemanda,
+  atributos, cargas, cargaCorrente, combinacoesDaCarga, ctsCadastro,
+  ctsComDemanda, ctsDoadores, ctsOrfaos, capacidadeSemDemanda,
+  demandaSemCapacidade, indicePorCt, resumoCarga, todasAsRegras,
 } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import EnviarDemanda from './enviar';
 import Cargas from './cargas';
-import OrigemDoIndice from './origem';
+import Explorar from './explorar';
 
 export const dynamic = 'force-dynamic';
+
+// A ORDEM DA PÁGINA É A ORDEM DO TRABALHO: importar, decidir qual carga está no
+// ar, conferir o que ela cobre — e só então explorar os dados. As quatro
+// tabelas de dados moram num quadrante só, escolhidas por botão, porque
+// empilhadas elas faziam a tela virar um poço de rolagem.
 
 const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 
@@ -37,13 +43,16 @@ export default async function Page() {
   }
 
   const resumo = corrente ? await resumoCarga(corrente.id) : null;
-  const [semCap, semDem, indice, orfaos, doadores, comDemanda] = corrente
+  const [semCap, semDem, indice, orfaos, doadores, comDemanda,
+         combinacoes, attrs, regras, cadastro] = corrente
     ? await Promise.all([
         demandaSemCapacidade(corrente.id), capacidadeSemDemanda(corrente.id),
         indicePorCt(corrente.id), ctsOrfaos(corrente.id),
         ctsDoadores(corrente.id), ctsComDemanda(corrente.id),
+        combinacoesDaCarga(corrente.id), atributos(), todasAsRegras(),
+        ctsCadastro(),
       ])
-    : [[], [], [], [], [], []];
+    : [[], [], [], [], [], [], [], [], [], []];
 
   const cobertura = resumo && Number(resumo.horas)
     ? (Number(resumo.casados.horas) * 100 / Number(resumo.horas)) : 0;
@@ -55,6 +64,18 @@ export default async function Page() {
       </div>
 
       <EnviarDemanda recursosCadastrados={cts} />
+
+      <Cargas itens={lista} />
+
+      {!corrente && lista.length > 0 && (
+        <div className="aviso">
+          <strong>Nenhuma carga no ar.</strong>
+          <p style={{ margin: '8px 0 0' }}>
+            Existem cargas importadas, mas nenhuma marcada. Marque uma na lista
+            acima — é ela que o painel vai usar para converter capacidade.
+          </p>
+        </div>
+      )}
 
       {corrente && resumo && (
         <div className="painel">
@@ -88,74 +109,6 @@ export default async function Page() {
             </div>
           </div>
 
-          {semCap.length > 0 && (
-            <>
-              <p className="campo-rot" style={{ marginTop: 6 }}>
-                Demanda sem capacidade — {fmt(semCap.length)} centros de trabalho
-              </p>
-              <div className="grade-rolagem">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>CT</th>
-                      <th className="num">Horas</th>
-                      <th className="num">Linhas</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {semCap.map((x) => (
-                      <tr key={x.ct}>
-                        <td><code>{x.ct}</code></td>
-                        <td className="num">{fmt(x.horas)}</td>
-                        <td className="num muted">{fmt(x.linhas)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="rodape">
-                Ordenada por peso: é a fila do que falta cadastrar. Nada aqui é
-                erro, e nada precisa ser reimportado — o vínculo é o{' '}
-                <code>CC-CT</code> da máquina física e é resolvido na leitura,
-                então cada recurso que você cadastrar faz a linha correspondente
-                passar a valer sozinha.
-              </p>
-            </>
-          )}
-
-          {semDem.length > 0 && (
-            <>
-              <p className="campo-rot" style={{ marginTop: 14 }}>
-                Capacidade sem demanda — {fmt(semDem.length)} centros de trabalho
-              </p>
-              <div className="grade-rolagem">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>CT</th>
-                      <th className="num">Recursos</th>
-                      <th>Máquinas</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {semDem.map((x) => (
-                      <tr key={x.ct}>
-                        <td><code>{x.ct}</code></td>
-                        <td className="num">{fmt(x.recursos)}</td>
-                        <td className="muted">{x.maquinas}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="rodape">
-                Máquina cadastrada que o plano não usa. Pode ser numeração a
-                acertar, ou recurso que realmente não entra neste cenário —
-                nenhum dos dois é defeito.
-              </p>
-            </>
-          )}
-
           {resumo.sem_tempo > 0 && (
             <p className="rodape">
               <strong>{fmt(resumo.sem_tempo)} linha(s) com quantidade e sem
@@ -168,81 +121,10 @@ export default async function Page() {
       )}
 
       {corrente && (
-        <OrigemDoIndice cargaId={corrente.id} orfaos={orfaos}
-                        doadores={doadores} comDemanda={comDemanda} />
-      )}
-
-      {indice.length > 0 && (
-        <div className="painel">
-          <h2>Índice de conversão</h2>
-          <p className="rodape" style={{ margin: '0 0 12px' }}>
-            Quanto cada centro de trabalho produz por hora de capacidade, no
-            plano desta carga. É a <strong>soma da quantidade dividida pela soma
-            dos minutos</strong> — o mix entra ponderado sozinho, cada material
-            pelo tempo que ele ocupa.
-            {' '}Ponderar as taxas pela participação em quantidade, que é o erro
-            natural, infla a capacidade: o produto lento come mais tempo do que
-            a quantidade sugere.
-          </p>
-
-          <div className="grade-rolagem">
-            <table>
-              <thead>
-                <tr>
-                  <th>CT</th>
-                  <th>Unidade</th>
-                  <th className="num">Demanda (h)</th>
-                  <th className="num">m/h de tecelagem</th>
-                  <th className="num">UM do material /h</th>
-                  <th className="num">Meses</th>
-                  <th>Recurso</th>
-                </tr>
-              </thead>
-              <tbody>
-                {indice.map((x) => (
-                  <tr key={x.ct} className={x.tem_recurso ? '' : 'linha-vazia'}>
-                    <td><code>{x.ct}</code></td>
-                    <td>
-                      <span className={'selo ' + (x.unidade === 'KG' ? 'padrao' : 'rodizio')}>
-                        {x.unidade === 'KG' ? 'kg · fiação' : 'metro'}
-                      </span>
-                    </td>
-                    <td className="num">{fmt(x.horas)}</td>
-                    <td className="num forte">{fmt(x.metros_por_hora)}</td>
-                    <td className="num muted">{fmt(x.qtd_por_hora)}</td>
-                    <td className="num muted">{fmt(x.meses)}</td>
-                    <td className="muted">
-                      {x.tem_recurso ? 'cadastrado' : 'falta cadastrar'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <p className="rodape">
-            <strong>Conferência de sanidade:</strong> tear de felpudo fica na
-            casa de 11 a 51 m/h. Número muito fora disso costuma ser CT com
-            roteiro em outra unidade, não erro de conta.
-            {' '}Linha em cinza é CT sem recurso cadastrado: o índice existe e
-            está certo, só não tem em que capacidade se apoiar ainda.
-            {' '}A coluna <strong>m/h de tecelagem</strong> é a régua comum da
-            fábrica; a de <strong>UM do material</strong> conta peça, jogo ou
-            metro de produto, e por isso não soma entre CTs diferentes.
-          </p>
-        </div>
-      )}
-
-      <Cargas itens={lista} />
-
-      {!corrente && lista.length > 0 && (
-        <div className="aviso">
-          <strong>Nenhuma carga no ar.</strong>
-          <p style={{ margin: '8px 0 0' }}>
-            Existem cargas importadas, mas nenhuma marcada. Marque uma na lista
-            acima — é ela que o painel vai usar para converter capacidade.
-          </p>
-        </div>
+        <Explorar cargaId={corrente.id} semCap={semCap} semDem={semDem}
+                  indice={indice} orfaos={orfaos} doadores={doadores}
+                  comDemanda={comDemanda} combinacoes={combinacoes}
+                  atributos={attrs} regras={regras} cadastro={cadastro} />
       )}
     </>
   );

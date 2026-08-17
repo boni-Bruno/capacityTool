@@ -347,6 +347,14 @@ taxas diferentes, e a média daria metro a mais ou a menos sem nada denunciar.
 A consulta cara — as combinações por mês — só acontece quando há rótulo
 escolhido. Sem filtro o painel abre exatamente como antes.
 
+**A tela de Demanda virou um quadrante de dados só.** A ordem da página é a
+ordem do trabalho: importar → cargas → conferência → explorar. As quatro
+tabelas (demanda sem capacidade, capacidade sem demanda, origem do índice,
+índice de conversão) são modos de um quadrante único, escolhidos por botão, com
+filtros que valem para todos: planta, área, CC, CT, os atributos DE da base e
+os atributos PARA do DE/PARA. O recorte por atributo olha a demanda do CT, então
+CT sem demanda não responde a ele — a tela avisa quando isso esconde linhas.
+
 **O motor não roda sobre as 116 mil linhas.** Os seis atributos que as regras
 enxergam formam **1.279 combinações distintas** na base inteira — 91 vezes
 menos. Classificar a combinação e multiplicar pelas linhas dá o mesmo resultado,
