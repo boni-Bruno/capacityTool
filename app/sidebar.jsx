@@ -12,7 +12,7 @@ import { usePathname } from 'next/navigation';
 
 const GRUPOS = [
   {
-    nome: 'Estrutura',
+    nome: 'Estrutura da empresa',
     itens: [
       { href: '/cadastros/plantas',     rotulo: 'Plantas' },
       { href: '/cadastros/areas',       rotulo: 'Áreas' },
@@ -25,13 +25,21 @@ const GRUPOS = [
     ],
   },
   {
-    nome: 'Planejamento',
+    nome: 'Planejamento da capacidade',
     itens: [
       { href: '/cadastros/turnos-do-recurso', rotulo: 'Turnos do recurso' },
-      { href: '/cadastros/demanda',           rotulo: 'Demanda' },
-      { href: '/cadastros/de-para',           rotulo: 'DE/PARA' },
       { href: '/cadastros/oee',               rotulo: 'OEE' },
       { href: '/cadastros/paradas',           rotulo: 'Paradas' },
+    ],
+  },
+  {
+    // A conversão é outra natureza de trabalho: não muda a capacidade em
+    // minutos, muda em que língua ela é lida — demanda dá o índice, DE/PARA
+    // dá os rótulos.
+    nome: 'Conversão da capacidade',
+    itens: [
+      { href: '/cadastros/demanda', rotulo: 'Demanda' },
+      { href: '/cadastros/de-para', rotulo: 'DE/PARA' },
     ],
   },
 ];

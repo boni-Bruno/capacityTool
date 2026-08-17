@@ -54,18 +54,6 @@ const CADASTRAR = [
            '(rodízio ou padrão).',
   },
   {
-    href: '/cadastros/demanda',
-    titulo: 'Demanda',
-    texto: 'A base orçada importada da controladoria. É ela que diz quanto de ' +
-           'cada centro de trabalho o plano pede, e em que ritmo.',
-  },
-  {
-    href: '/cadastros/de-para',
-    titulo: 'DE/PARA',
-    texto: 'A lingua da base traduzida para a da empresa: rotulos e ' +
-           'agrupamentos por regra, com a previa de quanto cada uma pega.',
-  },
-  {
     href: '/cadastros/oee',
     titulo: 'OEE',
     texto: 'O rendimento que transforma capacidade planejada em disponível, ' +
@@ -76,6 +64,21 @@ const CADASTRAR = [
     titulo: 'Paradas planejadas',
     texto: 'Preventiva, preditiva, férias coletivas, obra e inventário. ' +
            'Muda toda semana.',
+  },
+];
+
+const CONVERSAO = [
+  {
+    href: '/cadastros/demanda',
+    titulo: 'Demanda',
+    texto: 'A base orçada importada da controladoria. É ela que diz quanto de ' +
+           'cada centro de trabalho o plano pede, e em que ritmo.',
+  },
+  {
+    href: '/cadastros/de-para',
+    titulo: 'DE/PARA',
+    texto: 'A lingua da base traduzida para a da empresa: rotulos e ' +
+           'agrupamentos por regra, com a previa de quanto cada uma pega.',
   },
 ];
 
@@ -101,20 +104,24 @@ export default function Menu() {
         {CONSULTAR.map((c) => <Cartao key={c.href} {...c} />)}
       </div>
 
-      <h2 className="menu-secao">Estrutura</h2>
+      <h2 className="menu-secao">Estrutura da empresa</h2>
       <div className="menu-grade">
         {ESTRUTURA.map((c) => <Cartao key={c.href} {...c} />)}
       </div>
 
-      <h2 className="menu-secao">Planejamento</h2>
+      <h2 className="menu-secao">Planejamento da capacidade</h2>
       <div className="menu-grade">
         {CADASTRAR.map((c) => <Cartao key={c.href} {...c} />)}
       </div>
 
+      <h2 className="menu-secao">Conversão da capacidade</h2>
+      <div className="menu-grade">
+        {CONVERSAO.map((c) => <Cartao key={c.href} {...c} />)}
+      </div>
+
       <p className="rodape">
-        Ainda não têm tela: tipos de parada e conversão de minutos para
-        peças ou metros. Usuários com perfil e escopo por área entram quando a
-        segunda pessoa começar a mexer.
+        Ainda não têm tela: tipos de parada. Usuários com perfil e escopo por
+        área entram quando a segunda pessoa começar a mexer.
       </p>
     </Shell>
   );
