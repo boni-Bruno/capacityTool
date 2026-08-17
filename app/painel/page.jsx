@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import {
-  ultimaExecucao, areas, porMes, porDia, porTurnoDoDia, tetoDoDia, porRecurso,
-  memoriaDoDia, anosComRodada,
+  ultimaExecucao, areas, arraysDeFatia, porMes, porDia, porTurnoDoDia,
+  tetoDoDia, porRecurso, memoriaDoDia, anosComRodada,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
@@ -14,7 +14,10 @@ import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
   detalhe, eFisica, formataUnidade, sufixoCampo, sufixoUnidade, UNIDADES,
 } from '../../lib/formato';
-import { cargaCorrente } from '../../lib/demanda';
+import {
+  atributos as atributosDePara, cargaCorrente, combinacoesPorMes, todasAsRegras,
+} from '../../lib/demanda';
+import { camposUsados, fatiasDoRotulo, rotulosDe } from '../../lib/regras';
 import {
   calendariosDaArea, diasTrabalhadosPorMes, pesosDoCalendario,
 } from '../../lib/calendario';
@@ -95,6 +98,26 @@ export default async function Page({ searchParams }) {
   const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
   const area = listaAreas.find((a) => a.id === areaId);
 
+  // FILTRO POR ATRIBUTO DO DE/PARA
+  //
+  // A capacidade é do RECURSO e o atributo é da LINHA de demanda, então isto
+  // não é um filtro comum: é um rateio. Ver o cabeçalho de lib/db.js.
+  //
+  // A lista de rótulos sai das REGRAS, que são poucas — nada é classificado
+  // para montar o seletor. Só quando um rótulo é escolhido é que as combinações
+  // por mês são lidas e classificadas, porque aí a conta é necessária.
+  const [attrsDePara, regrasDePara] = carga
+    ? await Promise.all([atributosDePara(), todasAsRegras()])
+    : [[], []];
+
+  const atributo = attrsDePara.some((a) => a.codigo === searchParams?.atributo)
+    ? searchParams.atributo : null;
+  const rotulosDoAtributo = atributo ? rotulosDe(regrasDePara, atributo) : [];
+  const rotulo = rotulosDoAtributo.includes(searchParams?.rotulo)
+    ? searchParams.rotulo : null;
+  const filtrandoAtributo = Boolean(atributo && rotulo);
+  const attrEscolhido = attrsDePara.find((a) => a.codigo === atributo);
+
   // CAPACIDADE POR DIA ÚTIL
   //
   // A contagem de dias úteis é por CALENDÁRIO, não por área — e uma área pode
@@ -155,6 +178,16 @@ export default async function Page({ searchParams }) {
     );
   }
 
+  // As combinações por mês só são lidas quando há um rótulo escolhido E há
+  // rodada para mostrar. É a consulta cara desta página — sem filtro, ela não
+  // acontece, e o painel abre exatamente como antes.
+  const fatias = filtrandoAtributo
+    ? fatiasDoRotulo(
+        await combinacoesPorMes(carga.id, camposUsados(regrasDePara)),
+        attrsDePara, regrasDePara, atributo, rotulo)
+    : [];
+  const fa = arraysDeFatia(fatias, filtrandoAtributo);
+
   // Clicar num recurso da tabela filtra os KPIs, o gráfico e a tabela mensal.
   // Sem recurso na URL, tudo mostra a área inteira.
   //
@@ -162,7 +195,7 @@ export default async function Page({ searchParams }) {
   // recurso de outra área faria as consultas voltarem vazias e a tela mostraria
   // zero em tudo, parecendo cálculo errado em vez de filtro inválido.
   const todos = await porRecurso(exec.id, areaId, periodo.de, periodo.ate,
-                                carga?.id ?? null);
+                                carga?.id ?? null, fa);
 
   // Os filtros do cabeçalho são atributos do recurso, e a lista de opções sai
   // do que existe nesta área — sem cadastro à parte de sub-área.
@@ -211,6 +244,8 @@ export default async function Page({ searchParams }) {
     diaUtil = porDiaUtil,
     calId = cal?.id ?? null,
     um = unidade,
+    attr = atributo,
+    rot = rotulo,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
@@ -222,6 +257,8 @@ export default async function Page({ searchParams }) {
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
     if (diaUtil) p.set('dia_util', '1');
     if (calId && calendarios.length > 1) p.set('cal', String(calId));
+    if (attr) p.set('atributo', attr);
+    if (attr && rot) p.set('rotulo', rot);
     // Ano inteiro é a ausência de recorte, e some do endereço: parâmetro que
     // repete o padrão só atrapalha quem lê a URL.
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
@@ -242,8 +279,8 @@ export default async function Page({ searchParams }) {
     // Turno: sem instalada nas barras. Ela é grão dia — repetir o teto em cada
     // turno era o que inflava o total no Qlik antigo. Vem separado, uma vez.
     const [linhas, tetoDia] = await Promise.all([
-      porTurnoDoDia(exec.id, areaId, dataISO, listaIds, carga?.id ?? null),
-      tetoDoDia(exec.id, areaId, dataISO, listaIds),
+      porTurnoDoDia(exec.id, areaId, dataISO, listaIds, carga?.id ?? null, fa),
+      tetoDoDia(exec.id, areaId, dataISO, listaIds, fa),
     ]);
     dados = linhas.map((l) => ({
       rotulo: l.nome,
@@ -258,7 +295,7 @@ export default async function Page({ searchParams }) {
     if (foco) memoria = await memoriaDoDia(exec.id, foco.id, dataISO);
   } else if (periodo.nivel === 'DIA') {
     const linhas = await porDia(exec.id, areaId, periodo.de, periodo.ate, listaIds,
-                                carga?.id ?? null);
+                                carga?.id ?? null, fa);
     dados = diasNoIntervalo(periodo.de, periodo.ate).map((data) => {
       const achado = linhas.find((l) => l.data === data);
       // O dia da semana antes do número: é o que explica de bate-pronto por
@@ -274,7 +311,7 @@ export default async function Page({ searchParams }) {
     });
   } else {
     const linhas = await porMes(exec.id, areaId, periodo.de, periodo.ate, listaIds,
-                                carga?.id ?? null);
+                                carga?.id ?? null, fa);
     dados = serieDeMeses(linhas, mesesNoIntervalo(periodo.de, periodo.ate), cmp)
       .map((m) => {
         // Dividir por dia útil é decisão de LEITURA, feita o mais tarde
@@ -460,6 +497,24 @@ export default async function Page({ searchParams }) {
       </div>
       </div>
 
+      {/* O rateio precisa estar escrito onde o número está. Sem isto, "84 h"
+          com filtro e "84 h" sem filtro têm a mesma cara e significam coisas
+          diferentes — e a primeira é a que engana. */}
+      {filtrandoAtributo && (
+        <p className="rodape" style={{ marginTop: -8, marginBottom: '1.5rem' }}>
+          Recorte por <strong>{attrEscolhido?.nome}</strong> ={' '}
+          <strong>{rotulo}</strong>. A capacidade é do recurso e o atributo é da
+          linha de demanda, então o que está somado não são os recursos inteiros:
+          é a <strong>fatia</strong> de cada um que este rótulo ocupa —
+          {' '}minutos do rótulo ÷ minutos do centro de trabalho, mês a mês. As
+          fatias de um CT somam 1, então somar todos os rótulos devolve o total.
+          {' '}Centro de trabalho sem nada deste rótulo fica de fora da conta e
+          da tabela, e por isso {fatias.length === 0 ? 'nada aparece aqui' : 'a lista abaixo é menor'}.
+          {fisica && ' A conversão usa a taxa deste rótulo, não a média do CT.'}
+          {' '}<Link href={url({ attr: null, rot: null })}>Tirar o recorte</Link>.
+        </p>
+      )}
+
       {/* O que o "% do teto" quer dizer muda com o que está selecionado, e
           calado ele engana: 100% numa seleção de pessoas parece capacidade
           esgotada quando é só a definição do teto. */}
@@ -634,7 +689,9 @@ export default async function Page({ searchParams }) {
           <h2>Por recurso</h2>
           <Suspense>
             <FiltrosRecurso ano={ano} anos={anos} periodo={periodo}
-                            subAreas={subAreas} sub={sub} tipo={tipo} />
+                            subAreas={subAreas} sub={sub} tipo={tipo}
+                            atributosDePara={attrsDePara} atributo={atributo}
+                            rotulos={rotulosDoAtributo} rotulo={rotulo} />
           </Suspense>
         </div>
         <p className="rodape" style={{ margin: '0 0 1rem' }}>

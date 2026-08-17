@@ -312,15 +312,34 @@ nenhum — vira um número torto no painel semanas depois. Por isso o contador e
 colado no editor e os valores vêm em lista em vez de campo livre: valor digitado
 errado é regra que fica quieta.
 
-Falta a etapa 5: **filtrar o painel por atributo derivado**. Hoje o DE/PARA
-existe e classifica, mas o painel ainda não sabe ler por ele — os cortes
-disponíveis continuam sendo área, sub-área, tipo e recurso.
+## 4. Capacidade por atributo — PRONTO
 
-O que falta, em uma frase: a capacidade é do RECURSO e o atributo é da LINHA de
-demanda, então filtrar por "Banho Jacquard" não é somar recursos, é somar a
-**fatia** de cada recurso que o Banho Jacquard ocupa — `minutos_do_rótulo ÷
-minutos_do_CT` aplicado à capacidade daquele recurso naquele mês. O rateio é o
-trabalho todo; a tela é o resto.
+O painel recorta por atributo do DE/PARA, ao lado de sub-área e tipo.
+
+**Não é um filtro; é um rateio.** A capacidade é do RECURSO e o atributo é da
+LINHA de demanda. Um CT faz várias linhas de produto no mesmo mês, então somar
+"os recursos que fazem Banho Jacquard" contaria o CT inteiro, inclusive o que
+ele faz de outra coisa, e a soma dos rótulos daria mais que o total.
+
+O que entra é a fatia: `minutos do rótulo ÷ minutos do CT`, mês a mês. **As
+fatias de um CT somam 1**, e é isso que faz a soma dos rótulos fechar com o
+total — a propriedade que torna o número confiável.
+
+Três decisões, todas do Bruno:
+
+- **CT sem nada do rótulo sai da conta e da tabela.** Linha zerada pareceria
+  recurso parado, e é recurso que não faz aquilo.
+- **A fatia é mensal**, como o índice. Um CT que em março só faz felpudo tem
+  fatia diferente da de abril.
+- **Instalada também rateia.** O teto de 24 h entra pela mesma fatia, então o
+  "% do teto" não muda ao filtrar.
+
+E uma consequência que caiu de graça: com filtro, a conversão para metro usa a
+taxa DO RÓTULO, não a média do CT. Um CT que faz felpudo e liso converte a
+taxas diferentes, e a média daria metro a mais ou a menos sem nada denunciar.
+
+A consulta cara — as combinações por mês — só acontece quando há rótulo
+escolhido. Sem filtro o painel abre exatamente como antes.
 
 **O motor não roda sobre as 116 mil linhas.** Os seis atributos que as regras
 enxergam formam **1.279 combinações distintas** na base inteira — 91 vezes

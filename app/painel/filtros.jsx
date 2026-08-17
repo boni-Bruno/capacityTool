@@ -43,6 +43,9 @@ function useMuda() {
     if (chaves.some((k) => ['sub', 'tipo', 'area', 'origem'].includes(k))) {
       p.delete('recurso'); p.delete('de'); p.delete('ate');
     }
+    // Recortar por rótulo pode tirar da seleção justamente o recurso em foco:
+    // CT sem nada daquele rótulo sai da tabela. O período continua valendo.
+    if (chaves.some((k) => ['atributo', 'rotulo'].includes(k))) p.delete('recurso');
     // Trocar de ano invalida um recorte que era de outro ano.
     if (chaves.includes('ano')) { p.delete('de'); p.delete('ate'); }
     // O regime escolhido é da área; trocar de área invalida a escolha.
@@ -134,6 +137,10 @@ export function FiltrosTopo({ areas, areaId, ano, origem }) {
 
 export function FiltrosRecurso({
   ano, anos, subAreas = [], sub = null, tipo = null, periodo = null,
+  // O DE/PARA: atributos derivados e os rótulos do que está escolhido. Este é
+  // filtro de verdade — ele muda o que está sendo somado, e não só como o
+  // número é dito.
+  atributosDePara = [], atributo = null, rotulos = [], rotulo = null,
 }) {
   const muda = useMuda();
 
@@ -185,6 +192,26 @@ export function FiltrosRecurso({
         <option value="MAQUINA">só máquina</option>
         <option value="PESSOA">só pessoa</option>
       </select>
+
+      {/* Trocar de atributo derruba o rótulo junto: rótulo de outro atributo
+          não existe, e deixá-lo na URL mostraria a área inteira parecendo
+          filtrada. */}
+      {atributosDePara.length > 0 && (
+        <select value={atributo ?? ''}
+                onChange={(e) => muda({ atributo: e.target.value, rotulo: '' })}>
+          <option value="">sem recorte por atributo</option>
+          {atributosDePara.map((a) => (
+            <option key={a.codigo} value={a.codigo}>por {a.nome}</option>
+          ))}
+        </select>
+      )}
+
+      {atributo && (
+        <select value={rotulo ?? ''} onChange={(e) => muda('rotulo', e.target.value)}>
+          <option value="">todos</option>
+          {rotulos.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+      )}
 
     </div>
   );
