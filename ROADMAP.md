@@ -334,6 +334,12 @@ Três decisões, todas do Bruno:
 - **Instalada também rateia.** O teto de 24 h entra pela mesma fatia, então o
   "% do teto" não muda ao filtrar.
 
+**Herança de mix vale para qualquer CT**, não só para os órfãos. O motor
+sempre foi assim (a regra ganha da demanda própria, migração 21); agora a tela
+acompanha: todo CT com demanda própria aparece na segunda lista com a taxa de
+casa na primeira opção e os doadores ao lado, para a troca ser uma comparação.
+Voltar é escolher "a própria" — que apaga a regra em vez de gravar o default.
+
 E uma consequência que caiu de graça: com filtro, a conversão para metro usa a
 taxa DO RÓTULO, não a média do CT. Um CT que faz felpudo e liso converte a
 taxas diferentes, e a média daria metro a mais ou a menos sem nada denunciar.

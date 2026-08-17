@@ -17,7 +17,7 @@ const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 const dec = (n) => Number(n ?? 0).toLocaleString('pt-BR',
   { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export default function OrigemDoIndice({ cargaId, orfaos, doadores, obsoletas }) {
+export default function OrigemDoIndice({ cargaId, orfaos, doadores, comDemanda }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(null);
   const [erro, setErro] = useState(null);
@@ -66,18 +66,20 @@ export default function OrigemDoIndice({ cargaId, orfaos, doadores, obsoletas })
   const ccsComOrfao = [...new Set(orfaos.filter((o) => !o.tipo && o.cc_irmaos > 0)
                                         .map((o) => o.cc))];
 
-  if (!orfaos.length && !obsoletas.length) return null;
+  if (!orfaos.length && !comDemanda.length) return null;
 
   return (
     <div className="painel">
       <h2>De onde vem o índice</h2>
       <p className="rodape" style={{ margin: '0 0 12px' }}>
-        Centro de trabalho sem demanda própria não é falha do dado: o roteiro
-        escolhe uma máquina entre irmãs, e a que não foi escolhida fica sem
-        carga. Ela continua tendo capacidade — só não tem em que taxa converter.
-        {' '}Aqui se diz de onde ela pega a taxa emprestada.
+        Qualquer centro de trabalho pode usar o mix de outro CT ou a média de um
+        CC — não só os sem demanda própria. O caso clássico é a regra de fluxo:
+        a prioridade manda a carga do orçamento para um irmão, mas quem produz é
+        ele, então o mix que o descreve está na demanda do outro.
         {' '}<strong>Empresta o índice, nunca a demanda</strong>: o CT que herda
-        continua sem carga própria, senão a demanda da fábrica dobraria.
+        continua com a carga que tem, senão a demanda da fábrica dobraria.
+        {' '}E a regra ganha da demanda própria enquanto existir — herança
+        descreve fluxo, e fluxo não muda de mês para mês.
       </p>
 
       {orfaos.length > 0 && (
@@ -170,34 +172,62 @@ export default function OrigemDoIndice({ cargaId, orfaos, doadores, obsoletas })
         </>
       )}
 
-      {obsoletas.length > 0 && (
+      {comDemanda.length > 0 && (
         <>
           <p className="campo-rot" style={{ marginTop: 14 }}>
-            {fmt(obsoletas.length)} com regra de herança e demanda própria
+            {fmt(comDemanda.length)} centros de trabalho com demanda própria
+            {comDemanda.some((x) => x.tipo)
+              && ` · ${fmt(comDemanda.filter((x) => x.tipo).length)} usando mix de outro`}
           </p>
           <div className="grade-rolagem">
             <table>
               <thead>
                 <tr>
                   <th>CT</th>
-                  <th>Herda de</th>
+                  <th>Máquinas</th>
                   <th className="num">Demanda própria</th>
                   <th className="num">Taxa própria</th>
-                  <th />
+                  <th>Converte com</th>
                 </tr>
               </thead>
               <tbody>
-                {obsoletas.map((x) => (
+                {comDemanda.map((x) => (
                   <tr key={x.ct}>
                     <td><code>{x.ct}</code></td>
-                    <td>{x.tipo === 'CC' ? `CC ${x.valor}` : x.valor}</td>
+                    <td className="muted">{x.maquinas}</td>
                     <td className="num">{fmt(x.propria_horas)} h</td>
                     <td className="num">{dec(x.propria_metros_por_hora)} m/h</td>
-                    <td className="acoes">
-                      <button className="btn btn-mini" disabled={ocupado !== null}
-                              onClick={() => chamar('DELETE', { ct: x.ct }, x.ct)}>
-                        Passar a usar a própria
-                      </button>
+                    <td>
+                      {/* Voltar para "a própria" é apagar a regra, não gravar
+                          uma: ausência de regra JÁ significa própria, e um
+                          registro dizendo o default viraria fila de revisão
+                          sem nada para revisar. */}
+                      <select value={x.tipo && x.tipo !== 'NENHUM'
+                                       ? `${x.tipo}:${x.valor}` : ''}
+                              disabled={ocupado !== null}
+                              onChange={(e) => (e.target.value === ''
+                                ? chamar('DELETE', { ct: x.ct }, x.ct)
+                                : escolher(x.ct, e.target.value))}>
+                        <option value="">
+                          a própria — {dec(x.propria_metros_por_hora)} m/h
+                        </option>
+                        <optgroup label={`média do CC`}>
+                          <option value={`CC:${x.cc}`}>
+                            CC {x.cc}
+                          </option>
+                        </optgroup>
+                        {[...porCc.entries()].map(([cc, lista]) => (
+                          <optgroup key={cc}
+                                    label={cc === x.cc ? `CC ${cc} (mesmo CC)` : `CC ${cc}`}>
+                            {lista.filter((d) => d.ct !== x.ct).map((d) => (
+                              <option key={d.ct} value={`CT:${d.ct}`}>
+                                {d.ct} — {dec(d.metros_por_hora)}
+                                {d.unidade === 'KG' ? ' kg/h' : ' m/h'}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
                     </td>
                   </tr>
                 ))}
@@ -205,11 +235,11 @@ export default function OrigemDoIndice({ cargaId, orfaos, doadores, obsoletas })
             </table>
           </div>
           <p className="rodape">
-            Estes CTs ganharam carga própria mas continuam herdando, porque a
-            regra ganha da demanda própria — foi decidido assim, para a herança
-            descrever o fluxo e não mudar de mês para mês.
-            {' '}Não é erro, é o caso que essa escolha cria. Aparece aqui para
-            poder ser revisto quando você quiser.
+            A taxa própria fica escrita na primeira opção de propósito: trocar o
+            mix de casa pelo do vizinho é uma comparação, e ela se faz com os
+            dois números à vista. Enquanto a regra existir, ela ganha da demanda
+            própria — inclusive nos meses em que o CT tiver carga. Para voltar,
+            escolha <strong>a própria</strong>.
           </p>
         </>
       )}
