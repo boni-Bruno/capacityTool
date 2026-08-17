@@ -148,7 +148,7 @@ export default async function Page({ searchParams }) {
             sozinho, e a outra origem tem a rodada dela.
           </p>
           <Suspense>
-            <FiltrosRecurso ano={ano} anos={anos} unidade={unidade} />
+            <FiltrosRecurso ano={ano} anos={anos} />
           </Suspense>
         </div>
       </Shell>
@@ -210,11 +210,12 @@ export default async function Page({ searchParams }) {
     // desligar sem perder o resto do recorte.
     diaUtil = porDiaUtil,
     calId = cal?.id ?? null,
+    um = unidade,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
     p.set('ano', String(ano));
-    p.set('unidade', unidade);
+    p.set('unidade', um);
     p.set('origem', origem);
     if (sub !== null) p.set('sub', sub);
     if (tipo !== null) p.set('tipo', tipo);
@@ -412,14 +413,25 @@ export default async function Page({ searchParams }) {
         </div>
       </div>
 
-      {/* Mês inteiro ou por dia útil. Era uma caixinha perdida entre os filtros
-          lá embaixo, e ninguém achava — é uma troca de leitura, não um filtro,
-          e por isso fica junto do número que ela muda.
+      {/* As duas trocas de leitura, uma embaixo da outra: em que unidade ler,
+          e se o número é do mês inteiro ou de um dia útil. Nenhuma das duas é
+          filtro — elas não mudam o que está sendo somado, mudam como o mesmo
+          número é dito — e por isso ficam junto do número, e não lá embaixo
+          entre os recortes. */}
+      <div className="modo-caixa">
+        <nav className="modo">
+          {unidades.map((u) => (
+            <Link key={u.valor} href={url({ um: u.valor })}
+                  className={u.valor === unidade ? 'modo-on' : ''}>
+              {u.curto}
+            </Link>
+          ))}
+        </nav>
 
-          Só no nível de mês: dividir a capacidade de um dia pelos dias úteis do
-          mês não significaria nada. */}
-      {periodo.nivel === 'MES' && cal && (
-        <div className="modo-caixa">
+        {/* Só no nível de mês: dividir a capacidade de um dia pelos dias úteis
+            do mês não significaria nada. */}
+        {periodo.nivel === 'MES' && cal && (
+          <>
           <nav className="modo">
             <Link href={url({ diaUtil: false })}
                   className={porDiaUtil ? '' : 'modo-on'}>Mês inteiro</Link>
@@ -443,8 +455,9 @@ export default async function Page({ searchParams }) {
           {porDiaUtil && calendarios.length === 1 && (
             <p className="modo-regime">dias úteis de {cal.codigo}</p>
           )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
       </div>
 
       {/* O que o "% do teto" quer dizer muda com o que está selecionado, e
@@ -620,8 +633,7 @@ export default async function Page({ searchParams }) {
         <div className="painel-topo">
           <h2>Por recurso</h2>
           <Suspense>
-            <FiltrosRecurso ano={ano} anos={anos} unidade={unidade}
-                            unidades={unidades} periodo={periodo}
+            <FiltrosRecurso ano={ano} anos={anos} periodo={periodo}
                             subAreas={subAreas} sub={sub} tipo={tipo} />
           </Suspense>
         </div>

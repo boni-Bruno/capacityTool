@@ -312,8 +312,15 @@ nenhum — vira um número torto no painel semanas depois. Por isso o contador e
 colado no editor e os valores vêm em lista em vez de campo livre: valor digitado
 errado é regra que fica quieta.
 
-Falta a etapa 5: filtrar o painel por atributo derivado, com o rateio
-`fatia_do_tempo × índice_da_linha`.
+Falta a etapa 5: **filtrar o painel por atributo derivado**. Hoje o DE/PARA
+existe e classifica, mas o painel ainda não sabe ler por ele — os cortes
+disponíveis continuam sendo área, sub-área, tipo e recurso.
+
+O que falta, em uma frase: a capacidade é do RECURSO e o atributo é da LINHA de
+demanda, então filtrar por "Banho Jacquard" não é somar recursos, é somar a
+**fatia** de cada recurso que o Banho Jacquard ocupa — `minutos_do_rótulo ÷
+minutos_do_CT` aplicado à capacidade daquele recurso naquele mês. O rateio é o
+trabalho todo; a tela é o resto.
 
 **O motor não roda sobre as 116 mil linhas.** Os seis atributos que as regras
 enxergam formam **1.279 combinações distintas** na base inteira — 91 vezes

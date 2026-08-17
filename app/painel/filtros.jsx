@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { rotuloArea } from '../../lib/dias';
-import { UNIDADES } from '../../lib/formato';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 
 // Os filtros do painel moram em dois lugares.
@@ -12,9 +11,13 @@ import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 // do OEE, porque a rodada é por área e por origem, e o botão que dispara uma
 // nova. Trocar de origem troca de rodada — não recalcula nada.
 //
-// Os de recorte — ano, sub-área, tipo e unidade — ficam junto da tabela por
+// Os de recorte — ano, período, sub-área e tipo — ficam junto da tabela por
 // recurso, que é onde se escolhe o que olhar. Todos vivem na URL, então
 // continuam valendo para os indicadores e o gráfico lá em cima.
+//
+// A unidade NÃO está aqui, e a capacidade por dia útil também não. As duas não
+// recortam nada: elas mudam como o mesmo número é dito. Por isso moram junto
+// dos indicadores, no painel, onde o efeito delas é visível na hora.
 
 // Um lugar só mexe na URL: campo vazio some do endereço em vez de virar
 // "sub=", e trocar de recorte derruba o que dependia do recorte antigo.
@@ -130,11 +133,7 @@ export function FiltrosTopo({ areas, areaId, ano, origem }) {
 }
 
 export function FiltrosRecurso({
-  ano, anos, unidade, subAreas = [], sub = null, tipo = null, periodo = null,
-  // A lista chega de fora porque as unidades físicas só existem quando há
-  // carga de demanda no ar. Oferecer "metros" e mostrar zero seria pior do que
-  // não oferecer.
-  unidades = UNIDADES,
+  ano, anos, subAreas = [], sub = null, tipo = null, periodo = null,
 }) {
   const muda = useMuda();
 
@@ -187,12 +186,6 @@ export function FiltrosRecurso({
         <option value="PESSOA">só pessoa</option>
       </select>
 
-      {/* A unidade muda só a leitura: o dado trafega sempre em minutos. */}
-      <select value={unidade} onChange={(e) => muda('unidade', e.target.value)}>
-        {unidades.map((u) => (
-          <option key={u.valor} value={u.valor}>{u.rotulo}</option>
-        ))}
-      </select>
     </div>
   );
 }
