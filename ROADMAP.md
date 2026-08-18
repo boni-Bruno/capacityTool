@@ -365,6 +365,15 @@ para o rótulo em questão, não a média geral).
 O painel usa o ajuste no rateio por atributo automaticamente, e o rodapé diz em
 quantos CT×mês o mix manual está valendo.
 
+**Mix e recorte também por campo da base** (migração `25_mix_campo_base.sql`):
+o seletor de atributo do mix e o filtro do painel ganharam o grupo "Campos da
+base" — grupo de estoque, nível de estoque, linha de produto, família de
+produto, família de tecelagem, tecido base e UM — sem precisar de regra DE/PARA
+antes: o valor da coluna já é o rótulo. No editor de um campo da base entram só
+os valores que o CT tem (mais os ajustados), com um seletor para adicionar
+valor novo; listar os centenas de valores globais afogaria a tela. A lista do
+mix mostra o nome do recurso ao lado do CT.
+
 **A tela de Demanda virou um quadrante de dados só.** A ordem da página é a
 ordem do trabalho: importar → cargas → conferência → explorar. As quatro
 tabelas (demanda sem capacidade, capacidade sem demanda, origem do índice,

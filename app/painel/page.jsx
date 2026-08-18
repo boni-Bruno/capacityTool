@@ -18,7 +18,9 @@ import {
   atributos as atributosDePara, cargaCorrente, combinacoesPorMes, mixAjustes,
   taxasDoMix, todasAsRegras,
 } from '../../lib/demanda';
-import { camposUsados, fatiasDoRotulo, rotulosDe } from '../../lib/regras';
+import {
+  CAMPOS_BASE, camposUsados, fatiasDoRotulo, rotulosDe, valoresDe,
+} from '../../lib/regras';
 import {
   calendariosDaArea, diasTrabalhadosPorMes, pesosDoCalendario,
 } from '../../lib/calendario';
@@ -111,13 +113,28 @@ export default async function Page({ searchParams }) {
     ? await Promise.all([atributosDePara(), todasAsRegras()])
     : [[], []];
 
-  const atributo = attrsDePara.some((a) => a.codigo === searchParams?.atributo)
+  // O recorte aceita atributo do DE/PARA e campo da base. Num campo da base o
+  // valor da coluna já é o rótulo — e a lista deles vem das combinações, que
+  // só são lidas quando o campo está escolhido.
+  const atributosFiltro = carga ? [...attrsDePara, ...CAMPOS_BASE] : [];
+  const atributo = atributosFiltro.some((a) => a.codigo === searchParams?.atributo)
     ? searchParams.atributo : null;
-  const rotulosDoAtributo = atributo ? rotulosDe(regrasDePara, atributo) : [];
+  const ehCampoBase = CAMPOS_BASE.some((c) => c.codigo === atributo);
+
+  let combosAtributo = null;
+  let rotulosDoAtributo = [];
+  if (atributo && !ehCampoBase) {
+    rotulosDoAtributo = rotulosDe(regrasDePara, atributo);
+  } else if (atributo) {
+    combosAtributo = await combinacoesPorMes(
+      carga.id, [...new Set([...camposUsados(regrasDePara), atributo])]);
+    rotulosDoAtributo = valoresDe(combosAtributo, atributo).map((v) => v.valor);
+  }
+
   const rotulo = rotulosDoAtributo.includes(searchParams?.rotulo)
     ? searchParams.rotulo : null;
   const filtrandoAtributo = Boolean(atributo && rotulo);
-  const attrEscolhido = attrsDePara.find((a) => a.codigo === atributo);
+  const attrEscolhido = atributosFiltro.find((a) => a.codigo === atributo);
 
   // CAPACIDADE POR DIA ÚTIL
   //
@@ -189,7 +206,8 @@ export default async function Page({ searchParams }) {
   let fatias = [];
   if (filtrandoAtributo) {
     const [combos, manuais, taxasMix] = await Promise.all([
-      combinacoesPorMes(carga.id, camposUsados(regrasDePara)),
+      combosAtributo
+        ?? combinacoesPorMes(carga.id, camposUsados(regrasDePara)),
       mixAjustes(atributo, ano),
       taxasDoMix(atributo),
     ]);
@@ -703,7 +721,7 @@ export default async function Page({ searchParams }) {
           <Suspense>
             <FiltrosRecurso ano={ano} anos={anos} periodo={periodo}
                             subAreas={subAreas} sub={sub} tipo={tipo}
-                            atributosDePara={attrsDePara} atributo={atributo}
+                            atributosDePara={atributosFiltro} atributo={atributo}
                             rotulos={rotulosDoAtributo} rotulo={rotulo} />
           </Suspense>
         </div>

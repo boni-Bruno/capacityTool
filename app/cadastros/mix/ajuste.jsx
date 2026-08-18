@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { mixDaBase, rotulosDe } from '../../../lib/regras';
+import { CAMPOS_BASE, mixDaBase, rotulosDe, valoresDe } from '../../../lib/regras';
 
 // A tela do mix: a lista de CTs com os doze meses, e o editor de um CT.
 //
@@ -56,15 +56,22 @@ export default function AjusteMix({ ano, anos, atributo, atributos, regras,
   const cad = useMemo(
     () => new Map(cadastro.map((c) => [c.ct, c])), [cadastro]);
 
-  // Os rótulos possíveis do atributo, mais o que aparecer em ajuste antigo.
+  const ehOrigem = CAMPOS_BASE.some((c) => c.codigo === atributo);
+
+  // Os rótulos possíveis do atributo: os das regras quando é DE/PARA, os
+  // valores da própria coluna quando é campo da base — ali o valor JÁ é o
+  // rótulo. Ajuste antigo com rótulo que sumiu continua na lista: cadastro
+  // vivo não pode ficar invisível.
   const rotulos = useMemo(() => {
-    const r = rotulosDe(regras, atributo);
+    const r = ehOrigem
+      ? valoresDe(combinacoes, atributo).map((v) => v.valor)
+      : rotulosDe(regras, atributo);
     for (const a of ajustes) {
       const rot = a.rotulo ?? SEM_ROTULO;
       if (rot !== SEM_ROTULO && !r.includes(rot)) r.push(rot);
     }
     return r;
-  }, [regras, atributo, ajustes]);
+  }, [ehOrigem, combinacoes, regras, atributo, ajustes]);
 
   // Todos os CTs: do cadastro e da base. CT sem demanda também entra — o mix
   // manual é justamente o que pode dar rótulo a ele.
@@ -112,7 +119,8 @@ export default function AjusteMix({ ano, anos, atributo, atributos, regras,
     }
   }
 
-  const attrNome = atributos.find((a) => a.codigo === atributo)?.nome ?? atributo;
+  const attrNome = atributos.find((a) => a.codigo === atributo)?.nome
+    ?? CAMPOS_BASE.find((c) => c.codigo === atributo)?.nome ?? atributo;
 
   return (
     <>
@@ -126,9 +134,18 @@ export default function AjusteMix({ ano, anos, atributo, atributos, regras,
 
           <select value={atributo}
                   onChange={(e) => navega('atributo', e.target.value)}>
-            {atributos.map((a) => (
-              <option key={a.codigo} value={a.codigo}>{a.nome}</option>
-            ))}
+            {atributos.length > 0 && (
+              <optgroup label="Atributos DE/PARA">
+                {atributos.map((a) => (
+                  <option key={a.codigo} value={a.codigo}>{a.nome}</option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Campos da base">
+              {CAMPOS_BASE.map((c) => (
+                <option key={c.codigo} value={c.codigo}>{c.nome}</option>
+              ))}
+            </optgroup>
           </select>
 
           <select value={filtro.planta ?? ''}
@@ -166,7 +183,7 @@ export default function AjusteMix({ ano, anos, atributo, atributos, regras,
             <thead>
               <tr>
                 <th>CT</th>
-                <th>Máquinas</th>
+                <th>Recurso</th>
                 <th>Mix</th>
                 {MESES_CURTO.map((m) => <th key={m} className="num">{m}</th>)}
               </tr>
@@ -183,7 +200,7 @@ export default function AjusteMix({ ano, anos, atributo, atributos, regras,
                         {ct}
                       </button>
                     </td>
-                    <td className="muted">{cad.get(ct)?.area ?? '—'}</td>
+                    <td className="muted">{cad.get(ct)?.recursos ?? '—'}</td>
                     <td>
                       {temAjuste
                         ? <span className="selo rodizio">ajustado</span>
@@ -218,8 +235,10 @@ export default function AjusteMix({ ano, anos, atributo, atributos, regras,
 
       {aberto && (
         <EditorMix key={`${aberto}|${ano}|${atributo}`}
-                   ct={aberto} ano={ano} atributo={atributo} attrNome={attrNome}
-                   rotulos={rotulos} base={baseDe.get(aberto)}
+                   ct={aberto} recurso={cad.get(aberto)?.recursos}
+                   ano={ano} atributo={atributo} attrNome={attrNome}
+                   rotulos={rotulos} ehOrigem={ehOrigem}
+                   base={baseDe.get(aberto)}
                    ajuste={ajusteDe.get(aberto)} taxa={taxaDe.get(aberto)}
                    baseToda={base} ocupado={ocupado}
                    fechar={() => setAberto(null)} chamar={chamar} />
@@ -264,28 +283,45 @@ function descreveMix(linhas) {
 // O EDITOR DE UM CT: rótulos × 12 meses, em %.
 // -----------------------------------------------------------------------------
 
-function EditorMix({ ct, ano, atributo, attrNome, rotulos, base, ajuste, taxa,
-                     baseToda, ocupado, fechar, chamar }) {
-  // As linhas do editor: cada rótulo do atributo, mais a parte sem rótulo.
-  const linhas = useMemo(() => [...rotulos, SEM_ROTULO], [rotulos]);
-
+function EditorMix({ ct, recurso, ano, atributo, attrNome, rotulos, ehOrigem,
+                     base, ajuste, taxa, baseToda, ocupado, fechar, chamar }) {
   // O rascunho nasce do que vale hoje: o ajuste onde existe, a base onde não.
   // Uma casa decimal, porque mix é decisão de gestão e não medição — quem
   // ajusta pensa em 90/10, não em 89,7342/10,2658.
   const [valores, setValores] = useState(() => {
     const v = {};
-    for (const rot of [...rotulos, SEM_ROTULO]) {
-      v[rot] = {};
-      for (let mes = 1; mes <= 12; mes += 1) {
-        const fonte = ajuste?.get(mes) ?? base?.get(mes);
-        const total = fonte?.reduce((s, l) => s + Number(l.pct), 0);
-        const l = fonte?.find((x) => (x.rotulo ?? SEM_ROTULO) === rot);
-        v[rot][mes] = l && total
-          ? String(Math.round(l.pct * 1000 / total) / 10) : '';
+    for (let mes = 1; mes <= 12; mes += 1) {
+      const fonte = ajuste?.get(mes) ?? base?.get(mes);
+      if (!fonte?.length) continue;
+      const total = fonte.reduce((s, l) => s + Number(l.pct), 0);
+      if (!total) continue;
+      for (const l of fonte) {
+        const rot = l.rotulo ?? SEM_ROTULO;
+        if (!v[rot]) v[rot] = {};
+        v[rot][mes] = String(Math.round(l.pct * 1000 / total) / 10);
       }
     }
     return v;
   });
+
+  // Linhas adicionadas à mão: um valor que o CT não tem hoje, para poder
+  // ganhar fatia dele.
+  const [extras, setExtras] = useState([]);
+
+  // As linhas do editor. No DE/PARA são todos os rótulos — a lista é curta e
+  // ver o zero é informação. Num campo da base seriam centenas de valores,
+  // quase todos alheios a este CT: entram só os que o CT tem, os já ajustados
+  // e os adicionados à mão; o resto fica no seletor de adicionar.
+  const linhas = useMemo(() => {
+    const s = new Set([
+      ...(ehOrigem ? [] : rotulos),
+      ...Object.keys(valores).filter((r) => r !== SEM_ROTULO),
+      ...extras,
+    ]);
+    return [...s, SEM_ROTULO];
+  }, [ehOrigem, rotulos, valores, extras]);
+
+  const foraDaLista = rotulos.filter((r) => !linhas.includes(r));
 
   const muda = (rot, mes, valor) => setValores((v) => ({
     ...v, [rot]: { ...v[rot], [mes]: valor },
@@ -344,6 +380,7 @@ function EditorMix({ ct, ano, atributo, attrNome, rotulos, base, ajuste, taxa,
       <div className="painel-topo">
         <h2>
           Mix de <code>{ct}</code>
+          {recurso && <span> · {recurso}</span>}
           <span className="muted" style={{ fontWeight: 400 }}>
             {' '}· {attrNome} · {ano}
           </span>
@@ -410,6 +447,17 @@ function EditorMix({ ct, ano, atributo, attrNome, rotulos, base, ajuste, taxa,
           </tbody>
         </table>
       </div>
+
+      {foraDaLista.length > 0 && (
+        <div className="acoes" style={{ marginTop: 8 }}>
+          <select value="" onChange={(e) => {
+                    if (e.target.value) setExtras([...extras, e.target.value]);
+                  }}>
+            <option value="">+ adicionar {attrNome.toLowerCase()}…</option>
+            {foraDaLista.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+      )}
 
       <p className="rodape">
         A soma não precisa dar 100: ao gravar, cada mês é{' '}
