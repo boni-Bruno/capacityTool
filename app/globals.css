@@ -620,3 +620,18 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
   border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 12px 0;
 }
 .previa .muted { color: var(--teal-fg); opacity: .7; }
+
+/* ---- ajuste de mix ---- */
+
+/* A celula resumo: o rotulo dominante e a fatia dele. Destaque no ajustado a
+   mao, porque ele ganha da base e isso nao pode passar despercebido. */
+.mix-cel { font-size: 12px; white-space: nowrap; }
+.mix-manual { color: var(--teal-fg); font-weight: 600; background: var(--teal-bg); }
+.linha-aberta td { background: #f2f6fc; }
+
+.mix-input {
+  width: 52px; height: 28px; padding: 0 6px; font-size: 13px; text-align: right;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); color: var(--text); font-family: inherit;
+}
+.mix-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }

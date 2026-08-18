@@ -15,7 +15,8 @@ import {
   detalhe, eFisica, formataUnidade, sufixoCampo, sufixoUnidade, UNIDADES,
 } from '../../lib/formato';
 import {
-  atributos as atributosDePara, cargaCorrente, combinacoesPorMes, todasAsRegras,
+  atributos as atributosDePara, cargaCorrente, combinacoesPorMes, mixAjustes,
+  taxasDoMix, todasAsRegras,
 } from '../../lib/demanda';
 import { camposUsados, fatiasDoRotulo, rotulosDe } from '../../lib/regras';
 import {
@@ -181,11 +182,20 @@ export default async function Page({ searchParams }) {
   // As combinações por mês só são lidas quando há um rótulo escolhido E há
   // rodada para mostrar. É a consulta cara desta página — sem filtro, ela não
   // acontece, e o painel abre exatamente como antes.
-  const fatias = filtrandoAtributo
-    ? fatiasDoRotulo(
-        await combinacoesPorMes(carga.id, camposUsados(regrasDePara)),
-        attrsDePara, regrasDePara, atributo, rotulo)
-    : [];
+  //
+  // O mix ajustado à mão entra aqui: onde existir, ele ganha do calculado da
+  // carga — é a camada da tela de Ajuste de mix, e ela vale em todo lugar que
+  // rateia, senão o painel diria um número e a tela de mix outro.
+  let fatias = [];
+  if (filtrandoAtributo) {
+    const [combos, manuais, taxasMix] = await Promise.all([
+      combinacoesPorMes(carga.id, camposUsados(regrasDePara)),
+      mixAjustes(atributo, ano),
+      taxasDoMix(atributo),
+    ]);
+    fatias = fatiasDoRotulo(combos, attrsDePara, regrasDePara, atributo, rotulo,
+                            { ano, manuais, taxas: taxasMix });
+  }
   const fa = arraysDeFatia(fatias, filtrandoAtributo);
 
   // Clicar num recurso da tabela filtra os KPIs, o gráfico e a tabela mensal.
@@ -511,6 +521,9 @@ export default async function Page({ searchParams }) {
           {' '}Centro de trabalho sem nada deste rótulo fica de fora da conta e
           da tabela, e por isso {fatias.length === 0 ? 'nada aparece aqui' : 'a lista abaixo é menor'}.
           {fisica && ' A conversão usa a taxa deste rótulo, não a média do CT.'}
+          {fatias.some((f) => f.manual)
+            && <> Em <strong>{fatias.filter((f) => f.manual).length}</strong>{' '}
+               CT×mês vale o mix ajustado à mão, que ganha do calculado.</>}
           {' '}<Link href={url({ attr: null, rot: null })}>Tirar o recorte</Link>.
         </p>
       )}

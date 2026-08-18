@@ -347,6 +347,24 @@ taxas diferentes, e a média daria metro a mais ou a menos sem nada denunciar.
 A consulta cara — as combinações por mês — só acontece quando há rótulo
 escolhido. Sem filtro o painel abre exatamente como antes.
 
+## 5. Ajuste manual de mix — PRONTO
+
+Nova aba em Conversão da capacidade (`/cadastros/mix`). O mix de um CT — quanto
+do tempo dele pertence a cada rótulo do DE/PARA — é calculado da carga; esta
+tela é a camada manual por cima: **onde existe ajuste, ele ganha da base, e
+importar uma carga nova nunca mexe nele** (migração `24_mix_ajuste.sql`).
+
+A lista mostra todos os CTs × 12 meses com o mix vigente (célula destacada =
+ajustado); clicar no CT abre a matriz rótulos × meses, pré-preenchida com o que
+vale hoje. Decisões do Bruno: soma ≠ 100 **normaliza proporcionalmente** ao
+gravar; coluna "Ano" replica um valor nos 12 meses; a parte **sem rótulo** é
+uma linha ajustável como as outras; rótulo que o CT não produz na base pede
+**taxa apontada** (CT doador ou média de CC — o doador empresta a taxa dele
+para o rótulo em questão, não a média geral).
+
+O painel usa o ajuste no rateio por atributo automaticamente, e o rodapé diz em
+quantos CT×mês o mix manual está valendo.
+
 **A tela de Demanda virou um quadrante de dados só.** A ordem da página é a
 ordem do trabalho: importar → cargas → conferência → explorar. As quatro
 tabelas (demanda sem capacidade, capacidade sem demanda, origem do índice,

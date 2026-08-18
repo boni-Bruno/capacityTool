@@ -80,6 +80,12 @@ const CONVERSAO = [
     texto: 'A lingua da base traduzida para a da empresa: rotulos e ' +
            'agrupamentos por regra, com a previa de quanto cada uma pega.',
   },
+  {
+    href: '/cadastros/mix',
+    titulo: 'Ajuste de mix',
+    texto: 'O mix calculado da carga, ajustavel a mao por CT e mes. Onde ' +
+           'existe ajuste, ele ganha da base — e importar nao mexe nele.',
+  },
 ];
 
 function Cartao({ href, titulo, texto }) {

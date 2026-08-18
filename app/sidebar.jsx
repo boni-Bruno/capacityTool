@@ -40,6 +40,7 @@ const GRUPOS = [
     itens: [
       { href: '/cadastros/demanda', rotulo: 'Demanda' },
       { href: '/cadastros/de-para', rotulo: 'DE/PARA' },
+      { href: '/cadastros/mix',     rotulo: 'Ajuste de mix' },
     ],
   },
 ];
