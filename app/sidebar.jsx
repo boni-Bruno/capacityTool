@@ -43,6 +43,13 @@ const GRUPOS = [
       { href: '/cadastros/mix',     rotulo: 'Ajuste de mix' },
     ],
   },
+  {
+    // A saída: o resultado do cálculo no formato que o sistema de lá entende.
+    nome: 'Extração',
+    itens: [
+      { href: '/cadastros/extracao-ap', rotulo: 'Extração para o AP' },
+    ],
+  },
 ];
 
 export default function Sidebar({ versao }) {

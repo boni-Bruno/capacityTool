@@ -377,6 +377,19 @@ mix mostra o nome do recurso ao lado do CT.
 Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
 seletores separados, que estreitam a lista de Código/Recurso em cascata.
 
+## 6. Extração para o AP — PRONTO
+
+Grupo novo no menu (Extração), tela `/cadastros/extracao-ap`. Sai um .csv com
+`CT;Periodo;Minutos`, condensado por mês, período em AAAA.MM — o formato da
+base de demanda, que é onde os dois sistemas se encontram. Cada área×ano entra
+com a última rodada OK do OEE META, a mesma regra do painel aplicada em lote.
+
+Filtros em cascata antes de extrair: planta, área, sub-área, CC, CT,
+patrimônio, nome do recurso, e período De/Até em meses cruzando anos. A medida
+é escolhível (disponível como padrão, planejada e instalada). O fluxo é gerar →
+conferir a prévia (totais + primeiras linhas) → baixar; minuto sai inteiro no
+arquivo, com BOM para o Excel abrir como UTF-8.
+
 **A tela de Demanda virou um quadrante de dados só.** A ordem da página é a
 ordem do trabalho: importar → cargas → conferência → explorar. As quatro
 tabelas (demanda sem capacidade, capacidade sem demanda, origem do índice,

@@ -88,6 +88,15 @@ const CONVERSAO = [
   },
 ];
 
+const EXTRACAO = [
+  {
+    href: '/cadastros/extracao-ap',
+    titulo: 'Extração para o AP',
+    texto: 'A capacidade calculada em .csv — CT, período AAAA.MM e minutos, ' +
+           'condensada por mês, com prévia antes de baixar.',
+  },
+];
+
 function Cartao({ href, titulo, texto }) {
   return (
     <Link href={href} className="menu-card">
@@ -123,6 +132,11 @@ export default function Menu() {
       <h2 className="menu-secao">Conversão da capacidade</h2>
       <div className="menu-grade">
         {CONVERSAO.map((c) => <Cartao key={c.href} {...c} />)}
+      </div>
+
+      <h2 className="menu-secao">Extração</h2>
+      <div className="menu-grade">
+        {EXTRACAO.map((c) => <Cartao key={c.href} {...c} />)}
       </div>
 
       <p className="rodape">
