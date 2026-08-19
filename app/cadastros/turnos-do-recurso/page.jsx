@@ -33,12 +33,49 @@ export default async function Page({ searchParams }) {
   // Mesma lista do painel: ano com rodada não some quando o tempo passa.
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
-  const listaRecursos = await recursos(areaId);
+  const todosRecursos = await recursos(areaId);
 
+  // CC, CT e Patrimônio estreitam a lista antes de escolher a máquina — quem
+  // trabalha com a controladoria procura por eles, não pelo apelido. Cada um
+  // valida contra o que sobrou dos anteriores: um CT que não existe no CC
+  // escolhido é ignorado em vez de filtrar a tela para o vazio.
+  const distintos = (lista, campo) =>
+    [...new Set(lista.map((r) => r[campo]).filter(Boolean))]
+      .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+
+  const ccs = distintos(todosRecursos, 'cc');
+  const cc = ccs.includes(searchParams?.cc) ? searchParams.cc : null;
+  const aposCc = cc ? todosRecursos.filter((r) => r.cc === cc) : todosRecursos;
+
+  const cts = distintos(aposCc, 'ct');
+  const ct = cts.includes(searchParams?.ct) ? searchParams.ct : null;
+  const aposCt = ct ? aposCc.filter((r) => r.ct === ct) : aposCc;
+
+  const pats = distintos(aposCt, 'patrimonio');
+  const pat = pats.includes(searchParams?.pat) ? searchParams.pat : null;
+  const listaRecursos = pat
+    ? aposCt.filter((r) => r.patrimonio === pat) : aposCt;
+
+  const opcaoTodos = (rotulo) => ({ valor: '', rotulo });
   const campos = [
     {
       nome: 'area', rotulo: 'Área', tipo: 'select', valor: String(areaId),
       opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: rotuloArea(a) })),
+    },
+    {
+      nome: 'cc', rotulo: 'CC', tipo: 'select', valor: cc ?? '',
+      opcoes: [opcaoTodos('todos'),
+               ...ccs.map((v) => ({ valor: v, rotulo: v }))],
+    },
+    {
+      nome: 'ct', rotulo: 'CT', tipo: 'select', valor: ct ?? '',
+      opcoes: [opcaoTodos('todos'),
+               ...cts.map((v) => ({ valor: v, rotulo: v }))],
+    },
+    {
+      nome: 'pat', rotulo: 'Patrimônio', tipo: 'select', valor: pat ?? '',
+      opcoes: [opcaoTodos('todos'),
+               ...pats.map((v) => ({ valor: v, rotulo: v }))],
     },
   ];
 

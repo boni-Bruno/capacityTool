@@ -374,6 +374,9 @@ os valores que o CT tem (mais os ajustados), com um seletor para adicionar
 valor novo; listar os centenas de valores globais afogaria a tela. A lista do
 mix mostra o nome do recurso ao lado do CT.
 
+Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
+seletores separados, que estreitam a lista de Código/Recurso em cascata.
+
 **A tela de Demanda virou um quadrante de dados só.** A ordem da página é a
 ordem do trabalho: importar → cargas → conferência → explorar. As quatro
 tabelas (demanda sem capacidade, capacidade sem demanda, origem do índice,
