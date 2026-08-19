@@ -15,6 +15,7 @@ export async function POST(req) {
 
     const medida = ['DISPONIVEL', 'PLANEJADA', 'INSTALADA'].includes(b.medida)
       ? b.medida : 'DISPONIVEL';
+    const origem = b.origem === 'SIMULADO' ? 'SIMULADO' : 'META';
     const de = String(b.de ?? '').slice(0, 10);
     const ate = String(b.ate ?? '').slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(de) || !/^\d{4}-\d{2}-\d{2}$/.test(ate)) {
@@ -23,7 +24,7 @@ export async function POST(req) {
     if (de > ate) throw new Error('O início do período vem antes do fim.');
 
     const linhas = await extracaoAp({
-      medida, de, ate, recursos: b.recursos ?? null,
+      medida, origem, de, ate, recursos: b.recursos ?? null,
     });
     return NextResponse.json({ ok: true, linhas });
   } catch (e) {

@@ -386,7 +386,9 @@ com a última rodada OK do OEE META, a mesma regra do painel aplicada em lote.
 
 Filtros em cascata antes de extrair: planta, área, sub-área, CC, CT,
 patrimônio, nome do recurso, e período De/Até em meses cruzando anos. A medida
-é escolhível (disponível como padrão, planejada e instalada). O fluxo é gerar →
+é escolhível (disponível como padrão, planejada e instalada) e a origem do OEE
+também (Meta ou Simulado). O arquivo leva a quarta coluna `CT_Periodo` — a
+chave `CT|Periodo` já concatenada, pronta para o PROCV. O fluxo é gerar →
 conferir a prévia (totais + primeiras linhas) → baixar; minuto sai inteiro no
 arquivo, com BOM para o Excel abrir como UTF-8.
 

@@ -17,15 +17,20 @@ const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 // Excel brasileiro: ponto e vírgula separa, e o número não leva separador de
 // milhar. Minuto sai inteiro — a fração existe dentro do cálculo para a soma
 // bater, mas um arquivo de integração não é lugar de 0,0004 min.
+// CT_Periodo é a chave concatenada (o CT&"|"&Periodo do Excel), pronta para o
+// PROCV do outro lado — montar a chave lá é onde um | vira ! e ninguém vê.
+const chave = (l) => `${l.ct}|${l.periodo}`;
+
 function montaCsv(linhas) {
   const corpo = linhas.map((l) =>
-    `${l.ct};${l.periodo};${Math.round(Number(l.minutos))}`);
-  return ['CT;Periodo;Minutos', ...corpo].join('\r\n');
+    `${l.ct};${l.periodo};${chave(l)};${Math.round(Number(l.minutos))}`);
+  return ['CT;Periodo;CT_Periodo;Minutos', ...corpo].join('\r\n');
 }
 
 export default function Extrator({ recursos, anos }) {
   const [filtro, setFiltro] = useState({});
   const [medida, setMedida] = useState('DISPONIVEL');
+  const [origem, setOrigem] = useState('META');
   const [de, setDe] = useState(`${anos[0]}-01`);
   const [ate, setAte] = useState(`${anos[anos.length - 1]}-12`);
   const [ocupado, setOcupado] = useState(false);
@@ -95,6 +100,7 @@ export default function Extrator({ recursos, anos }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           medida,
+          origem,
           de: `${de}-01`,
           // O último dia do mês final, calculado aqui: dia 0 do mês seguinte.
           ate: ultimoDia(ate),
@@ -119,7 +125,8 @@ export default function Extrator({ recursos, anos }) {
                           { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `capacidade_ap_${de}_${ate}_${medida.toLowerCase()}.csv`;
+    a.download = `capacidade_ap_${de}_${ate}_${medida.toLowerCase()}`
+      + `_${origem.toLowerCase()}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -134,10 +141,11 @@ export default function Extrator({ recursos, anos }) {
       <div className="painel">
         <h2>O que sai</h2>
         <p className="rodape" style={{ margin: '0 0 12px' }}>
-          Três colunas — <code>CT;Periodo;Minutos</code> — condensadas por mês,
-          com o período em <strong>AAAA.MM</strong>, o mesmo formato da base de
-          demanda. Cada área e ano entram com a <strong>última rodada</strong>
-          {' '}do OEE META, a mesma que o painel mostra.
+          Quatro colunas — <code>CT;Periodo;CT_Periodo;Minutos</code> —
+          condensadas por mês, com o período em <strong>AAAA.MM</strong> e a
+          chave <code>CT|Periodo</code> já concatenada, pronta para o PROCV do
+          outro lado. Cada área e ano entram com a <strong>última
+          rodada</strong> do OEE escolhido, a mesma que o painel mostra.
         </p>
 
         <div className="filtros" style={{ marginBottom: 14 }}>
@@ -148,6 +156,14 @@ export default function Extrator({ recursos, anos }) {
               <option value="DISPONIVEL">Disponível (com OEE)</option>
               <option value="PLANEJADA">Planejada (sem OEE)</option>
               <option value="INSTALADA">Instalada (teto)</option>
+            </select>
+          </label>
+          <label className="campo">
+            <span className="campo-rot">OEE</span>
+            <select value={origem}
+                    onChange={(e) => { setOrigem(e.target.value); setResultado(null); }}>
+              <option value="META">Meta</option>
+              <option value="SIMULADO">Simulado</option>
             </select>
           </label>
           <label className="campo">
@@ -243,14 +259,16 @@ export default function Extrator({ recursos, anos }) {
                     <tr>
                       <th>CT</th>
                       <th>Período</th>
+                      <th>CT_Periodo</th>
                       <th className="num">Minutos</th>
                     </tr>
                   </thead>
                   <tbody>
                     {resultado.slice(0, 30).map((l) => (
-                      <tr key={`${l.ct}|${l.periodo}`}>
+                      <tr key={chave(l)}>
                         <td><code>{l.ct}</code></td>
                         <td>{l.periodo}</td>
+                        <td className="muted"><code>{chave(l)}</code></td>
                         <td className="num">{fmt(Math.round(Number(l.minutos)))}</td>
                       </tr>
                     ))}
