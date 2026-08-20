@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { rotuloArea } from '../../lib/dias';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
+import RecalcularTudo from './recalcular';
 
 // Os filtros do painel moram em dois lugares.
 //
@@ -55,46 +55,8 @@ function useMuda() {
   };
 }
 
-export function FiltrosTopo({ areas, areaId, ano, origem }) {
-  const router = useRouter();
+export function FiltrosTopo({ areas, areaId, ano, origem, anos = [] }) {
   const muda = useMuda();
-  const [rodando, setRodando] = useState(false);
-  const [erro, setErro] = useState(null);
-  const [vazia, setVazia] = useState(null);
-
-  async function recalcular() {
-    setRodando(true);
-    setErro(null);
-    setVazia(null);
-    try {
-      const r = await fetch('/api/recalcular', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ areaId, ano, origem }),
-      });
-      const j = await r.json();
-      if (!j.ok) throw new Error(j.erro);
-
-      // Rodada sem linha nenhuma não é falha: é área sem recurso, ou recurso
-      // sem turno marcado no ano. Antes isso caía na mesma tela de "nenhum
-      // cálculo", que mandava clicar em Recalcular — o botão que a pessoa
-      // acabara de clicar.
-      if (!j.instalada) {
-        setVazia(`Rodou e não gerou linha nenhuma para ${ano}. Nenhum recurso `
-                 + 'ativo nesta área tem operação neste ano — confira a janela '
-                 + '"Em operação de … até" no cadastro de Recursos.');
-      } else if (!j.fato) {
-        setVazia(`Rodou: teto calculado para ${ano}, mas nenhuma capacidade `
-                 + 'planejada. Os recursos existem e nenhum tem turno marcado '
-                 + 'neste ano — veja Turnos do recurso.');
-      }
-      router.refresh();
-    } catch (e) {
-      setErro(e.message ?? 'Falhou');
-    } finally {
-      setRodando(false);
-    }
-  }
 
   return (
     <div className="filtros">
@@ -114,23 +76,7 @@ export function FiltrosTopo({ areas, areaId, ano, origem }) {
         ))}
       </select>
 
-      <button className="btn" onClick={recalcular} disabled={rodando}
-              title={`Recalcular o OEE ${rotuloOrigem(origem)} deste ano`}>
-        {rodando ? 'Calculando…' : 'Recalcular'}
-      </button>
-
-      {erro && (
-        <span style={{ fontSize: 13, color: '#a32d2d', alignSelf: 'center' }}>
-          {erro}
-        </span>
-      )}
-
-      {vazia && (
-        <span style={{ fontSize: 13, color: '#6b4d0e', alignSelf: 'center',
-                       maxWidth: 520 }}>
-          {vazia}
-        </span>
-      )}
+      <RecalcularTudo areas={areas} anos={anos} />
     </div>
   );
 }

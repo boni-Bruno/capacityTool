@@ -377,7 +377,28 @@ mix mostra o nome do recurso ao lado do CT.
 Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
 seletores separados, que estreitam a lista de Código/Recurso em cascata.
 
-## 6. Extração para o AP — PRONTO
+## 6. Recalcular tudo — PRONTO
+
+O botão do painel refaz **todas** as rodadas numa pressão: cada área ativa com
+recurso, cada ano da lista, META e SIMULADO. Antes ele recalculava só o que
+estava na tela, e manter a fábrica atualizada exigia passear por área e ano —
+o que garante que alguém esqueça uma combinação e a extração leve número velho
+misturado com novo, sem nada denunciar.
+
+O laço mora no navegador, uma requisição por rodada, pela mesma razão da
+importação de demanda: função serverless tem minuto contado, e trinta rodadas
+numa requisição só estouram no meio deixando metade calculada. Em troca dá para
+mostrar em que passo está e parar no meio. **A aba precisa ficar aberta até o
+fim.**
+
+Área sem recurso não entra. Rodada sem linha é contada à parte das que
+falharam — misturá-las mandaria caçar erro onde não há.
+
+**Pendência que isto agrava:** cada pressão cria áreas × anos × 2 rodadas novas,
+e nada apaga rodada antiga (ver a análise de volume abaixo). A poda das rodadas
+superadas passou de desejável a necessária.
+
+## 7. Extração para o AP — PRONTO
 
 Grupo novo no menu (Extração), tela `/cadastros/extracao-ap`. Sai um .csv com
 `CT;Periodo;Minutos`, condensado por mês, período em AAAA.MM — o formato da

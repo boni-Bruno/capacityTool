@@ -175,7 +175,8 @@ export default async function Page({ searchParams }) {
             )}
           </h1>
           <Suspense>
-            <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} origem={origem} />
+            <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano}
+                         origem={origem} anos={anos} />
           </Suspense>
         </div>
         <div className="aviso">
@@ -184,9 +185,10 @@ export default async function Page({ searchParams }) {
             {area ? rotuloArea(area) : 'esta área'} em {ano}.
           </strong>
           <p style={{ margin: '8px 0 12px' }}>
-            Clique em <strong>Recalcular</strong> aí em cima. O motor roda por
-            área, ano e origem de OEE — cadastrar turno ou parada não recalcula
-            sozinho, e a outra origem tem a rodada dela.
+            Clique em <strong>Recalcular tudo</strong> aí em cima: ele refaz
+            todas as áreas, todos os anos e as duas origens de OEE numa
+            passada. Cadastrar turno ou parada não recalcula sozinho — o número
+            que muda sem ninguém pedir é o que não se consegue conferir depois.
           </p>
           <Suspense>
             <FiltrosRecurso ano={ano} anos={anos} />
@@ -429,7 +431,8 @@ export default async function Page({ searchParams }) {
           )}
         </h1>
         <Suspense>
-          <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano} origem={origem} />
+          <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano}
+                         origem={origem} anos={anos} />
         </Suspense>
       </div>
 
@@ -787,7 +790,8 @@ export default async function Page({ searchParams }) {
           {exec.cenario} · calculada em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}.
           {' '}Cadastro alterado depois disso só entra na conta ao
-          {' '}<strong>Recalcular</strong>.
+          {' '}<strong>Recalcular tudo</strong>, que refaz todas as áreas e
+          anos de uma vez.
         </p>
       </div>
     </Shell>
