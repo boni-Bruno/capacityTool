@@ -394,9 +394,17 @@ fim.**
 Área sem recurso não entra. Rodada sem linha é contada à parte das que
 falharam — misturá-las mandaria caçar erro onde não há.
 
-**Pendência que isto agrava:** cada pressão cria áreas × anos × 2 rodadas novas,
-e nada apaga rodada antiga (ver a análise de volume abaixo). A poda das rodadas
-superadas passou de desejável a necessária.
+**O banco guarda só a rodada corrente** (migração `26_so_a_rodada_corrente.sql`).
+Vale uma rodada por (área, ano, origem): a nova substitui a anterior, e o banco
+para de crescer. O sistema mostra a capacidade atual — rodada velha não era
+consultada por ninguém e só ocupava espaço, sobretudo o memorial, que é ~75%
+do volume.
+
+Para isso `calculo_execucao` ganhou `area_id`: sem ela não havia como saber o
+que substituir, e descobrir a área de uma rodada exigia varrer a maior tabela
+do banco. De quebra, duas consultas caras sumiram — `ultimaExecucao`, que o
+painel faz em toda abertura, e o CTE da extração, que agrupava a tabela de
+fatos inteira.
 
 ## 7. Extração para o AP — PRONTO
 
