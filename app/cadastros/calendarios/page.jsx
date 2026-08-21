@@ -63,12 +63,21 @@ export default async function Page({ searchParams }) {
 
   const areasPlanta = cal ? await areasDaPlanta(cal.planta_id) : [];
 
-  // Sem área escolhida a grade mostra todas ao mesmo tempo, como sempre foi.
-  // Com uma área, só o que alcança ela — depois que a exceção passou a valer
-  // por área, mostrar tudo junto dizia que um feriado da Confecção parava a
-  // planta inteira.
+  // A GRADE É SEMPRE DE UMA ÁREA.
+  //
+  // Existia a opção "todas as áreas", e ela pintava a união dos feriados de
+  // todas — um calendário que nenhuma área tem de verdade. Quem olhasse veria
+  // a Confecção parando num feriado da Fiação, e a contagem de dias úteis
+  // embaixo saía de um mix que não é de ninguém.
+  //
+  // O padrão é Confecção quando ela existe: é a área que se olha primeiro no
+  // dia a dia. Sem ela, a primeira da planta — o que importa é sempre haver
+  // uma área concreta respondendo pelo que está pintado.
   const areaPedida = Number(searchParams?.area);
-  const area = areasPlanta.find((a) => a.id === areaPedida) ?? null;
+  const area = areasPlanta.find((a) => a.id === areaPedida)
+    ?? areasPlanta.find((a) => a.nome.toLowerCase().startsWith('confec'))
+    ?? areasPlanta[0]
+    ?? null;
 
   const [diasSemana, pesos, contagem, dias, excecoes] = cal
     ? await Promise.all([
@@ -123,10 +132,8 @@ export default async function Page({ searchParams }) {
             ...(areasPlanta.length > 0 ? [{
               nome: 'area', rotulo: 'Área', tipo: 'select',
               valor: String(area?.id ?? ''),
-              opcoes: [
-                { valor: '', rotulo: 'todas as áreas' },
-                ...areasPlanta.map((a) => ({ valor: String(a.id), rotulo: a.nome })),
-              ],
+              opcoes: areasPlanta.map((a) => (
+                { valor: String(a.id), rotulo: a.nome })),
             }] : []),
             {
               nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
@@ -162,12 +169,10 @@ export default async function Page({ searchParams }) {
               Pintado é dia em que <strong>esta linha não produz</strong>. A mesma
               data aparece diferente em outro calendário — o rodízio trabalha
               domingo e pode trabalhar num feriado que o padrão observa.
-              {area
-                ? ` Mostrando só o que alcança ${area.nome}: feriado marcado ` +
-                  `para outra área não aparece aqui, e não entra na contagem ` +
-                  `de dias úteis abaixo.`
-                : ' Sem área escolhida, aparece tudo que este calendário observa,' +
-                  ' em qualquer área.'}
+              {area && ` A grade é sempre de uma área — aqui, ${area.nome}. ` +
+                `Feriado marcado para outra área não aparece e não entra na ` +
+                `contagem de dias úteis abaixo: a exceção vale por área, e ` +
+                `somar todas mostraria um calendário que ninguém tem.`}
             </p>
 
             {semAlcance.length > 0 && (

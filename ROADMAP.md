@@ -377,6 +377,11 @@ mix mostra o nome do recurso ao lado do CT.
 Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
 seletores separados, que estreitam a lista de Código/Recurso em cascata.
 
+**Calendários: a grade é sempre de uma área.** A opção "todas as áreas" saiu —
+ela pintava a união dos feriados de todas, um calendário que nenhuma área tem
+de verdade, e a contagem de dias úteis saía de um mix que não é de ninguém. O
+padrão é Confecção quando existe; sem ela, a primeira área da planta.
+
 ## 6. Recalcular tudo — PRONTO
 
 O botão do painel refaz **todas** as rodadas numa pressão: cada área ativa com
