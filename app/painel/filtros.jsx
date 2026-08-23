@@ -11,13 +11,15 @@ import RecalcularTudo from './recalcular';
 // do OEE, porque a rodada é por área e por origem, e o botão que dispara uma
 // nova. Trocar de origem troca de rodada — não recalcula nada.
 //
-// Os de recorte — ano, período, sub-área e tipo — ficam junto da tabela por
+// Os de recorte fino — período, sub-área e tipo — ficam junto da tabela por
 // recurso, que é onde se escolhe o que olhar. Todos vivem na URL, então
 // continuam valendo para os indicadores e o gráfico lá em cima.
 //
-// A unidade NÃO está aqui, e a capacidade por dia útil também não. As duas não
-// recortam nada: elas mudam como o mesmo número é dito. Por isso moram junto
-// dos indicadores, no painel, onde o efeito delas é visível na hora.
+// O ANO subiu para junto dos indicadores: ele é o recorte mais graúdo que
+// existe, e tudo lá em cima fala dele. A unidade e a capacidade por dia útil
+// estão do lado dele pelo motivo oposto — não recortam nada, mudam como o
+// mesmo número é dito —, mas as três compartilham o mesmo lugar porque é onde
+// o efeito delas é visível na hora.
 
 // Um lugar só mexe na URL: campo vazio some do endereço em vez de virar
 // "sub=", e trocar de recorte derruba o que dependia do recorte antigo.
@@ -81,8 +83,25 @@ export function FiltrosTopo({ areas, areaId, ano, origem, anos = [] }) {
   );
 }
 
+/**
+ * O ano, sozinho.
+ *
+ * Ele estava entre os filtros da tabela de recursos, no fim da página, e é o
+ * recorte mais graúdo que existe: tudo lá em cima — indicadores, gráfico,
+ * unidade — fala do ano escolhido. Fica junto deles, acima da unidade.
+ */
+export function SeletorAno({ ano, anos = [] }) {
+  const muda = useMuda();
+  return (
+    <select className="sel-ano" value={ano}
+            onChange={(e) => muda('ano', e.target.value)}>
+      {anos.map((a) => <option key={a} value={a}>{a}</option>)}
+    </select>
+  );
+}
+
 export function FiltrosRecurso({
-  ano, anos, subAreas = [], sub = null, tipo = null, periodo = null,
+  ano, subAreas = [], sub = null, tipo = null, periodo = null,
   // O DE/PARA: atributos derivados e os rótulos do que está escolhido. Este é
   // filtro de verdade — ele muda o que está sendo somado, e não só como o
   // número é dito.
@@ -101,10 +120,6 @@ export function FiltrosRecurso({
 
   return (
     <div className="filtros">
-      <select value={ano} onChange={(e) => muda('ano', e.target.value)}>
-        {anos.map((a) => <option key={a} value={a}>{a}</option>)}
-      </select>
-
       {periodo && (
         <>
           <label className="campo-inline">

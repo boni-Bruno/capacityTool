@@ -534,6 +534,10 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 .kpis-linha .kpis { margin-bottom: 0; }
 
 .modo-caixa { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+
+/* O ano, no alto da caixa de leitura. Compacto porque e o rotulo dele proprio:
+   "2027" nao precisa de legenda. */
+.sel-ano { height: 30px; padding: 0 8px; font-size: 13px; font-weight: 600; }
 .modo {
   display: inline-flex; background: var(--card);
   border: 1px solid var(--border); border-radius: 9px; overflow: hidden;

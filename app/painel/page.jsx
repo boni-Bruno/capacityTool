@@ -26,7 +26,7 @@ import {
 } from '../../lib/calendario';
 import { diasUteisPorMes, formataDiasUteis } from '../../lib/dia-util';
 import Grafico from './grafico';
-import { FiltrosTopo, FiltrosRecurso } from './filtros';
+import { FiltrosTopo, FiltrosRecurso, SeletorAno } from './filtros';
 import TabelaMes from './tabela-mes';
 import Memoria from './memoria';
 import Shell from '../shell';
@@ -191,7 +191,7 @@ export default async function Page({ searchParams }) {
             que muda sem ninguém pedir é o que não se consegue conferir depois.
           </p>
           <Suspense>
-            <FiltrosRecurso ano={ano} anos={anos} />
+            <SeletorAno ano={ano} anos={anos} />
           </Suspense>
         </div>
       </Shell>
@@ -481,12 +481,16 @@ export default async function Page({ searchParams }) {
         </div>
       </div>
 
-      {/* As duas trocas de leitura, uma embaixo da outra: em que unidade ler,
-          e se o número é do mês inteiro ou de um dia útil. Nenhuma das duas é
-          filtro — elas não mudam o que está sendo somado, mudam como o mesmo
-          número é dito — e por isso ficam junto do número, e não lá embaixo
-          entre os recortes. */}
+      {/* A caixa de leitura, ao lado dos indicadores: o ano em cima, depois em
+          que unidade ler, depois mês inteiro ou dia útil.
+          O ano é o recorte mais graúdo que existe — tudo aqui fala dele — e
+          estava perdido no fim da página. As outras duas nem recortam: mudam
+          como o mesmo número é dito, e por isso ficam junto do número. */}
       <div className="modo-caixa">
+        <Suspense>
+          <SeletorAno ano={ano} anos={anos} />
+        </Suspense>
+
         <nav className="modo">
           {unidades.map((u) => (
             <Link key={u.valor} href={url({ um: u.valor })}
@@ -722,7 +726,7 @@ export default async function Page({ searchParams }) {
         <div className="painel-topo">
           <h2>Por recurso</h2>
           <Suspense>
-            <FiltrosRecurso ano={ano} anos={anos} periodo={periodo}
+            <FiltrosRecurso ano={ano} periodo={periodo}
                             subAreas={subAreas} sub={sub} tipo={tipo}
                             atributosDePara={atributosFiltro} atributo={atributo}
                             rotulos={rotulosDoAtributo} rotulo={rotulo} />

@@ -382,6 +382,11 @@ ela pintava a união dos feriados de todas, um calendário que nenhuma área tem
 de verdade, e a contagem de dias úteis saía de um mix que não é de ninguém. O
 padrão é Confecção quando existe; sem ela, a primeira área da planta.
 
+**No painel, o ano subiu** para a caixa de leitura ao lado dos indicadores,
+acima dos botões de unidade. Ele é o recorte mais graúdo que existe — tudo ali
+em cima fala dele — e estava entre os filtros da tabela de recursos, no fim da
+página.
+
 ## 6. Recalcular tudo — PRONTO
 
 O botão do painel refaz **todas** as rodadas numa pressão: cada área ativa com
