@@ -1,6 +1,8 @@
 import { anosComRodada, recursosParaExtracao } from '../../../lib/db';
+import { ctsSemQuantidadeAp, resumoRecursosAp } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import Extrator from './extrator';
+import ImportarAp from './importar-ap';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +20,12 @@ export const dynamic = 'force-dynamic';
 export default async function Page() {
   let recursos;
   let anos;
+  let resumoAp;
+  let semQuantidade;
   try {
-    [recursos, anos] = await Promise.all([
+    [recursos, anos, resumoAp, semQuantidade] = await Promise.all([
       recursosParaExtracao(), anosComRodada(),
+      resumoRecursosAp(), ctsSemQuantidadeAp(),
     ]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
@@ -31,6 +36,8 @@ export default async function Page() {
       <div className="topo">
         <h1 className="titulo">Extração para o AP</h1>
       </div>
+
+      <ImportarAp resumo={resumoAp} semQuantidade={semQuantidade} />
 
       {!anos.length ? (
         <div className="aviso">

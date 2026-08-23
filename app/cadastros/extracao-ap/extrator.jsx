@@ -21,10 +21,19 @@ const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 // PROCV do outro lado — montar a chave lá é onde um | vira ! e ninguém vê.
 const chave = (l) => `${l.ct}|${l.periodo}`;
 
+// Centro sem quantidade no AP sai com as duas últimas colunas VAZIAS, e não
+// zeradas: facção e serviço externo não têm parque, e um zero ali seria lido
+// como "capacidade nenhuma" em vez de "esta conta não se aplica".
+const porRecurso = (l) => (l.minutos_por_recurso === null
+  || l.minutos_por_recurso === undefined
+  ? '' : String(Math.round(Number(l.minutos_por_recurso))));
+
 function montaCsv(linhas) {
   const corpo = linhas.map((l) =>
-    `${l.ct};${l.periodo};${chave(l)};${Math.round(Number(l.minutos))}`);
-  return ['CT;Periodo;CT_Periodo;Minutos', ...corpo].join('\r\n');
+    `${l.ct};${l.periodo};${chave(l)};${Math.round(Number(l.minutos))}`
+    + `;${l.qtd_ap ?? ''};${porRecurso(l)}`);
+  return ['CT;Periodo;CT_Periodo;Minutos;Qtd. Recurso AP;'
+          + 'Capacidade por recurso do AP', ...corpo].join('\r\n');
 }
 
 export default function Extrator({ recursos, anos }) {
@@ -133,6 +142,7 @@ export default function Extrator({ recursos, anos }) {
 
   const totalMin = resultado?.reduce((s, l) => s + Number(l.minutos), 0) ?? 0;
   const cts = resultado ? new Set(resultado.map((l) => l.ct)).size : 0;
+  const semDivisor = resultado?.filter((l) => !porRecurso(l)).length ?? 0;
 
   return (
     <>
@@ -141,11 +151,14 @@ export default function Extrator({ recursos, anos }) {
       <div className="painel">
         <h2>O que sai</h2>
         <p className="rodape" style={{ margin: '0 0 12px' }}>
-          Quatro colunas — <code>CT;Periodo;CT_Periodo;Minutos</code> —
-          condensadas por mês, com o período em <strong>AAAA.MM</strong> e a
-          chave <code>CT|Periodo</code> já concatenada, pronta para o PROCV do
-          outro lado. Cada área e ano entram com a <strong>última
-          rodada</strong> do OEE escolhido, a mesma que o painel mostra.
+          Seis colunas — <code>CT;Periodo;CT_Periodo;Minutos;Qtd. Recurso AP;
+          Capacidade por recurso do AP</code> — condensadas por mês, com o
+          período em <strong>AAAA.MM</strong> e a chave <code>CT|Periodo</code>
+          já concatenada, pronta para o PROCV do outro lado. A capacidade por
+          recurso é os minutos <strong>divididos pela quantidade que o AP
+          conta</strong> naquele centro. Cada área e ano entram com a{' '}
+          <strong>última rodada</strong> do OEE escolhido, a mesma que o painel
+          mostra.
         </p>
 
         <div className="filtros" style={{ marginBottom: 14 }}>
@@ -251,6 +264,16 @@ export default function Extrator({ recursos, anos }) {
                   <p className="val">{fmt(Math.round(totalMin))}</p>
                   <p className="sub">{fmt(Math.round(totalMin / 60))} horas</p>
                 </div>
+                <div className="kpi">
+                  <p className="rot">Sem divisor</p>
+                  <p className="val">{fmt(semDivisor)}</p>
+                  <p className="sub">
+                    {semDivisor
+                      ? 'linhas sem quantidade no AP — saem com a coluna por '
+                        + 'recurso vazia'
+                      : 'todas as linhas têm quantidade do AP'}
+                  </p>
+                </div>
               </div>
 
               <div className="grade-rolagem">
@@ -261,6 +284,8 @@ export default function Extrator({ recursos, anos }) {
                       <th>Período</th>
                       <th>CT_Periodo</th>
                       <th className="num">Minutos</th>
+                      <th className="num">Qtd. AP</th>
+                      <th className="num">Por recurso</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -270,6 +295,10 @@ export default function Extrator({ recursos, anos }) {
                         <td>{l.periodo}</td>
                         <td className="muted"><code>{chave(l)}</code></td>
                         <td className="num">{fmt(Math.round(Number(l.minutos)))}</td>
+                        <td className="num muted">{l.qtd_ap ?? '—'}</td>
+                        <td className="num forte">
+                          {porRecurso(l) ? fmt(Number(porRecurso(l))) : '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -418,6 +418,24 @@ Grupo novo no menu (Extração), tela `/cadastros/extracao-ap`. Sai um .csv com
 base de demanda, que é onde os dois sistemas se encontram. Cada área×ano entra
 com a última rodada OK do OEE META, a mesma regra do painel aplicada em lote.
 
+**Capacidade por recurso do AP** (migração `27_recurso_ap.sql`). O arquivo ganha
+duas colunas: `Qtd. Recurso AP` e `Capacidade por recurso do AP` — os minutos
+divididos pela quantidade que o AP conta naquele centro, que é como o outro
+sistema raciocina.
+
+A quantidade é importada do `RecursosAP_CapacityTool.parquet`, no painel do
+topo da própria tela de extração. O arquivo traz **dois** campos para a mesma
+ideia (`QTMAQUINA` e `QTPESSOAS`), e `INDICADORCALCULOCAPACIDADE` diz qual vale
+('M', 'P' ou branco); a escolha acontece na leitura, em `lib/ap.js`, e chega ao
+banco como um campo só. No arquivo real: 228 linhas → 193 centros, 137 por
+máquina, 34 por pessoas, 22 sem quantidade (facção e serviço externo).
+
+Centro sem quantidade sai com as duas colunas **vazias**, não zeradas — zero
+seria lido como "capacidade nenhuma" em vez de "esta conta não se aplica" — e a
+prévia conta quantas linhas ficaram sem divisor. CT repetido no arquivo (um por
+sequência de roteiro) condensa; se as repetições discordarem da quantidade, a
+carga para.
+
 Filtros em cascata antes de extrair: planta, área, sub-área, CC, CT,
 patrimônio, nome do recurso, e período De/Até em meses cruzando anos. A medida
 é escolhível (disponível como padrão, planejada e instalada) e a origem do OEE
