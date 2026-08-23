@@ -383,7 +383,8 @@ de verdade, e a contagem de dias úteis saía de um mix que não é de ninguém.
 padrão é Confecção quando existe; sem ela, a primeira área da planta.
 
 **No painel, o ano subiu** para a caixa de leitura ao lado dos indicadores,
-acima dos botões de unidade. Ele é o recorte mais graúdo que existe — tudo ali
+acima dos botões de unidade — e vem como botões, não lista suspensa: são quatro
+ou cinco anos, e escondê-los atrás de um clique custa mais que a largura. Ele é o recorte mais graúdo que existe — tudo ali
 em cima fala dele — e estava entre os filtros da tabela de recursos, no fim da
 página.
 

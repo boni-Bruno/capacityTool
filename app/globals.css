@@ -535,21 +535,30 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 
 .modo-caixa { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 
-/* O ano, no alto da caixa de leitura. Compacto porque e o rotulo dele proprio:
-   "2027" nao precisa de legenda. */
-.sel-ano { height: 30px; padding: 0 8px; font-size: 13px; font-weight: 600; }
+/* Os tres controles da caixa de leitura tem a mesma forma de proposito: sao a
+   mesma pergunta — "qual destes?" — e responder a todas do mesmo jeito e o que
+   dispensa aprender cada uma. O ano vem como botao e nao como lista suspensa
+   porque sao quatro ou cinco: escondê-los atras de um clique custa mais do que
+   a largura que eles ocupam. */
 .modo {
   display: inline-flex; background: var(--card);
   border: 1px solid var(--border); border-radius: 9px; overflow: hidden;
 }
-.modo a {
+.modo a, .modo button {
   padding: 9px 16px; font-size: 14px; color: var(--muted);
   text-decoration: none; white-space: nowrap;
+  border: none; background: none; font-family: inherit; cursor: pointer;
 }
-.modo a + a { border-left: 1px solid var(--border); }
-.modo a:hover { background: var(--gray-bg); color: var(--text); }
+.modo > * + * { border-left: 1px solid var(--border); }
+.modo a:hover, .modo button:hover:not(:disabled) {
+  background: var(--gray-bg); color: var(--text);
+}
 .modo .modo-on { background: var(--accent); color: #fff; font-weight: 500; }
 .modo .modo-on:hover { background: #2569bd; color: #fff; }
+
+/* O ano e o recorte, nao uma troca de leitura: um pouco menor, para a
+   diferenca de natureza aparecer sem precisar de legenda. */
+.modo-ano button { padding: 7px 13px; font-size: 13px; }
 
 .modo-regime { margin: 0; font-size: 12px; color: var(--muted); }
 .modo-regime a { color: var(--muted); text-decoration: none; }

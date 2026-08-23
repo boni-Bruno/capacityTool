@@ -93,10 +93,15 @@ export function FiltrosTopo({ areas, areaId, ano, origem, anos = [] }) {
 export function SeletorAno({ ano, anos = [] }) {
   const muda = useMuda();
   return (
-    <select className="sel-ano" value={ano}
-            onChange={(e) => muda('ano', e.target.value)}>
-      {anos.map((a) => <option key={a} value={a}>{a}</option>)}
-    </select>
+    <nav className="modo modo-ano">
+      {anos.map((a) => (
+        <button key={a} type="button"
+                className={Number(a) === Number(ano) ? 'modo-on' : ''}
+                onClick={() => muda('ano', String(a))}>
+          {a}
+        </button>
+      ))}
+    </nav>
   );
 }
 
