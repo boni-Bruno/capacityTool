@@ -11,6 +11,7 @@ import {
 } from '../../lib/periodo';
 import { MESES, DIAS, DIAS_CURTO, rotuloArea } from '../../lib/dias';
 import { leOrdem, ordenar } from '../../lib/ordem';
+import { LARGURA_MIN } from './grade';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
   detalhe, eFisica, formataUnidade, sufixoCampo, sufixoUnidade, UNIDADES,
@@ -779,10 +780,17 @@ export default async function Page({ searchParams }) {
           </nav>
         </div>
 
-        <Grafico dados={dados} mostrarInstalada={mostrarInstalada}
-                 unidade={unidade} sufixo={sufixo} />
-        <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada}
-                   unidade={unidade} sufixo={sufixo} totais={totais} />
+        {/* Gráfico e tabela na MESMA caixa de rolagem: eles desenham as
+            mesmas doze colunas, e rolar um sem o outro desalinharia
+            justamente quem está conferindo coluna por coluna. */}
+        <div className="grade-rolagem">
+          <div className="grade-alinhada" style={{ minWidth: LARGURA_MIN }}>
+            <Grafico dados={dados} mostrarInstalada={mostrarInstalada}
+                     unidade={unidade} sufixo={sufixo} />
+            <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada}
+                       unidade={unidade} sufixo={sufixo} totais={totais} />
+          </div>
+        </div>
 
         {porDiaUtil && (
           <p className="rodape">

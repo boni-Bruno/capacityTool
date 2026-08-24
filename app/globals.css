@@ -693,3 +693,21 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 
 .ocup-estoura { color: #a32d2d; font-weight: 600; }
 .ocup-aperta  { color: #8a4b0d; font-weight: 600; }
+
+/* ---- a grade que alinha grafico e tabela ---- */
+
+/* `fixed` e o que faz os doze meses terem larguras iguais: sem ele, a coluna
+   mais larga puxa as vizinhas e nenhuma cai embaixo da barra dela. As larguras
+   do rotulo e do total vem de app/painel/grade.js, que o grafico usa como
+   margem — as duas medidas moram num lugar so. */
+.grade-alinhada { display: flex; flex-direction: column; }
+.tabela-grade { table-layout: fixed; width: 100%; }
+
+/* Doze colunas de largura igual apertam a celula: menos respiro lateral e um
+   ponto a menos de fonte fazem "3.727.239,1" caber sem cortar. */
+.tabela-grade th, .tabela-grade td { padding: 7px 5px; font-size: 12px; }
+
+/* O cabecalho do mes vai centrado, como o rotulo do eixo do grafico; os
+   numeros embaixo seguem a direita, como numero deve ir. */
+.tabela-grade th.col-mes { text-align: center; }
+.tabela-grade td { overflow: hidden; text-overflow: ellipsis; }

@@ -6,6 +6,7 @@ import {
   Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { detalhe, emUnidade, formataUnidade, sufixoUnidade } from '../../lib/formato';
+import { EIXO, MARGEM_ESQ, TOTAL } from '../painel/grade';
 
 // A demanda em colunas, dentro da capacidade desenhada como área.
 //
@@ -58,7 +59,9 @@ export default function GraficoOcupacao({
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart
         data={d}
-        margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
+        // As margens vêm da mesma grade da tabela logo abaixo: é isso que
+        // faz janeiro cair embaixo de janeiro. Ver ../painel/grade.js.
+        margin={{ top: 4, right: TOTAL, left: MARGEM_ESQ, bottom: 0 }}
         onClick={clicavel ? aoClicar : undefined}
         style={clicavel ? { cursor: 'pointer' } : undefined}
       >
@@ -66,7 +69,7 @@ export default function GraficoOcupacao({
         <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: '#6b6a65' }}
                axisLine={{ stroke: '#d8d6cf' }} tickLine={false} />
         <YAxis tick={{ fontSize: 12, fill: '#6b6a65' }} axisLine={false}
-               tickLine={false} width={54}
+               tickLine={false} width={EIXO}
                tickFormatter={(v) =>
                  (v >= 1000
                    ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k ${suf}`

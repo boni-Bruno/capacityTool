@@ -5,6 +5,7 @@
 // Serve aos três níveis do drill-down. No de turno `mostrarInstalada` é falso:
 // instalada é grão dia e não se reparte por turno.
 import { detalhe, eFisica, formataUnidade, sufixoUnidade } from '../../lib/formato';
+import { ROTULO, TOTAL } from './grade';
 
 export default function TabelaMes({
   dados, mostrarInstalada = true, unidade = 'min',
@@ -45,13 +46,19 @@ export default function TabelaMes({
   if (!dados.length) return null;
 
   return (
-    <div className="grade-rolagem">
-      <table className="tabela-mes">
+    <>
+      {/* Larguras fixas e iguais para os meses: é o que põe cada coluna embaixo
+          da barra dela. Os cabeçalhos de mês vão centrados como no eixo do
+          gráfico; os números seguem à direita, como número deve ir.
+          A rolagem é do container lá fora, que leva o gráfico junto. */}
+      <table className="tabela-mes tabela-grade">
         <thead>
           <tr>
-            <th>Capacidade ({suf})</th>
-            {dados.map((x) => <th key={x.rotulo} className="num">{x.rotulo}</th>)}
-            <th className="num">total</th>
+            <th style={{ width: ROTULO }}>Capacidade ({suf})</th>
+            {dados.map((x) => (
+              <th key={x.rotulo} className="col-mes">{x.rotulo}</th>
+            ))}
+            <th className="num" style={{ width: TOTAL }}>total</th>
           </tr>
         </thead>
         <tbody>
@@ -73,6 +80,6 @@ export default function TabelaMes({
           ))}
         </tbody>
       </table>
-    </div>
+    </>
   );
 }

@@ -7,6 +7,7 @@
 // porcentagem é o erro clássico desta tabela, e ele só apareceria conferindo
 // contra o indicador lá em cima.
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
+import { ROTULO, TOTAL } from '../painel/grade';
 
 const classePct = (v) => (v === null ? 'muted'
   : v > 100 ? 'ocup-estoura'
@@ -28,13 +29,17 @@ export default function TabelaMesOcupacao({ dados, medida, unidade = 'min' }) {
   ];
 
   return (
-    <div className="grade-rolagem">
-      <table className="tabela-mes">
+    <>
+      {/* A mesma grade do gráfico logo acima — ver ../painel/grade.js. A
+          rolagem é do container lá fora, que leva os dois juntos. */}
+      <table className="tabela-mes tabela-grade">
         <thead>
           <tr>
-            <th>Ocupação ({suf})</th>
-            {dados.map((x) => <th key={x.rotulo} className="num">{x.rotulo}</th>)}
-            <th className="num">total</th>
+            <th style={{ width: ROTULO }}>Ocupação ({suf})</th>
+            {dados.map((x) => (
+              <th key={x.rotulo} className="col-mes">{x.rotulo}</th>
+            ))}
+            <th className="num" style={{ width: TOTAL }}>total</th>
           </tr>
         </thead>
         <tbody>
@@ -88,6 +93,6 @@ export default function TabelaMesOcupacao({ dados, medida, unidade = 'min' }) {
           </tr>
         </tbody>
       </table>
-    </div>
+    </>
   );
 }

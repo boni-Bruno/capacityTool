@@ -17,6 +17,7 @@ import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
 import { FiltrosRecurso, FiltrosTopo, SeletorAno } from '../painel/filtros';
 import GraficoOcupacao from './grafico';
 import TabelaMesOcupacao from './tabela-mes';
+import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
 import Shell from '../shell';
 
@@ -411,9 +412,15 @@ export default async function Page({ searchParams }) {
           </Suspense>
         </div>
 
-        <GraficoOcupacao dados={dados} medida={rotuloMedida} unidade={unidade} />
-
-        <TabelaMesOcupacao dados={dados} medida={rotuloMedida} unidade={unidade} />
+        {/* Gráfico e tabela na MESMA caixa de rolagem — ver ../painel/grade.js. */}
+        <div className="grade-rolagem">
+          <div className="grade-alinhada" style={{ minWidth: LARGURA_MIN }}>
+            <GraficoOcupacao dados={dados} medida={rotuloMedida}
+                             unidade={unidade} />
+            <TabelaMesOcupacao dados={dados} medida={rotuloMedida}
+                               unidade={unidade} />
+          </div>
+        </div>
 
         {estouram.length > 0 && (
           <div className="aviso" style={{ marginTop: 12 }}>

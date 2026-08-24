@@ -8,6 +8,7 @@ import {
 import {
   detalhe, eFisica, emUnidade, formataUnidade, sufixoUnidade, eMinuto,
 } from '../../lib/formato';
+import { EIXO, MARGEM_ESQ, TOTAL } from './grade';
 
 // Um gráfico para os três níveis do drill-down: mês, dia e turno.
 //
@@ -56,7 +57,9 @@ export default function Grafico({
     <ResponsiveContainer width="100%" height={260}>
       <BarChart
         data={d}
-        margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
+        // As margens vêm da mesma grade da tabela logo abaixo: é isso que
+        // faz janeiro cair embaixo de janeiro. Ver ./grade.js.
+        margin={{ top: 4, right: TOTAL, left: MARGEM_ESQ, bottom: 0 }}
         onClick={clicavel ? aoClicar : undefined}
         style={clicavel ? { cursor: 'pointer' } : undefined}
       >
@@ -64,7 +67,7 @@ export default function Grafico({
         <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: '#6b6a65' }}
                axisLine={{ stroke: '#d8d6cf' }} tickLine={false} />
         <YAxis tick={{ fontSize: 12, fill: '#6b6a65' }} axisLine={false} tickLine={false}
-               width={54}
+               width={EIXO}
                tickFormatter={(v) =>
                  v >= 1000
                    ? (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
