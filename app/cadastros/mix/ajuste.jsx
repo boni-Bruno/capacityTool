@@ -178,6 +178,14 @@ export default function AjusteMix({ ano, anos, atributo, atributos, regras,
           inteiro.
         </p>
 
+        <p className="rodape" style={{ margin: '0 0 12px' }}>
+          <strong>O mix muda a capacidade em metro e em peça no painel.</strong>
+          {' '}O índice de um CT é a média das taxas dos produtos dele, ponderada
+          pelo tempo: um recurso metade em algo a 15 m/min e metade em algo a 5
+          converte a 10; em 100% do primeiro, a 15. Ajustar aqui muda esse
+          número lá — em minuto e hora nada muda, porque tempo é tempo.
+        </p>
+
         <div className="grade-rolagem">
           <table className="tabela-mes">
             <thead>

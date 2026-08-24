@@ -362,8 +362,20 @@ uma linha ajustável como as outras; rótulo que o CT não produz na base pede
 **taxa apontada** (CT doador ou média de CC — o doador empresta a taxa dele
 para o rótulo em questão, não a média geral).
 
-O painel usa o ajuste no rateio por atributo automaticamente, e o rodapé diz em
-quantos CT×mês o mix manual está valendo.
+**O mix ajustado muda o índice de conversão do painel**, com ou sem filtro. O
+índice de um CT é a média das taxas dos produtos dele ponderada pelo tempo —
+metade a 15 m/min e metade a 5 dá 10; 100% do primeiro dá 15 — então mexer no
+mix tem que mexer no metro e na peça. Antes o ajuste só valia quando havia um
+rótulo escolhido no filtro, e ficava mudo justamente na leitura mais comum.
+
+Rótulo sem taxa conhecida sai da média inteira, numerador e denominador, e a
+fatia perdida é reportada: dizer que ele rende zero derrubaria a capacidade em
+silêncio. Dois atributos ajustados para o mesmo CT são duas respostas para a
+mesma pergunta — vale o primeiro na ordem do cadastro, e o painel diz qual.
+
+A leitura cara das combinações só acontece se existir ajuste, e limitada aos
+CTs que têm. O painel usa o ajuste no rateio por atributo automaticamente, e o
+rodapé diz em quantos CT×mês o mix manual está valendo.
 
 **Mix e recorte também por campo da base** (migração `25_mix_campo_base.sql`):
 o seletor de atributo do mix e o filtro do painel ganharam o grupo "Campos da

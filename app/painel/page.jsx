@@ -17,10 +17,11 @@ import {
 } from '../../lib/formato';
 import {
   atributos as atributosDePara, cargaCorrente, combinacoesPorMes, mixAjustes,
-  taxasDoMix, todasAsRegras,
+  mixAjustesDoAno, taxasDoMix, todasAsRegras, todasAsTaxasDeMix,
 } from '../../lib/demanda';
 import {
-  CAMPOS_BASE, camposUsados, fatiasDoRotulo, rotulosDe, valoresDe,
+  CAMPOS_BASE, camposUsados, fatiasDoRotulo, indiceDoMixManual, rotulosDe,
+  valoresDe,
 } from '../../lib/regras';
 import {
   calendariosDaArea, diasTrabalhadosPorMes, pesosDoCalendario,
@@ -207,6 +208,7 @@ export default async function Page({ searchParams }) {
   // carga — é a camada da tela de Ajuste de mix, e ela vale em todo lugar que
   // rateia, senão o painel diria um número e a tela de mix outro.
   let fatias = [];
+  let mixSemTaxa = 0;
   if (filtrandoAtributo) {
     const [combos, manuais, taxasMix] = await Promise.all([
       combosAtributo
@@ -219,6 +221,52 @@ export default async function Page({ searchParams }) {
   }
   const fa = arraysDeFatia(fatias, filtrandoAtributo);
 
+  // O ÍNDICE QUE VEM DO MIX AJUSTADO À MÃO
+  //
+  // O índice de um CT é a média das taxas dos produtos dele, ponderada pelo
+  // tempo. Um tear metade em Cama a 15 m/min e metade em Decoração a 5 converte
+  // a 10; em 100% de Cama, a 15. Então mexer no mix TEM que mexer no metro e na
+  // peça do painel — não é efeito colateral, é a definição.
+  //
+  // Isto vale sem filtro nenhum, que é justamente onde faltava: com um rótulo
+  // escolhido, o rateio acima já usa a taxa daquele rótulo.
+  //
+  // A leitura cara das combinações só acontece se existir ajuste, e limitada
+  // aos CTs que têm — quem nunca abriu a tela de mix não paga nada.
+  let indiceMix = [];
+  if (carga && !filtrandoAtributo) {
+    const ajustes = await mixAjustesDoAno(ano);
+    if (ajustes.length) {
+      // Cada atributo é uma leitura independente do MESMO tempo, então dois
+      // deles ajustados para o mesmo CT são duas respostas para a mesma
+      // pergunta. Vale o primeiro na ordem do cadastro — nível, ordem, código —
+      // e a tela diz qual foi, para a escolha não ser invisível.
+      const comAjuste = attrsDePara
+        .map((a) => a.codigo)
+        .find((cod) => ajustes.some((x) => x.atributo === cod))
+        ?? ajustes[0].atributo;
+
+      const manuais = ajustes.filter((x) => x.atributo === comAjuste);
+      const cts = [...new Set(manuais.map((x) => x.ct))];
+      const [combos, taxasMix] = await Promise.all([
+        combinacoesPorMes(
+          carga.id,
+          [...new Set([...camposUsados(regrasDePara), comAjuste])],
+          cts),
+        todasAsTaxasDeMix(),
+      ]);
+      indiceMix = indiceDoMixManual(combos, attrsDePara, regrasDePara, comAjuste,
+        { ano, manuais, taxas: taxasMix.filter((t) => t.atributo === comAjuste) });
+      mixSemTaxa = indiceMix.filter((x) => x.semTaxa > 0).length;
+    }
+  }
+
+  // `ativo: false` de propósito: isto NÃO exclui ninguém da conta. Ele só
+  // oferece um índice melhor a quem tem mix cadastrado; o resto cai no índice
+  // da carga, como sempre.
+  const faIndice = arraysDeFatia(indiceMix, false);
+  const faEfetivo = filtrandoAtributo ? fa : faIndice;
+
   // Clicar num recurso da tabela filtra os KPIs, o gráfico e a tabela mensal.
   // Sem recurso na URL, tudo mostra a área inteira.
   //
@@ -226,7 +274,7 @@ export default async function Page({ searchParams }) {
   // recurso de outra área faria as consultas voltarem vazias e a tela mostraria
   // zero em tudo, parecendo cálculo errado em vez de filtro inválido.
   const todos = await porRecurso(exec.id, areaId, periodo.de, periodo.ate,
-                                carga?.id ?? null, fa);
+                                carga?.id ?? null, faEfetivo);
 
   // Os filtros do cabeçalho são atributos do recurso, e a lista de opções sai
   // do que existe nesta área — sem cadastro à parte de sub-área.
@@ -405,8 +453,8 @@ export default async function Page({ searchParams }) {
     // Turno: sem instalada nas barras. Ela é grão dia — repetir o teto em cada
     // turno era o que inflava o total no Qlik antigo. Vem separado, uma vez.
     const [linhas, tetoDia] = await Promise.all([
-      porTurnoDoDia(exec.id, areaId, dataISO, listaIds, carga?.id ?? null, fa),
-      tetoDoDia(exec.id, areaId, dataISO, listaIds, fa),
+      porTurnoDoDia(exec.id, areaId, dataISO, listaIds, carga?.id ?? null, faEfetivo),
+      tetoDoDia(exec.id, areaId, dataISO, listaIds, faEfetivo),
     ]);
     dados = linhas.map((l) => ({
       rotulo: l.nome,
@@ -421,7 +469,7 @@ export default async function Page({ searchParams }) {
     if (foco) memoria = await memoriaDoDia(exec.id, foco.id, dataISO);
   } else if (periodo.nivel === 'DIA') {
     const linhas = await porDia(exec.id, areaId, periodo.de, periodo.ate, listaIds,
-                                carga?.id ?? null, fa);
+                                carga?.id ?? null, faEfetivo);
     dados = diasNoIntervalo(periodo.de, periodo.ate).map((data) => {
       const achado = linhas.find((l) => l.data === data);
       // O dia da semana antes do número: é o que explica de bate-pronto por
@@ -437,7 +485,7 @@ export default async function Page({ searchParams }) {
     });
   } else {
     const linhas = await porMes(exec.id, areaId, periodo.de, periodo.ate, listaIds,
-                                carga?.id ?? null, fa);
+                                carga?.id ?? null, faEfetivo);
     dados = serieDeMeses(linhas, mesesNoIntervalo(periodo.de, periodo.ate), cmp)
       .map((m) => {
         // Dividir por dia útil é decisão de LEITURA, feita o mais tarde
@@ -627,6 +675,26 @@ export default async function Page({ searchParams }) {
         )}
       </div>
       </div>
+
+      {/* Número que muda de origem em silêncio é o defeito que este projeto
+          mais evita: em metro ou peça, o índice de quem tem mix ajustado não é
+          mais o da carga. */}
+      {fisica && indiceMix.length > 0 && !filtrandoAtributo && (
+        <p className="rodape" style={{ marginTop: -8, marginBottom: '1.5rem' }}>
+          <strong>{indiceMix.length}</strong> centro(s) de trabalho convertem
+          pelo <Link href="/cadastros/mix">mix ajustado à mão</Link>, e não pelo
+          da carga. O índice é a média das taxas dos produtos ponderada pelo
+          tempo — mudar o mix muda quanto o mesmo minuto rende.
+          {mixSemTaxa > 0 && (
+            <>
+              {' '}Em <strong>{mixSemTaxa}</strong> deles parte da fatia foi
+              dada a um rótulo sem taxa conhecida; essa parte ficou fora da
+              média em vez de entrar como zero, e aponte a origem da taxa na
+              tela de mix para ela contar.
+            </>
+          )}
+        </p>
+      )}
 
       {/* O rateio precisa estar escrito onde o número está. Sem isto, "84 h"
           com filtro e "84 h" sem filtro têm a mesma cara e significam coisas
