@@ -10,6 +10,7 @@ import {
   rotuloPeriodo,
 } from '../../lib/periodo';
 import { MESES, DIAS, DIAS_CURTO, rotuloArea } from '../../lib/dias';
+import { leOrdem, ordenar } from '../../lib/ordem';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
   detalhe, eFisica, formataUnidade, sufixoCampo, sufixoUnidade, UNIDADES,
@@ -234,17 +235,37 @@ export default async function Page({ searchParams }) {
   const tipo = ['MAQUINA', 'PESSOA'].includes(searchParams?.tipo)
     ? searchParams.tipo : null;
 
+  // CC e CT: a identidade da máquina na controladoria. Em cascata, como nas
+  // telas de cadastro — escolher o CC limita os CTs oferecidos, e CT que não
+  // existe no CC escolhido é ignorado em vez de esvaziar a tela sem explicar.
+  const distintos = (lista, campo) =>
+    [...new Set(lista.map((r) => r[campo]).filter(Boolean))]
+      .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+
+  const ccs = distintos(todos, 'cc');
+  const cc = ccs.includes(searchParams?.cc) ? searchParams.cc : null;
+  const cts = distintos(cc ? todos.filter((r) => r.cc === cc) : todos, 'ct');
+  const ct = cts.includes(searchParams?.ct) ? searchParams.ct : null;
+
   // Um lugar só decide quem entra: a tabela mostra exatamente os recursos que
   // alimentaram os indicadores e o gráfico.
   const recursos = todos.filter((r) =>
     (sub === null || r.sub_area === sub) &&
-    (tipo === null || r.tipo_recurso === tipo));
+    (tipo === null || r.tipo_recurso === tipo) &&
+    (cc === null || r.cc === cc) &&
+    (ct === null || r.ct === ct));
 
   const pedido = searchParams?.recurso ? Number(searchParams.recurso) : null;
   const foco = recursos.find((r) => Number(r.id) === pedido) ?? null;
 
   // Clicar num recurso estreita ainda mais; sem clique, valem os filtros.
   const visiveis = foco ? [foco] : recursos;
+
+  // A ordenação da tabela mora na URL, como todo o resto do painel: o endereço
+  // descreve por inteiro o que está na tela, e recarregar cai no mesmo lugar.
+  // Nome ascendente é o padrão, e por ser o padrão não aparece no endereço.
+  const ordemTexto = searchParams?.ordem ?? null;
+  const ordem = leOrdem(ordemTexto, { campo: 'nome', desc: false });
 
   // De que é feito o teto desta seleção. Máquina tem teto físico de 24 h por
   // dia; pessoa tem o turno escalado, e ali a instalada é a própria planejada.
@@ -254,7 +275,8 @@ export default async function Page({ searchParams }) {
     : visiveis.every((r) => r.tipo_recurso === 'PESSOA')  ? 'PESSOA'
     : visiveis.every((r) => r.tipo_recurso === 'MAQUINA') ? 'MAQUINA'
     : 'MISTA';
-  const filtrado = sub !== null || tipo !== null || foco !== null;
+  const filtrado = sub !== null || tipo !== null || cc !== null || ct !== null
+    || foco !== null;
   // '0' quando nada casa o filtro: nenhum recurso tem id 0, então as consultas
   // voltam zeradas. String vazia estouraria no cast de string_to_array.
   const listaIds = !filtrado ? null
@@ -276,6 +298,7 @@ export default async function Page({ searchParams }) {
     um = unidade,
     attr = atributo,
     rot = rotulo,
+    ordem: ord = ordemTexto,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
@@ -289,12 +312,85 @@ export default async function Page({ searchParams }) {
     if (calId && calendarios.length > 1) p.set('cal', String(calId));
     if (attr) p.set('atributo', attr);
     if (attr && rot) p.set('rotulo', rot);
+    if (cc !== null) p.set('cc', cc);
+    if (ct !== null) p.set('ct', ct);
+    if (ord) p.set('ordem', ord);
     // Ano inteiro é a ausência de recorte, e some do endereço: parâmetro que
     // repete o padrão só atrapalha quem lê a URL.
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
     if (d1 && d2 && !inteiro) { p.set('de', d1); p.set('ate', d2); }
     return '?' + p.toString();
   };
+
+  // AS COLUNAS DA TABELA POR RECURSO, cabeçalho e célula na mesma definição.
+  //
+  // `chave` é o campo pelo qual a coluna ordena, e para os números ele carrega
+  // o sufixo da unidade — em metros a coluna "Planejada" lê `planejada_m`, e
+  // ordenar por `planejada` mandaria a tabela pela ordem dos minutos enquanto
+  // a tela mostra metros.
+  const colunas = [
+    { chave: 'planta',   rot: 'Planta',    celula: (r) => r.planta },
+    { chave: 'area',     rot: 'Área',      celula: (r) => r.area },
+    { chave: 'cc',       rot: 'CC',
+      celula: (r) => (r.cc ? <code>{r.cc}</code> : <span className="muted">—</span>) },
+    { chave: 'ct',       rot: 'CT',
+      celula: (r) => (r.ct ? <code>{r.ct}</code> : <span className="muted">—</span>) },
+    { chave: 'nome',     rot: 'Recurso',
+      celula: (r) => (
+        <Link className="link-linha" href={url({ recurso: r.id })}>{r.nome}</Link>
+      ) },
+    { chave: 'sub_area', rot: 'Sub-área',
+      celula: (r) => (r.sub_area
+        ? r.sub_area : <span className="muted">—</span>) },
+    { chave: 'calendario', rot: 'Calendário',
+      celula: (r) => (
+        <span className={'selo ' + (r.calendario === 'RODIZIO' ? 'rodizio' : 'padrao')}>
+          {r.calendario ? r.calendario.toLowerCase() : '—'}
+        </span>
+      ) },
+    // Instalada é teto em tempo: não existe em metro nem em peça.
+    ...(fisica ? [] : [{
+      chave: 'instalada', num: true,
+      rot: `Instalada (${sufixoUnidade(unidade)})`,
+      celula: (r) => (
+        <span title={detalhe(r.instalada, unidade)}>
+          {formataUnidade(r.instalada, unidade)}
+        </span>
+      ),
+    }]),
+    {
+      chave: `planejada${cmp}`, num: true,
+      rot: `Planejada (${sufixoUnidade(unidade)})`,
+      celula: (r) => (
+        <span title={detalhe(r[`planejada${cmp}`], unidade)}>
+          {formataUnidade(r[`planejada${cmp}`], unidade)}
+        </span>
+      ),
+    },
+    {
+      chave: `disponivel${cmp}`, num: true,
+      rot: `Disponível (${sufixoUnidade(unidade)})`,
+      celula: (r) => (fisica && !r.tem_demanda
+        ? (
+          <span className="muted"
+                title="Sem demanda para este CT nesta carga — não há índice para converter.">
+            —
+          </span>
+        )
+        : (
+          <span title={detalhe(r[`disponivel${cmp}`], unidade)}>
+            {formataUnidade(r[`disponivel${cmp}`], unidade)}
+          </span>
+        )),
+    },
+    ...(fisica ? [] : [{
+      chave: 'pct_teto', num: true, rot: '% do teto',
+      celula: (r) => (r.pct_teto === null
+        ? '—' : `${Number(r.pct_teto).toFixed(1)}%`),
+    }]),
+  ];
+
+  const ordenados = ordenar(visiveis, ordem);
 
   const dataISO = periodo.nivel === 'TURNO' ? periodo.de : null;
 
@@ -728,66 +824,56 @@ export default async function Page({ searchParams }) {
           <Suspense>
             <FiltrosRecurso ano={ano} periodo={periodo}
                             subAreas={subAreas} sub={sub} tipo={tipo}
+                            ccs={ccs} cc={cc} cts={cts} ct={ct}
                             atributosDePara={atributosFiltro} atributo={atributo}
                             rotulos={rotulosDoAtributo} rotulo={rotulo} />
           </Suspense>
         </div>
         <p className="rodape" style={{ margin: '0 0 1rem' }}>
           Estes filtros valem para os indicadores e o gráfico acima também.
-          Clique num recurso para estreitar ainda mais.
+          Clique num recurso para estreitar ainda mais, ou num{' '}
+          <strong>título de coluna</strong> para ordenar por ele.
         </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Recurso</th>
-              <th>Sub-área</th>
-              <th>Calendário</th>
-              {!fisica && <th className="num">Instalada ({sufixoUnidade(unidade)})</th>}
-              <th className="num">Planejada ({sufixoUnidade(unidade)})</th>
-              <th className="num">Disponível ({sufixoUnidade(unidade)})</th>
-              {!fisica && <th className="num">% do teto</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {visiveis.map((r) => (
-              <tr key={r.codigo} className={foco?.id === r.id ? 'linha-edit' : ''}>
-                <td>
-                  <Link className="link-linha"
-                        href={url({ recurso: r.id })}>
-                    {r.nome}
-                  </Link>
-                </td>
-                <td className={r.sub_area ? '' : 'muted'}>{r.sub_area || '—'}</td>
-                <td>
-                  <span className={'selo ' + (r.calendario === 'RODIZIO' ? 'rodizio' : 'padrao')}>
-                    {r.calendario ? r.calendario.toLowerCase() : '—'}
-                  </span>
-                </td>
-                {!fisica && (
-                  <td className="num" title={detalhe(r.instalada, unidade)}>
-                    {formataUnidade(r.instalada, unidade)}
-                  </td>
-                )}
-                <td className="num" title={detalhe(r[`planejada${cmp}`], unidade)}>
-                  {formataUnidade(r[`planejada${cmp}`], unidade)}
-                </td>
-                <td className={'num' + (fisica && !r.tem_demanda ? ' muted' : '')}
-                    title={fisica && !r.tem_demanda
-                      ? 'Sem demanda para este CT nesta carga — não há índice para converter.'
-                      : detalhe(r[`disponivel${cmp}`], unidade)}>
-                  {fisica && !r.tem_demanda
-                    ? '—'
-                    : formataUnidade(r[`disponivel${cmp}`], unidade)}
-                </td>
-                {!fisica && (
-                  <td className="num">
-                    {r.pct_teto === null ? '—' : Number(r.pct_teto).toFixed(1) + '%'}
-                  </td>
-                )}
+        {/* Cabeçalho e célula na mesma definição de propósito: onze colunas
+            declaradas em dois lugares divergem na primeira que alguém mexer, e
+            o sintoma seria um valor embaixo do título errado. */}
+        <div className="grade-rolagem">
+          <table className="tabela-recursos">
+            <thead>
+              <tr>
+                {colunas.map((c) => {
+                  const atual = ordem?.campo === c.chave;
+                  return (
+                    <th key={c.chave} className={c.num ? 'num' : ''}>
+                      <Link className="th-ordem"
+                            href={url({
+                              // Clicar de novo na mesma coluna inverte; em
+                              // outra, começa crescente.
+                              ordem: `${c.chave}:${atual && !ordem.desc ? 'desc' : 'asc'}`,
+                            })}>
+                        {c.rot}
+                        <span className="th-seta">
+                          {atual ? (ordem.desc ? '▼' : '▲') : '⇅'}
+                        </span>
+                      </Link>
+                    </th>
+                  );
+                })}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ordenados.map((r) => (
+                <tr key={r.codigo} className={foco?.id === r.id ? 'linha-edit' : ''}>
+                  {colunas.map((c) => (
+                    <td key={c.chave} className={c.num ? 'num' : ''}>
+                      {c.celula(r)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         <p className="rodape">
           Rodada {exec.id} · OEE {rotuloOrigem(exec.origem)} · cenário{' '}

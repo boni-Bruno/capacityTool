@@ -675,3 +675,11 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
   gap: 10px;
 }
 .lote-meses .campo-pct input { width: 100%; }
+
+/* Onze colunas nao cabem numa tela estreita: a tabela rola dentro da propria
+   caixa em vez de esticar a pagina. */
+.tabela-recursos { width: auto; min-width: 100%; font-size: 13px; }
+.tabela-recursos th, .tabela-recursos td { padding: 8px 9px; white-space: nowrap; }
+.tabela-recursos tbody tr:hover td { background: #f7f6f3; }
+.tabela-recursos .th-ordem { white-space: nowrap; }
+.tabela-recursos th.num .th-ordem { justify-content: flex-end; }

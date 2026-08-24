@@ -47,7 +47,9 @@ function useMuda() {
     }
     // Recortar por rótulo pode tirar da seleção justamente o recurso em foco:
     // CT sem nada daquele rótulo sai da tabela. O período continua valendo.
-    if (chaves.some((k) => ['atributo', 'rotulo'].includes(k))) p.delete('recurso');
+    if (chaves.some((k) => ['atributo', 'rotulo', 'cc', 'ct'].includes(k))) {
+      p.delete('recurso');
+    }
     // Trocar de ano invalida um recorte que era de outro ano.
     if (chaves.includes('ano')) { p.delete('de'); p.delete('ate'); }
     // O regime escolhido é da área; trocar de área invalida a escolha.
@@ -107,6 +109,9 @@ export function SeletorAno({ ano, anos = [] }) {
 
 export function FiltrosRecurso({
   ano, subAreas = [], sub = null, tipo = null, periodo = null,
+  // CC e CT: a identidade da máquina na controladoria. Em cascata — o CC
+  // limita os CTs oferecidos, e trocar de CC derruba o CT que era dele.
+  ccs = [], cc = null, cts = [], ct = null,
   // O DE/PARA: atributos derivados e os rótulos do que está escolhido. Este é
   // filtro de verdade — ele muda o que está sendo somado, e não só como o
   // número é dito.
@@ -158,6 +163,21 @@ export function FiltrosRecurso({
         <option value="MAQUINA">só máquina</option>
         <option value="PESSOA">só pessoa</option>
       </select>
+
+      {ccs.length > 0 && (
+        <select value={cc ?? ''}
+                onChange={(e) => muda({ cc: e.target.value, ct: '' })}>
+          <option value="">todo CC</option>
+          {ccs.map((c) => <option key={c} value={c}>CC {c}</option>)}
+        </select>
+      )}
+
+      {cts.length > 0 && (
+        <select value={ct ?? ''} onChange={(e) => muda('ct', e.target.value)}>
+          <option value="">todo CT</option>
+          {cts.map((c) => <option key={c} value={c}>CT {c}</option>)}
+        </select>
+      )}
 
       {/* Trocar de atributo derruba o rótulo junto: rótulo de outro atributo
           não existe, e deixá-lo na URL mostraria a área inteira parecendo

@@ -388,6 +388,11 @@ ela pintava a união dos feriados de todas, um calendário que nenhuma área tem
 de verdade, e a contagem de dias úteis saía de um mix que não é de ninguém. O
 padrão é Confecção quando existe; sem ela, a primeira área da planta.
 
+**No painel, a tabela por recurso** mostra Planta, Área, CC, CT e Recurso, e
+ordena por qualquer coluna — a ordem vive na URL, como o resto do painel.
+Filtros de CC e CT entraram ao lado de sub-área e tipo, e valem também para os
+indicadores e o gráfico.
+
 **No painel, o ano subiu** para a caixa de leitura ao lado dos indicadores,
 acima dos botões de unidade — e vem como botões, não lista suspensa: são quatro
 ou cinco anos, e escondê-los atrás de um clique custa mais que a largura. Ele é o recorte mais graúdo que existe — tudo ali
