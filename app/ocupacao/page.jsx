@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import {
   anosComRodada, areas, demandaPorDiaDaArea, demandaPorMesDaArea,
-  ocupacaoPorCt, porDia, porMes, ultimaExecucao,
+  ocupacaoPorCt, porDia, porMes, porRecurso, ultimaExecucao,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import { cargas, cargaCorrente } from '../../lib/demanda';
@@ -14,7 +14,7 @@ import { DIAS_CURTO, MESES, rotuloArea } from '../../lib/dias';
 import { leOrdem, ordenar } from '../../lib/ordem';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
-import { FiltrosTopo, SeletorAno } from '../painel/filtros';
+import { FiltrosRecurso, FiltrosTopo, SeletorAno } from '../painel/filtros';
 import GraficoOcupacao from './grafico';
 import FiltrosOcupacao from './filtros';
 import Shell from '../shell';
@@ -107,26 +107,6 @@ export default async function Page({ searchParams }) {
 
   const exec = await ultimaExecucao(areaId, ano, origem);
 
-  const url = ({
-    de: d1 = periodo.de,
-    ate: d2 = periodo.ate,
-    med = medida,
-    um = unidade,
-    cg = cargaId,
-    ordem: ord = searchParams?.ordem ?? null,
-  } = {}) => {
-    const p = new URLSearchParams();
-    p.set('area', String(areaId));
-    p.set('ano', String(ano));
-    p.set('origem', origem);
-    if (med !== 'disponivel') p.set('medida', med);
-    if (um !== 'min') p.set('unidade', um);
-    if (cg) p.set('carga', String(cg));
-    if (ord) p.set('ordem', ord);
-    const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
-    if (d1 && d2 && !inteiro) { p.set('de', d1); p.set('ate', d2); }
-    return `?${p.toString()}`;
-  };
 
   const topo = (
     <div className="topo">
@@ -182,17 +162,79 @@ export default async function Page({ searchParams }) {
     );
   }
 
+  // ---- QUEM ENTRA NA CONTA -------------------------------------------------
+  //
+  // O mesmo funil do painel da capacidade, e de propósito: são as mesmas
+  // perguntas sobre os mesmos recursos, e duas gramáticas de filtro na mesma
+  // ferramenta fariam a pessoa aprender duas vezes. Sub-área, tipo, CC e CT.
+  const todos = await porRecurso(exec.id, areaId, periodo.de, periodo.ate);
+
+  const subAreas = [...new Set(todos.map((r) => r.sub_area).filter(Boolean))].sort();
+  const sub = subAreas.includes(searchParams?.sub) ? searchParams.sub : null;
+  const tipo = ['MAQUINA', 'PESSOA'].includes(searchParams?.tipo)
+    ? searchParams.tipo : null;
+
+  const distintos = (lista, campo) =>
+    [...new Set(lista.map((r) => r[campo]).filter(Boolean))]
+      .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+
+  const ccs = distintos(todos, 'cc');
+  const cc = ccs.includes(searchParams?.cc) ? searchParams.cc : null;
+  const cts = distintos(cc ? todos.filter((r) => r.cc === cc) : todos, 'ct');
+  const ct = cts.includes(searchParams?.ct) ? searchParams.ct : null;
+
+  const recursos = todos.filter((r) =>
+    (sub === null || r.sub_area === sub)
+    && (tipo === null || r.tipo_recurso === tipo)
+    && (cc === null || r.cc === cc)
+    && (ct === null || r.ct === ct));
+
+  const filtrado = sub !== null || tipo !== null || cc !== null || ct !== null;
+  // '0' quando nada casa: nenhum recurso tem id 0, então as consultas voltam
+  // zeradas em vez de estourar no cast.
+  const listaIds = !filtrado ? null
+    : (recursos.length ? recursos.map((r) => r.id).join(',') : '0');
+
+  // A URL descreve por inteiro o que está na tela: recorte, medida, unidade,
+  // base e ordenação. Ela mora aqui embaixo porque fecha em cima do funil
+  // acima — declarada antes dele, leria variáveis que ainda não existem.
+  const url = ({
+    de: d1 = periodo.de,
+    ate: d2 = periodo.ate,
+    med = medida,
+    um = unidade,
+    cg = cargaId,
+    ordem: ord = searchParams?.ordem ?? null,
+    ctSel = ct,
+  } = {}) => {
+    const p = new URLSearchParams();
+    p.set('area', String(areaId));
+    p.set('ano', String(ano));
+    p.set('origem', origem);
+    if (med !== 'disponivel') p.set('medida', med);
+    if (um !== 'min') p.set('unidade', um);
+    if (cg) p.set('carga', String(cg));
+    if (ord) p.set('ordem', ord);
+    if (sub !== null) p.set('sub', sub);
+    if (tipo !== null) p.set('tipo', tipo);
+    if (cc !== null) p.set('cc', cc);
+    if (ctSel !== null) p.set('ct', ctSel);
+    const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
+    if (d1 && d2 && !inteiro) { p.set('de', d1); p.set('ate', d2); }
+    return `?${p.toString()}`;
+  };
+
   // ---- os números ---------------------------------------------------------
   const linhasCt = await ocupacaoPorCt(exec.id, areaId, periodo.de, periodo.ate,
-                                       null, cargaId);
+                                       listaIds, cargaId);
 
   const nivelMes = periodo.nivel !== 'DIA' && periodo.nivel !== 'TURNO';
   let dados;
 
   if (nivelMes) {
     const [cap, dem] = await Promise.all([
-      porMes(exec.id, areaId, periodo.de, periodo.ate, null, null),
-      demandaPorMesDaArea(cargaId, areaId, periodo.de, periodo.ate),
+      porMes(exec.id, areaId, periodo.de, periodo.ate, listaIds, null),
+      demandaPorMesDaArea(cargaId, areaId, periodo.de, periodo.ate, listaIds),
     ]);
     dados = mesesNoIntervalo(periodo.de, periodo.ate).map((m) => {
       const c = cap.find((x) => Number(x.mes) === m.mes);
@@ -208,8 +250,8 @@ export default async function Page({ searchParams }) {
     });
   } else {
     const [cap, dem] = await Promise.all([
-      porDia(exec.id, areaId, periodo.de, periodo.ate, null, null),
-      demandaPorDiaDaArea(cargaId, areaId, periodo.de, periodo.ate),
+      porDia(exec.id, areaId, periodo.de, periodo.ate, listaIds, null),
+      demandaPorDiaDaArea(cargaId, areaId, periodo.de, periodo.ate, listaIds),
     ]);
     // A demanda da base é MENSAL: ela vem carimbada no primeiro dia do mês.
     // Espalhar por dia útil seria inventar uma distribuição que o plano não
@@ -248,7 +290,15 @@ export default async function Page({ searchParams }) {
     { chave: 'planta', rot: 'Planta', celula: (r) => r.planta || '—' },
     { chave: 'area', rot: 'Área', celula: (r) => r.area || '—' },
     { chave: 'cc', rot: 'CC', celula: (r) => <code>{r.cc}</code> },
-    { chave: 'ct', rot: 'CT', celula: (r) => <code>{r.ct}</code> },
+    // Clicar no CT estreita tudo para ele — o mesmo gesto de clicar num
+    // recurso no painel da capacidade.
+    { chave: 'ct', rot: 'CT',
+      celula: (r) => (
+        <Link className="link-linha"
+              href={url({ ctSel: r.ct === ct ? null : r.ct })}>
+          <code>{r.ct}</code>
+        </Link>
+      ) },
     { chave: 'recursos', rot: 'Recursos',
       celula: (r) => (r.recursos
         || <span className="muted">sem recurso cadastrado</span>) },
@@ -346,8 +396,7 @@ export default async function Page({ searchParams }) {
             </span>
           </h2>
           <Suspense>
-            <FiltrosOcupacao cargas={listaCargas} carga={cargaId}
-                             periodo={periodo} ano={ano} />
+            <FiltrosOcupacao cargas={listaCargas} carga={cargaId} />
           </Suspense>
         </div>
 
@@ -382,7 +431,18 @@ export default async function Page({ searchParams }) {
       </div>
 
       <div className="painel">
-        <h2>Por centro de trabalho</h2>
+        <div className="painel-topo">
+          <h2>Por centro de trabalho</h2>
+          <Suspense>
+            <FiltrosRecurso ano={ano} periodo={periodo}
+                            subAreas={subAreas} sub={sub} tipo={tipo}
+                            ccs={ccs} cc={cc} cts={cts} ct={ct} />
+          </Suspense>
+        </div>
+        <p className="rodape" style={{ margin: '0 0 1rem' }}>
+          Estes filtros valem para os indicadores e o gráfico acima também.
+          Clique num CT para estreitar só nele.
+        </p>
         <p className="rodape" style={{ margin: '0 0 1rem' }}>
           A comparação é no grão do <strong>CT</strong>, e não do recurso: a
           capacidade é do recurso e a demanda é do centro de trabalho. Dois
@@ -415,7 +475,8 @@ export default async function Page({ searchParams }) {
             </thead>
             <tbody>
               {ordenados.map((r) => (
-                <tr key={r.ct}>
+                <tr key={r.ct}
+                    className={ct && r.ct.endsWith(`-${ct}`) ? 'linha-edit' : ''}>
                   {colunas.map((c) => (
                     <td key={c.chave} className={c.num ? 'num' : ''}>
                       {c.celula(r)}

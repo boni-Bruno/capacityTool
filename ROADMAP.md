@@ -427,9 +427,12 @@ deles, e o dado não tem por onde repartir.
 
 A base de demanda é escolhida no próprio painel e **pode não ser a corrente** —
 a que está no ar serve à conversão em metro, e a ocupação pode comparar contra
-outro cenário sem trocar o que todo mundo vê. O upload fica ali, recolhido, e é
-o mesmo componente e as mesmas tabelas da tela de Demanda: a estrutura do
-arquivo é idêntica, e uma segunda cópia divergiria da primeira no mês seguinte.
+outro cenário sem trocar o que todo mundo vê. Importar é na tela de Demanda: é
+lá que a carga se confere antes de existir.
+
+Os filtros são os mesmos do painel da capacidade — período, sub-área, tipo, CC
+e CT — e valem para os indicadores, o gráfico e a tabela. Clicar num CT
+estreita nele, como clicar num recurso do outro painel.
 
 ## 6. Recalcular tudo — PRONTO
 

@@ -124,13 +124,14 @@ export default function Sidebar({ versao }) {
           </button>
         </div>
 
+        {/* O único link fora de grupo, e ele é a saída para tudo: a tela
+            inicial é o menu inteiro em cartões. Com o menu recolhido, é por
+            aqui que se chega em qualquer lugar — os grupos só aparecem
+            expandidos, e um atalho solto para uma tela só privilegiaria uma
+            delas sem critério. */}
         <Link href="/" className={'lado-item lado-iniciar' + ativo('/')}
               title="Iniciar">
           {expandido ? '☰ Iniciar' : '☰'}
-        </Link>
-        <Link href="/painel" className={'lado-item' + ativo('/painel')}
-              title="Painel">
-          {expandido ? 'Painel' : '▤'}
         </Link>
 
         {expandido && GRUPOS.map((g) => {
