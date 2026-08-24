@@ -9,6 +9,7 @@ import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorOee from './editor';
+import LoteOee from './lote';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,12 +39,37 @@ export default async function Page({ searchParams }) {
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
   const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
-  const listaRecursos = await recursos(areaId);
+  const todosRecursos = await recursos(areaId);
 
+  // CC e CT estreitam a lista antes de escolher a máquina — e o recorte é
+  // também o alcance do lote: filtrar o CC 278 já é dizer "os nove CTs dele".
+  // Uma segunda lista de recursos para o lote seria uma lista a manter em dia
+  // com esta.
+  const distintos = (lista, campo) =>
+    [...new Set(lista.map((r) => r[campo]).filter(Boolean))]
+      .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+
+  const ccs = distintos(todosRecursos, 'cc');
+  const cc = ccs.includes(searchParams?.cc) ? searchParams.cc : null;
+  const aposCc = cc ? todosRecursos.filter((r) => r.cc === cc) : todosRecursos;
+
+  const cts = distintos(aposCc, 'ct');
+  const ct = cts.includes(searchParams?.ct) ? searchParams.ct : null;
+  const listaRecursos = ct ? aposCc.filter((r) => r.ct === ct) : aposCc;
+
+  const todos = (rotulo) => ({ valor: '', rotulo });
   const campos = [
     {
       nome: 'area', rotulo: 'Área', tipo: 'select', valor: String(areaId),
       opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: rotuloArea(a) })),
+    },
+    {
+      nome: 'cc', rotulo: 'CC', tipo: 'select', valor: cc ?? '',
+      opcoes: [todos('todos'), ...ccs.map((v) => ({ valor: v, rotulo: v }))],
+    },
+    {
+      nome: 'ct', rotulo: 'CT', tipo: 'select', valor: ct ?? '',
+      opcoes: [todos('todos'), ...cts.map((v) => ({ valor: v, rotulo: v }))],
     },
   ];
 
@@ -54,7 +80,13 @@ export default async function Page({ searchParams }) {
           <h1 className="titulo">OEE</h1>
           <Suspense><Seletor campos={campos} /></Suspense>
         </div>
-        <div className="aviso"><strong>Nenhum recurso nesta área.</strong></div>
+        <div className="aviso">
+          <strong>
+            {cc || ct
+              ? 'Nenhum recurso com este CC e CT.'
+              : 'Nenhum recurso nesta área.'}
+          </strong>
+        </div>
       </>
     );
   }
@@ -103,6 +135,10 @@ export default async function Page({ searchParams }) {
     },
   );
 
+  const escopo = ct ? `CT ${cc ? `${cc}-` : ''}${ct}`
+    : cc ? `CC ${cc}`
+      : (rotuloArea(listaAreas.find((a) => a.id === areaId) ?? {}) ?? 'esta área');
+
   return (
     <>
       <div className="topo">
@@ -150,6 +186,17 @@ export default async function Page({ searchParams }) {
           embutido aqui.
         </p>
       </div>
+
+      {listaRecursos.length > 1 && (
+        <LoteOee
+          key={`${areaId}:${cc}:${ct}:${origem}:${ano}`}
+          recursos={listaRecursos.map((r) => (
+            { id: r.id, codigo: r.codigo, nome: r.nome }))}
+          ano={ano}
+          origem={origem}
+          escopo={escopo}
+        />
+      )}
     </>
   );
 }

@@ -665,3 +665,13 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 }
 .recalc-txt { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
 .recalc-falha { color: #a32d2d; }
+
+/* ---- OEE em lote ---- */
+
+/* Os doze meses lado a lado, e nao um por linha como no editor de um recurso:
+   ali se le o ano inteiro de uma maquina, aqui se digita um mes so. */
+.lote-meses {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+  gap: 10px;
+}
+.lote-meses .campo-pct input { width: 100%; }
