@@ -8,9 +8,15 @@ import Shell from './shell';
 const CONSULTAR = [
   {
     href: '/painel',
-    titulo: 'Painel de capacidade',
-    texto: 'Instalada, planejada e disponível por área e ano. Gráfico mensal, ' +
-           'tabela por recurso e o botão de recalcular.',
+    titulo: 'Painel da Capacidade',
+    texto: 'Quanto cabe: instalada, planejada e disponível por área e ano, em ' +
+           'minuto, hora, metro ou peça. Gráfico mensal e tabela por recurso.',
+  },
+  {
+    href: '/ocupacao',
+    titulo: 'Painel da Ocupação',
+    texto: 'Cabe? A capacidade contra a demanda do plano, em minuto — barras ' +
+           'de capacidade com a demanda em linha por cima.',
   },
 ];
 

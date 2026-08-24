@@ -61,7 +61,7 @@ export default async function Page({ searchParams }) {
   } catch (e) {
     return (
       <Shell>
-        <h1 className="titulo">Capacidade</h1>
+        <h1 className="titulo">Painel da Capacidade</h1>
         <div className="aviso">
           <strong>Não consegui falar com o banco.</strong>
           <p style={{ margin: '8px 0 0' }}>
@@ -169,7 +169,7 @@ export default async function Page({ searchParams }) {
       <Shell>
         <div className="topo">
           <h1 className="titulo">
-            Capacidade
+            Painel da Capacidade
             {area && (
               <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
                 {' '}· {rotuloArea(area)}
@@ -564,7 +564,7 @@ export default async function Page({ searchParams }) {
     <Shell>
       <div className="topo">
         <h1 className="titulo">
-          Capacidade
+          Painel da Capacidade
           {/* A área no título, com a planta junto. Sem isso, trocar entre duas
               áreas de mesmo nome — Ibirama e Matriz têm as duas uma Confecção —
               não mudava nada visível quando as duas estavam sem rodada. */}

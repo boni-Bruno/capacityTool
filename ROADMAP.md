@@ -411,6 +411,26 @@ ou cinco anos, e escondê-los atrás de um clique custa mais que a largura. Ele 
 em cima fala dele — e estava entre os filtros da tabela de recursos, no fim da
 página.
 
+## Painel da Ocupação — PRONTO
+
+Segundo painel, em `/ocupacao`. O da capacidade responde "quanto cabe"; este
+responde "cabe?" — barras de UMA capacidade escolhida (disponível, planejada ou
+instalada) com a demanda em linha por cima, no mesmo eixo.
+
+**Em minuto e hora, só.** A demanda da base é tempo de roteiro já explodido
+para a quantidade do plano; comparar minuto com minuto dispensa índice de
+conversão. Metro e peça ficam no painel da capacidade.
+
+**No grão do CT**, e não do recurso: a capacidade é do recurso e a demanda é do
+centro de trabalho: dois recursos no mesmo CT dividem uma demanda que não sabe
+deles, e o dado não tem por onde repartir.
+
+A base de demanda é escolhida no próprio painel e **pode não ser a corrente** —
+a que está no ar serve à conversão em metro, e a ocupação pode comparar contra
+outro cenário sem trocar o que todo mundo vê. O upload fica ali, recolhido, e é
+o mesmo componente e as mesmas tabelas da tela de Demanda: a estrutura do
+arquivo é idêntica, e uma segunda cópia divergiria da primeira no mês seguinte.
+
 ## 6. Recalcular tudo — PRONTO
 
 O botão do painel refaz **todas** as rodadas numa pressão: cada área ativa com

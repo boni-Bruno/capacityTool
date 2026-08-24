@@ -12,6 +12,14 @@ import { usePathname } from 'next/navigation';
 
 const GRUPOS = [
   {
+    // Os dois paineis respondem perguntas diferentes: "quanto cabe" e "cabe?".
+    nome: 'Consultar',
+    itens: [
+      { href: '/painel',   rotulo: 'Painel da Capacidade' },
+      { href: '/ocupacao', rotulo: 'Painel da Ocupação' },
+    ],
+  },
+  {
     nome: 'Estrutura da empresa',
     itens: [
       { href: '/cadastros/plantas',     rotulo: 'Plantas' },

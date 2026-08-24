@@ -683,3 +683,10 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 .tabela-recursos tbody tr:hover td { background: #f7f6f3; }
 .tabela-recursos .th-ordem { white-space: nowrap; }
 .tabela-recursos th.num .th-ordem { justify-content: flex-end; }
+
+/* ---- painel da ocupacao ---- */
+
+/* A cor e redundante com o numero de proposito: numa tabela de cinquenta
+   linhas, achar as que estouram lendo numero por numero e o que ninguem faz. */
+.ocup-estoura { color: #a32d2d; font-weight: 600; }
+.ocup-aperta  { color: #8a4b0d; font-weight: 600; }
