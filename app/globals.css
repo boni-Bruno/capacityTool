@@ -688,5 +688,8 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 
 /* A cor e redundante com o numero de proposito: numa tabela de cinquenta
    linhas, achar as que estouram lendo numero por numero e o que ninguem faz. */
+/* O ponto da demanda na tabela, na mesma cor da coluna do grafico. */
+.med-dem { background: #a32d2d; }
+
 .ocup-estoura { color: #a32d2d; font-weight: 600; }
 .ocup-aperta  { color: #8a4b0d; font-weight: 600; }

@@ -16,6 +16,7 @@ import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
 import { FiltrosRecurso, FiltrosTopo, SeletorAno } from '../painel/filtros';
 import GraficoOcupacao from './grafico';
+import TabelaMesOcupacao from './tabela-mes';
 import FiltrosOcupacao from './filtros';
 import Shell from '../shell';
 
@@ -205,6 +206,7 @@ export default async function Page({ searchParams }) {
     um = unidade,
     cg = cargaId,
     ordem: ord = searchParams?.ordem ?? null,
+    ccSel = cc,
     ctSel = ct,
   } = {}) => {
     const p = new URLSearchParams();
@@ -217,7 +219,7 @@ export default async function Page({ searchParams }) {
     if (ord) p.set('ordem', ord);
     if (sub !== null) p.set('sub', sub);
     if (tipo !== null) p.set('tipo', tipo);
-    if (cc !== null) p.set('cc', cc);
+    if (ccSel !== null) p.set('cc', ccSel);
     if (ctSel !== null) p.set('ct', ctSel);
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
     if (d1 && d2 && !inteiro) { p.set('de', d1); p.set('ate', d2); }
@@ -292,13 +294,22 @@ export default async function Page({ searchParams }) {
     { chave: 'cc', rot: 'CC', celula: (r) => <code>{r.cc}</code> },
     // Clicar no CT estreita tudo para ele — o mesmo gesto de clicar num
     // recurso no painel da capacidade.
+    //
+    // O link manda CC e CT SEPARADOS porque é assim que o filtro lê: a coluna
+    // mostra o CC-CT inteiro, mas `mf.ct` guarda só a segunda metade, e mandar
+    // "515-004" onde se espera "004" fazia o clique não filtrar nada.
     { chave: 'ct', rot: 'CT',
-      celula: (r) => (
-        <Link className="link-linha"
-              href={url({ ctSel: r.ct === ct ? null : r.ct })}>
-          <code>{r.ct}</code>
-        </Link>
-      ) },
+      celula: (r) => {
+        const parte = String(r.ct).split('-').slice(1).join('-');
+        const aceso = cc === r.cc && ct === parte;
+        return (
+          <Link className="link-linha"
+                href={url(aceso ? { ccSel: null, ctSel: null }
+                                : { ccSel: r.cc, ctSel: parte })}>
+            <code>{r.ct}</code>
+          </Link>
+        );
+      } },
     { chave: 'recursos', rot: 'Recursos',
       celula: (r) => (r.recursos
         || <span className="muted">sem recurso cadastrado</span>) },
@@ -402,6 +413,8 @@ export default async function Page({ searchParams }) {
 
         <GraficoOcupacao dados={dados} medida={rotuloMedida} unidade={unidade} />
 
+        <TabelaMesOcupacao dados={dados} medida={rotuloMedida} unidade={unidade} />
+
         {estouram.length > 0 && (
           <div className="aviso" style={{ marginTop: 12 }}>
             <strong>
@@ -415,11 +428,12 @@ export default async function Page({ searchParams }) {
         )}
 
         <p className="rodape">
-          A linha é a demanda desta base, em tempo de roteiro já explodido para
-          a quantidade do plano — <strong>não é conversão</strong>, é o minuto
-          que o plano pede. A barra é a capacidade{' '}
-          <strong>{rotuloMedida.toLowerCase()}</strong>, e a distância entre as
-          duas é a resposta.
+          A <strong>área</strong> é a capacidade{' '}
+          <strong>{rotuloMedida.toLowerCase()}</strong> — o espaço que existe. A{' '}
+          <strong>coluna</strong> é a demanda desta base, em tempo de roteiro já
+          explodido para a quantidade do plano: <strong>não é conversão</strong>,
+          é o minuto que o plano pede. Coluna que passa do teto da área é o que
+          não cabe.
           {!nivelMes && (
             <>
               {' '}<strong>No dia a dia a demanda aparece toda no dia 1º</strong>:
@@ -476,7 +490,8 @@ export default async function Page({ searchParams }) {
             <tbody>
               {ordenados.map((r) => (
                 <tr key={r.ct}
-                    className={ct && r.ct.endsWith(`-${ct}`) ? 'linha-edit' : ''}>
+                    className={ct && cc === r.cc && r.ct.endsWith(`-${ct}`)
+                      ? 'linha-edit' : ''}>
                   {colunas.map((c) => (
                     <td key={c.chave} className={c.num ? 'num' : ''}>
                       {c.celula(r)}

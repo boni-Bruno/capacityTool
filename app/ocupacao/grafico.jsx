@@ -2,19 +2,23 @@
 
 import { useRouter } from 'next/navigation';
 import {
-  Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer,
+  Area, Bar, CartesianGrid, ComposedChart, Legend, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { detalhe, emUnidade, formataUnidade, sufixoUnidade } from '../../lib/formato';
 
-// Barras de capacidade com a demanda por cima, em linha.
+// A demanda em colunas, dentro da capacidade desenhada como área.
 //
-// UMA capacidade só nas barras, escolhida em cima. Três barras mais uma linha
-// deixariam a pergunta deste painel — "cabe?" — competindo com a comparação
-// entre as três capacidades, que é a pergunta do outro painel. Aqui a resposta
-// é a distância entre a barra e a linha, e ela precisa estar sozinha.
+// A CAPACIDADE É O CONTINENTE e a demanda é o conteúdo: a área é o espaço que
+// existe, e a coluna é o quanto dele foi pedido. Coluna que ultrapassa o teto
+// da área é o que se procura nesta tela, e a leitura é imediata porque a
+// pergunta virou geométrica — cabe dentro?
 //
-// A linha e as barras dividem o MESMO eixo de propósito. Dois eixos fariam a
+// UMA capacidade só, escolhida em cima. Três áreas empilhadas deixariam a
+// pergunta deste painel competindo com a comparação entre as três capacidades,
+// que é a pergunta do outro painel.
+//
+// A área e as colunas dividem o MESMO eixo de propósito. Dois eixos fariam a
 // demanda cruzar a capacidade em qualquer lugar que a escala mandasse — e o
 // cruzamento é justamente o que se está olhando.
 
@@ -76,13 +80,15 @@ export default function GraficoOcupacao({
           contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e3dd' }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
 
-        <Bar dataKey={medida} fill={COR[medida] ?? COR['Disponível']}
-             radius={[3, 3, 0, 0]} />
-        {/* A demanda em linha, e não em barra: barra ao lado de barra convida
-            a somar, e estas duas nunca se somam — uma é o que cabe, a outra é
-            o que foi pedido. */}
-        <Line type="monotone" dataKey="Demanda" stroke="#a32d2d" strokeWidth={2}
-              dot={{ r: 3, fill: '#a32d2d' }} activeDot={{ r: 5 }} />
+        {/* A área vem ANTES no eixo de empilhamento para ficar atrás: ela é o
+            espaço, e a coluna precisa aparecer dentro dele. */}
+        <Area type="monotone" dataKey={medida}
+              stroke={COR[medida] ?? COR['Disponível']} strokeWidth={2}
+              fill={COR[medida] ?? COR['Disponível']} fillOpacity={0.14}
+              dot={{ r: 3, fill: COR[medida] ?? COR['Disponível'] }}
+              activeDot={{ r: 5 }} />
+        <Bar dataKey="Demanda" fill="#a32d2d" fillOpacity={0.85}
+             radius={[3, 3, 0, 0]} maxBarSize={38} />
       </ComposedChart>
     </ResponsiveContainer>
   );

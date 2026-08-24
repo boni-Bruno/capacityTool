@@ -414,8 +414,14 @@ página.
 ## Painel da Ocupação — PRONTO
 
 Segundo painel, em `/ocupacao`. O da capacidade responde "quanto cabe"; este
-responde "cabe?" — barras de UMA capacidade escolhida (disponível, planejada ou
-instalada) com a demanda em linha por cima, no mesmo eixo.
+responde "cabe?" — a capacidade escolhida (disponível, planejada ou instalada)
+desenhada como **área**, e a demanda em **colunas dentro dela**, no mesmo eixo.
+A área é o espaço que existe, a coluna é o quanto dele foi pedido, e coluna que
+passa do teto é o que não cabe: a pergunta vira geométrica.
+
+Abaixo do gráfico, a tabela mês a mês com capacidade, demanda, ocupação e
+sobra. A ocupação do total não é a soma nem a média das mensais — é a demanda
+do período sobre a capacidade do período.
 
 **Em minuto e hora, só.** A demanda da base é tempo de roteiro já explodido
 para a quantidade do plano; comparar minuto com minuto dispensa índice de
