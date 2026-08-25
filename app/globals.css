@@ -707,7 +707,11 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
    ponto a menos de fonte fazem "3.727.239,1" caber sem cortar. */
 .tabela-grade th, .tabela-grade td { padding: 7px 5px; font-size: 12px; }
 
-/* O cabecalho do mes vai centrado, como o rotulo do eixo do grafico; os
-   numeros embaixo seguem a direita, como numero deve ir. */
-.tabela-grade th.col-mes { text-align: center; }
+/* CABECALHO E NUMERO CENTRADOS, os dois.
+   A barra do grafico fica no meio da faixa dela, entao o numero que a explica
+   tem que ficar no meio da coluna — e o cabecalho, em cima do numero. Numero a
+   direita alinharia com a borda da coluna e nao com a barra, que e o que se
+   esta lendo. `tabular-nums`, que vem de .num, mantem os digitos com a mesma
+   largura, entao valores de igual comprimento continuam casando na vertical. */
+.tabela-grade .col-mes { text-align: center; }
 .tabela-grade td { overflow: hidden; text-overflow: ellipsis; }

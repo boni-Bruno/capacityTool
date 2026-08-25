@@ -50,7 +50,7 @@ export default function TabelaMesOcupacao({ dados, medida, unidade = 'min' }) {
                 {l.rot}
               </td>
               {dados.map((x) => (
-                <td key={x.rotulo} className="num"
+                <td key={x.rotulo} className="num col-mes"
                     title={detalhe(x[l.campo], unidade)}>
                   {formataUnidade(Math.round(Number(x[l.campo] ?? 0)), unidade)}
                 </td>
@@ -68,7 +68,7 @@ export default function TabelaMesOcupacao({ dados, medida, unidade = 'min' }) {
             {dados.map((x) => {
               const o = ocupa(x.demanda, x.capacidade);
               return (
-                <td key={x.rotulo} className={`num ${classePct(o)}`}>
+                <td key={x.rotulo} className={`num col-mes ${classePct(o)}`}>
                   {fmtPct(o)}
                 </td>
               );
@@ -81,7 +81,7 @@ export default function TabelaMesOcupacao({ dados, medida, unidade = 'min' }) {
           <tr className="muted">
             <td>Sobra</td>
             {dados.map((x) => (
-              <td key={x.rotulo} className="num">
+              <td key={x.rotulo} className="num col-mes">
                 {formataUnidade(
                   Math.round(Number(x.capacidade ?? 0) - Number(x.demanda ?? 0)),
                   unidade)}

@@ -69,7 +69,8 @@ export default function TabelaMes({
                 {l.rot}
               </td>
               {dados.map((x) => (
-                <td key={x.rotulo} className="num" title={detalhe(x[l.campo], unidade)}>
+                <td key={x.rotulo} className="num col-mes"
+                    title={detalhe(x[l.campo], unidade)}>
                   {formataUnidade(mostra(x[l.campo], l), unidade)}
                 </td>
               ))}
