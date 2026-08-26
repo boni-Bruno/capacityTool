@@ -720,13 +720,35 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 
 .filtro-col { position: relative; display: inline-flex; margin-left: 4px; }
 
-/* Na barra de cima o controle vem com o nome do campo do lado: ali nao existe
-   cabecalho de coluna para dizer do que ele e. */
+/* Na barra de cima o controle vem numa caixa com o nome do campo: ali nao
+   existe cabecalho de coluna para dizer do que ele e. */
 .filtro-campo {
-  display: inline-flex; align-items: center; gap: 2px;
+  display: inline-flex; align-items: center; gap: 4px;
   border: 1px solid var(--border); border-radius: 8px;
-  padding: 6px 8px 6px 10px; background: var(--card); height: 36px;
+  padding: 4px 8px 4px 10px; background: var(--card); min-height: 36px;
 }
+.filtro-rot {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; color: inherit; text-align: left;
+}
+.filtro-valor { font-size: 13px; line-height: 1.2; }
+
+/* A CAIXA INTEIRA se anuncia quando o filtro esta ligado, e nao so a flecha:
+   numa barra de seis caixas iguais, uma flechinha azul passa despercebida — e
+   filtro que recorta sem se anunciar faz o total menor parecer capacidade
+   menor. */
+.filtro-campo-on {
+  border-color: var(--accent); background: var(--accent); color: #fff;
+}
+.filtro-campo-on .campo-rot { color: rgba(255,255,255,.8); }
+.filtro-campo-on .filtro-btn,
+.filtro-campo-on .filtro-btn:hover { color: #fff; opacity: 1; }
+
+/* O cabecalho da coluna filtrada, pelo mesmo motivo, em tom mais leve: ali a
+   cor forte competiria com a leitura da tabela inteira. */
+.th-filtrada { background: var(--teal-bg); }
+.th-filtrada .th-ordem { color: var(--teal-fg); }
 
 /* Discreto quando desligado, visivel quando esta recortando: a coluna
    filtrada precisa se anunciar, senao o total menor parece capacidade menor. */

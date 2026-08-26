@@ -186,11 +186,25 @@ export default async function Page({ searchParams }) {
   ];
   const filtros = leFiltros(searchParams, CAMPOS_FILTRO.map((c) => c.campo));
 
+  // AS OPÇÕES SAEM DO QUE SOBROU DOS OUTROS FILTROS.
+  //
+  // Escolher o CC 278 tem que deixar na lista de CT só os CTs dele — oferecer
+  // os 123 e ter 9 que respondem é mandar procurar agulha. Cada campo se
+  // pergunta sobre a lista já recortada pelos DEMAIS, e não por si mesmo:
+  // incluir o próprio filtro deixaria de fora justamente os valores que a
+  // pessoa precisa ver para desmarcar.
+  //
+  // Isso generaliza a cascata que existia só de CC para CT: agora filtrar a
+  // sub-área também enxuga os CCs, e assim por diante, em qualquer ordem.
   const distintos = (lista, campo) =>
     [...new Set(lista.map((r) => r[campo]).filter(Boolean))]
       .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
-  const opcoes = Object.fromEntries(
-    CAMPOS_FILTRO.map((c) => [c.campo, distintos(todos, c.campo)]));
+
+  const opcoes = Object.fromEntries(CAMPOS_FILTRO.map((c) => {
+    const outros = Object.fromEntries(
+      Object.entries(filtros).filter(([k]) => k !== c.campo));
+    return [c.campo, distintos(todos.filter((r) => passaTodos(r, outros)), c.campo)];
+  }));
 
   const recursos = todos.filter((r) => passaTodos(r, filtros));
 
@@ -198,7 +212,7 @@ export default async function Page({ searchParams }) {
     .filter((c) => filtros[c.campo])
     .map((c) => descreveFiltro(c.rot, filtros[c.campo]));
   const naBarra = CAMPOS_FILTRO.filter((c) =>
-    ['sub_area', 'tipo_recurso', 'cc', 'ct'].includes(c.campo)
+    ['sub_area', 'tipo_recurso', 'cc', 'ct', 'nome'].includes(c.campo)
     || filtros[c.campo]);
 
   const filtrado = ativos.length > 0;
@@ -478,7 +492,9 @@ export default async function Page({ searchParams }) {
                 {colunas.map((c) => {
                   const atual = ordem?.campo === c.chave;
                   return (
-                    <th key={c.chave} className={c.num ? 'num' : ''}>
+                    <th key={c.chave}
+                        className={`${c.num ? 'num' : ''}`
+                                   + `${filtros[c.chave] ? ' th-filtrada' : ''}`}>
                       <Link className="th-ordem"
                             href={url({
                               ordem: `${c.chave}:${atual && !ordem.desc ? 'desc' : 'asc'}`,

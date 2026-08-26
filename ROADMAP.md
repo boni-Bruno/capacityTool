@@ -413,7 +413,9 @@ operador e uma lista de valores, na URL como `f_<campo>=in:278,401`.
 
 O mesmo controle aparece na barra de cima e num **▼** ao lado do título de cada
 coluna de texto — os dois escrevem o mesmo parâmetro, então nunca discordam. As
-opções saem do que existe na tela, não de um cadastro. E entre campos, OU
+opções de cada campo saem da lista já recortada pelos **demais** filtros, o que
+generaliza a cascata CC→CT para todos eles, em qualquer ordem. Campo filtrado
+pinta a caixa inteira, e a coluna filtrada tinge o cabeçalho. E entre campos, OU
 dentro do campo. Um resumo acima da tabela diz o que está recortando, porque
 filtro que mostra menos sem se anunciar faz o total menor parecer capacidade
 menor.

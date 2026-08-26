@@ -21,6 +21,11 @@ import {
 
 export default function FiltroColuna({
   campo, rotulo, valores = [], compacto = false,
+  // Na barra de cima o controle vem numa caixa com o nome do campo: ali não
+  // existe cabeçalho de coluna para dizer do que ele é. A caixa é do próprio
+  // componente porque é ele que sabe se o filtro está ligado — e uma caixa
+  // montada por fora acenderia com um render de atraso, ou não acenderia.
+  caixa = false,
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -33,7 +38,7 @@ export default function FiltroColuna({
   const [texto, setTexto] = useState(
     atual && ehTexto(atual.op) ? (atual.valores?.[0] ?? '') : '');
   const [busca, setBusca] = useState('');
-  const caixa = useRef(null);
+  const raiz = useRef(null);
 
   // Reabrir tem que mostrar o que está valendo, e não o que ficou do rascunho
   // anterior: filtro que parece uma coisa e recorta outra é o pior defeito
@@ -74,8 +79,26 @@ export default function FiltroColuna({
 
   const ligado = Boolean(atual);
 
+  // O resumo do que está valendo, dentro da própria caixa: "CC · 278, 401"
+  // conta o recorte sem precisar abrir o painel.
+  const resumo = !atual ? null
+    : (atual.valores?.length
+        ? (atual.valores.length > 2
+            ? `${atual.valores.slice(0, 2).join(', ')} +${atual.valores.length - 2}`
+            : atual.valores.join(', '))
+        : OPERADORES.find((o) => o.codigo === atual.op)?.nome);
+
   return (
-    <span className="filtro-col" ref={caixa}>
+    <span className={`filtro-col ${caixa ? 'filtro-campo' : ''}`
+                     + `${caixa && ligado ? ' filtro-campo-on' : ''}`}
+          ref={raiz}>
+      {caixa && (
+        <button type="button" className="filtro-rot"
+                onClick={() => (aberto ? setAberto(false) : abre())}>
+          <span className="campo-rot">{rotulo}</span>
+          {resumo && <span className="filtro-valor">{resumo}</span>}
+        </button>
+      )}
       <button type="button"
               className={`filtro-btn ${ligado ? 'filtro-on' : ''}`}
               title={ligado ? `Filtrando ${rotulo}` : `Filtrar ${rotulo}`}

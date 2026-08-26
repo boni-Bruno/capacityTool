@@ -156,11 +156,8 @@ export function FiltrosRecurso({
       {/* O mesmo controle do cabeçalho da coluna, e o mesmo parâmetro da URL:
           filtrar aqui acende o botão lá, e vice-versa. */}
       {campos.map((c) => (
-        <span key={c.campo} className="filtro-campo">
-          <span className="campo-rot">{c.rot}</span>
-          <FiltroColuna campo={c.campo} rotulo={c.rot}
-                        valores={opcoes[c.campo] ?? []} />
-        </span>
+        <FiltroColuna key={c.campo} campo={c.campo} rotulo={c.rot} caixa
+                      valores={opcoes[c.campo] ?? []} />
       ))}
 
       {/* Trocar de atributo derruba o rótulo junto: rótulo de outro atributo
