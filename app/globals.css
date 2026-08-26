@@ -5,10 +5,50 @@
   --text: #1a1a19;
   --muted: #6b6a65;
   --accent: #2a78d6;
+  --accent-fundo: #2569bd;
   --teal-bg: #e1f5ee;
   --teal-fg: #085041;
   --gray-bg: #f1efe8;
   --gray-fg: #2c2c2a;
+  /* Estes tres estavam cravados em hexadecimal espalhados pelo arquivo. Sem
+     nome, o modo escuro precisaria cacar cada um — e o que escapasse ficaria
+     como uma faixa clara no meio da tela escura. */
+  --hover: #f7f6f3;          /* linha da tabela sob o cursor */
+  --suave: #fcfcfb;          /* painel dentro de painel, cartao sob o cursor */
+  --btn-hover: #f5f3ef;
+  --aviso-bg: #fef6e7;
+  --aviso-borda: #f0d9a8;
+  --aviso-fg: #6b4d0e;
+  --erro: #a32d2d;
+  /* O grafico nao le CSS: o recharts pinta por atributo do SVG, e variavel de
+     CSS nao resolve ali. Os valores viajam por prop, de app/painel/cores.js —
+     estes existem so para o resto da tela combinar com eles. */
+  --grade: #e5e3dd;
+}
+
+/* MODO ESCURO.
+   So a paleta muda: nenhuma regra de layout se repete aqui embaixo, senao as
+   duas versoes comecariam a divergir na primeira vez que alguem mexer numa. */
+:root[data-tema="escuro"] {
+  --bg: #16171a;
+  --card: #1e2024;
+  --border: #33363d;
+  --text: #e9e8e5;
+  --muted: #9b9b96;
+  --accent: #4f95ea;
+  --accent-fundo: #6aa6ef;
+  --teal-bg: #14332c;
+  --teal-fg: #74d6b7;
+  --gray-bg: #292b31;
+  --gray-fg: #d8d7d3;
+  --hover: #24262b;
+  --suave: #202227;
+  --btn-hover: #2a2d33;
+  --aviso-bg: #33290f;
+  --aviso-borda: #5c4a1c;
+  --aviso-fg: #f0d9a8;
+  --erro: #f08a8a;
+  --grade: #33363d;
 }
 
 * { box-sizing: border-box; }
@@ -157,7 +197,8 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .rodape { font-size: 12px; color: var(--muted); margin-top: 1rem; }
 
 .aviso {
-  background: #fef6e7; border: 1px solid #f0d9a8; color: #6b4d0e;
+  background: var(--aviso-bg); border: 1px solid var(--aviso-borda);
+  color: var(--aviso-fg);
   border-radius: 10px; padding: 1rem 1.15rem; font-size: 14px;
 }
 .aviso code {
@@ -197,13 +238,13 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   background: var(--card); color: var(--text); cursor: pointer;
   white-space: nowrap;
 }
-.btn:hover:not(:disabled) { background: #f5f3ef; }
+.btn:hover:not(:disabled) { background: var(--btn-hover); }
 .btn:disabled { opacity: .55; cursor: default; }
 
 .btn-primario {
   background: var(--accent); border-color: var(--accent); color: #fff;
 }
-.btn-primario:hover:not(:disabled) { background: #2569bd; }
+.btn-primario:hover:not(:disabled) { background: var(--accent-fundo); }
 .btn-mini { height: 30px; padding: 0 10px; font-size: 13px; }
 
 .btn-perigo { background: #a32d2d; border-color: #a32d2d; color: #fff; }
@@ -239,7 +280,7 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   border-radius: 10px; padding: 1.15rem;
   text-decoration: none; color: inherit;
 }
-.menu-card:hover { border-color: var(--accent); background: #fcfcfb; }
+.menu-card:hover { border-color: var(--accent); background: var(--suave); }
 .menu-card-tit { font-size: 15px; font-weight: 600; }
 .menu-card-txt { font-size: 13px; color: var(--muted); line-height: 1.45; }
 
@@ -281,7 +322,7 @@ a.trilha-atual { color: var(--text); }
 
 .tabela-mes { width: auto; min-width: 100%; font-size: 13px; }
 .tabela-mes th, .tabela-mes td { padding: 7px 9px; white-space: nowrap; }
-.tabela-mes tbody tr:hover td { background: #f7f6f3; }
+.tabela-mes tbody tr:hover td { background: var(--hover); }
 .tabela-mes .forte { font-weight: 600; }
 
 /* Mesmas cores das barras do gráfico, para ligar linha e barra. */
@@ -313,7 +354,7 @@ a.trilha-atual { color: var(--text); }
 
 .matriz { width: auto; min-width: 100%; }
 .matriz th, .matriz td { padding: 6px 8px; }
-.matriz tbody tr:hover td { background: #f7f6f3; }
+.matriz tbody tr:hover td { background: var(--hover); }
 
 .matriz-turno { text-align: center; }
 .matriz-mes { white-space: nowrap; }
@@ -345,7 +386,7 @@ td.acoes { white-space: nowrap; }
 .linha-vazia td { color: var(--muted); }
 
 .muted { color: var(--muted); }
-.erro { font-size: 13px; color: #a32d2d; margin: 10px 0 0; }
+.erro { font-size: 13px; color: var(--erro); margin: 10px 0 0; }
 
 .selo.vira {
   background: #fdf0e3; color: #8a4b0d; margin-left: 6px;
@@ -419,7 +460,7 @@ td.acoes { white-space: nowrap; }
   gap: 10px; justify-content: start;
 }
 .pesos input { width: 100%; text-align: right; }
-input.invalido { border-color: #a32d2d; }
+input.invalido { border-color: var(--erro); }
 .mes-uteis { color: var(--accent); font-weight: 600; }
 
 /* Caixa marcada dos dias da semana do calendário. */
@@ -441,7 +482,7 @@ input.invalido { border-color: #a32d2d; }
 .memoria table { font-size: 13px; }
 .memoria td, .memoria th { padding: 7px 8px; }
 .delta-mais { color: var(--teal-fg); }
-.delta-menos { color: #a32d2d; }
+.delta-menos { color: var(--erro); }
 
 /* Cabeçalho da coluna de turno: nome + atalho do ano inteiro. */
 .matriz-nome { display: block; font-size: 13px; color: var(--text); }
@@ -496,7 +537,7 @@ input.invalido { border-color: #a32d2d; }
 .intervalo-min:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 
 /* Pessoa sem minuto nenhum: o intervalo comeu o turno. */
-td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
+td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 
 /* Campo com rótulo em linha, na barra de filtros do painel (De / Até). */
 .campo-inline {
@@ -554,7 +595,7 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
   background: var(--gray-bg); color: var(--text);
 }
 .modo .modo-on { background: var(--accent); color: #fff; font-weight: 500; }
-.modo .modo-on:hover { background: #2569bd; color: #fff; }
+.modo .modo-on:hover { background: var(--accent-fundo); color: #fff; }
 
 /* O ano e o recorte, nao uma troca de leitura: um pouco menor, para a
    diferenca de natureza aparecer sem precisar de legenda. */
@@ -597,7 +638,7 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 
 .painel-interno {
   border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.15rem;
-  background: #fcfcfb; margin-top: 1rem;
+  background: var(--suave); margin-top: 1rem;
 }
 
 /* Um bloco e um E; blocos irmaos sao OU. A borda a esquerda existe para o
@@ -680,7 +721,7 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
    caixa em vez de esticar a pagina. */
 .tabela-recursos { width: auto; min-width: 100%; font-size: 13px; }
 .tabela-recursos th, .tabela-recursos td { padding: 8px 9px; white-space: nowrap; }
-.tabela-recursos tbody tr:hover td { background: #f7f6f3; }
+.tabela-recursos tbody tr:hover td { background: var(--hover); }
 .tabela-recursos .th-ordem { white-space: nowrap; }
 .tabela-recursos th.num .th-ordem { justify-content: flex-end; }
 
@@ -691,7 +732,13 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
 /* O ponto da demanda na tabela, na mesma cor da coluna do grafico. */
 .med-dem { background: #a32d2d; }
 
-.ocup-estoura { color: #a32d2d; font-weight: 600; }
+/* A celula da ocupacao por atributo leva duas informacoes: a porcentagem, que
+   e a resposta, e o par demanda/capacidade que a explica — menor, embaixo,
+   porque so se le quando a porcentagem chama a atencao. */
+.ocup-num { display: block; }
+.ocup-det { display: block; font-size: 10px; opacity: .6; font-weight: 400; }
+
+.ocup-estoura { color: var(--erro); font-weight: 600; }
 .ocup-aperta  { color: #8a4b0d; font-weight: 600; }
 
 /* ---- a grade que alinha grafico e tabela ---- */
@@ -792,3 +839,20 @@ td.erro-cel { color: #a32d2d; font-weight: 600; cursor: help; }
   background: var(--teal-bg); color: var(--teal-fg);
   border-radius: 999px; padding: 3px 10px; font-weight: 500;
 }
+
+/* ---- claro e escuro ---- */
+
+.lado-rodape {
+  margin-top: auto; display: flex; flex-direction: column; gap: 4px;
+  padding-top: 10px;
+}
+.lado-tema {
+  display: flex; align-items: center; gap: 9px;
+  border: none; background: none; font: inherit; cursor: pointer;
+  text-align: left; width: 100%;
+}
+.lado-tema-txt { font-size: 13px; }
+
+/* Recolhido, sobra o simbolo: o texto nao caberia e o simbolo ja diz. */
+.lado-estreito .lado-tema { justify-content: center; }
+.lado-estreito .lado-tema-txt { display: none; }

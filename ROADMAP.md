@@ -406,6 +406,20 @@ e da de total moram em `app/painel/grade.js` — o gráfico as usa como margem, 
 tabela como largura de coluna — e os dois compartilham uma única caixa de
 rolagem, senão rolar um desalinharia do outro.
 
+**Modo claro e escuro**, com o claro por padrão (`lib/tema.js`). A escolha vai
+para um cookie e o servidor já pinta o HTML certo — com localStorage haveria uma
+piscada branca a cada carregamento, que é justamente o que incomoda quem
+escolheu o escuro. Só a paleta muda: nenhuma regra de layout se repete no tema
+escuro. O gráfico recebe as cores por prop (`app/painel/cores.js`), porque o
+recharts pinta por atributo do SVG e variável de CSS não resolve ali.
+
+**O painel da ocupação ganhou o mesmo container de duas abas**: *por centro de
+trabalho* (a de sempre) e *por atributo* — a mesma ocupação por produto em vez
+de por máquina. Um rótulo pode estourar em junho sem que nenhum centro estoure,
+porque ele divide o mês com os outros. A capacidade vem rateada pela fatia de
+tempo; a demanda vem inteira, porque ela já é da linha e a linha já é
+classificada.
+
 **Os filtros dos dois painéis ganharam operador e vários valores**
 (`lib/filtro.js`, 14 verificações): é um de, não é nenhum de, contém, não
 contém, começa com, termina com, está vazio, não está vazio. Um campo, um

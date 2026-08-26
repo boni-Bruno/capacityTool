@@ -1,23 +1,35 @@
 import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import {
-  anosComRodada, areas, demandaPorDiaDaArea, demandaPorMesDaArea,
-  ocupacaoPorCt, porDia, porMes, porRecurso, ultimaExecucao,
+  anosComRodada, areas, capacidadePorCtMes, demandaPorDiaDaArea,
+  demandaPorMesDaArea, ocupacaoPorCt, porDia, porMes, porRecurso,
+  ultimaExecucao,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
-import { cargas, cargaCorrente } from '../../lib/demanda';
+import {
+  atributos as atributosDePara, cargas, cargaCorrente, combinacoesPorMes,
+  mixAjustes, taxasDoMix, todasAsRegras,
+} from '../../lib/demanda';
+import {
+  CAMPOS_BASE, camposUsados, capacidadePorAtributo, demandaPorAtributo,
+  rotulosDe, valoresDe,
+} from '../../lib/regras';
 import {
   diaDaSemana, diasNoIntervalo, iso, mesesNoIntervalo, resolvePeriodo,
   rotuloPeriodo,
 } from '../../lib/periodo';
 import { DIAS_CURTO, MESES, rotuloArea } from '../../lib/dias';
 import { leOrdem, ordenar } from '../../lib/ordem';
+import { COOKIE_TEMA, leTema } from '../../lib/tema';
 import { descreveFiltro, leFiltros, passaTodos } from '../../lib/filtro';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
 import { FiltrosRecurso, FiltrosTopo, SeletorAno } from '../painel/filtros';
 import GraficoOcupacao from './grafico';
 import TabelaMesOcupacao from './tabela-mes';
+import TabelaAtributoOcupacao from './tabela-atributo';
+import FiltroColuna from '../painel/filtro-coluna';
 import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
 import Shell from '../shell';
@@ -66,6 +78,7 @@ const classePct = (v) => (v === null ? 'muted'
     : v >= 85 ? 'ocup-aperta' : '');
 
 export default async function Page({ searchParams }) {
+  const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
   let listaAreas;
   let listaCargas;
   try {
@@ -211,9 +224,15 @@ export default async function Page({ searchParams }) {
   const ativos = CAMPOS_FILTRO
     .filter((c) => filtros[c.campo])
     .map((c) => descreveFiltro(c.rot, filtros[c.campo]));
-  const naBarra = CAMPOS_FILTRO.filter((c) =>
-    ['sub_area', 'tipo_recurso', 'cc', 'ct', 'nome'].includes(c.campo)
-    || filtros[c.campo]);
+  // A ordem é a do funil como se pensa nele: do maior recorte para o menor,
+  // e o tipo por último porque ele quase nunca é a primeira pergunta. Campo
+  // filtrado por fora dessa lista entra depois — o recorte não pode ficar
+  // escondido atrás de uma rolagem horizontal.
+  const FIXOS = ['sub_area', 'cc', 'ct', 'nome', 'tipo_recurso'];
+  const naBarra = [
+    ...FIXOS.map((k) => CAMPOS_FILTRO.find((c) => c.campo === k)).filter(Boolean),
+    ...CAMPOS_FILTRO.filter((c) => !FIXOS.includes(c.campo) && filtros[c.campo]),
+  ];
 
   const filtrado = ativos.length > 0;
   // '0' quando nada casa: nenhum recurso tem id 0, então as consultas voltam
@@ -224,6 +243,21 @@ export default async function Page({ searchParams }) {
   // A URL descreve por inteiro o que está na tela: recorte, medida, unidade,
   // base e ordenação. Ela mora aqui embaixo porque fecha em cima do funil
   // acima — declarada antes dele, leria variáveis que ainda não existem.
+  // O mesmo container de duas abas do painel da capacidade, com as medidas
+  // deste: a de baixo é a MESMA ocupação, olhada por produto em vez de por
+  // máquina — e um rótulo pode estourar em junho sem que nenhum centro estoure,
+  // porque ele divide o mês com os outros.
+  const [attrsDePara, regrasDePara] = await Promise.all([
+    atributosDePara(), todasAsRegras(),
+  ]);
+  const atributosFiltro = [...attrsDePara, ...CAMPOS_BASE];
+  const podeAtributo = atributosFiltro.length > 0;
+  const aba = podeAtributo && searchParams?.aba === 'atributo' ? 'atributo' : 'ct';
+  const attrTabela = aba === 'atributo'
+    ? (atributosFiltro.some((a) => a.codigo === searchParams?.attr_tab)
+        ? searchParams.attr_tab : atributosFiltro[0].codigo)
+    : null;
+
   const url = ({
     de: d1 = periodo.de,
     ate: d2 = periodo.ate,
@@ -231,6 +265,8 @@ export default async function Page({ searchParams }) {
     um = unidade,
     cg = cargaId,
     ordem: ord = searchParams?.ordem ?? null,
+    abaSel = aba,
+    attrTab = attrTabela,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
@@ -240,6 +276,8 @@ export default async function Page({ searchParams }) {
     if (um !== 'min') p.set('unidade', um);
     if (cg) p.set('carga', String(cg));
     if (ord) p.set('ordem', ord);
+    if (abaSel === 'atributo') p.set('aba', 'atributo');
+    if (abaSel === 'atributo' && attrTab) p.set('attr_tab', attrTab);
     // Os filtros viajam como vieram: reescrevê-los aqui seria uma segunda
     // serialização, livre para divergir da de lib/filtro.js.
     for (const c of CAMPOS_FILTRO) {
@@ -312,6 +350,54 @@ export default async function Page({ searchParams }) {
     ocupacao: ocupa(r.demanda, r[medida]),
   }));
   const ordenados = ordenar(comOcup, ordem);
+
+  // Só com a aba aberta: são duas consultas caras, e quem fica na tabela por
+  // centro de trabalho não tem por que pagar por elas.
+  let porAtributo = [];
+  let mesesDaTabela = [];
+  if (aba === 'atributo' && nivelMes) {
+    const [capCt, combos, manuais, taxasMix] = await Promise.all([
+      capacidadePorCtMes(exec.id, areaId, periodo.de, periodo.ate, listaIds,
+                         medida),
+      combinacoesPorMes(
+        carga.id,
+        [...new Set([...camposUsados(regrasDePara), attrTabela])]),
+      mixAjustes(attrTabela, ano),
+      taxasDoMix(attrTabela),
+    ]);
+
+    const ehBase = CAMPOS_BASE.some((c) => c.codigo === attrTabela);
+    const rotulos = [
+      ...(ehBase ? valoresDe(combos, attrTabela).map((v) => v.valor)
+                 : rotulosDe(regrasDePara, attrTabela)),
+      null,
+    ];
+
+    const cts = [...new Set(capCt.map((c) => c.ct))];
+    const cap = capacidadePorAtributo(capCt, combos, attrsDePara, regrasDePara,
+      attrTabela, rotulos, { ano, manuais, taxas: taxasMix });
+    const dem = demandaPorAtributo(combos, attrsDePara, regrasDePara, attrTabela,
+      cts);
+
+    // Um rótulo entra se tiver capacidade OU demanda: o que só tem demanda é o
+    // caso mais importante — plano pedindo de algo que ninguém produz aqui.
+    const chaves = [...new Set([
+      ...cap.linhas.map((l) => l.rotulo),
+      ...dem.map((l) => l.rotulo),
+    ])];
+    porAtributo = chaves.map((rotulo) => ({
+      rotulo,
+      capacidade: new Map(
+        [...(cap.linhas.find((l) => l.rotulo === rotulo)?.meses ?? new Map())]
+          .map(([m, v]) => [m, v.min])),
+      demanda: dem.find((l) => l.rotulo === rotulo)?.meses ?? new Map(),
+    }));
+
+    mesesDaTabela = mesesNoIntervalo(periodo.de, periodo.ate).map((m) => ({
+      chave: iso(m.ano, m.mes, 1),
+      rotulo: MESES[m.mes] + (m.parcial ? '*' : ''),
+    }));
+  }
 
   const colunas = [
     { chave: 'planta', rot: 'Planta', celula: (r) => r.planta || '—' },
@@ -423,7 +509,7 @@ export default async function Page({ searchParams }) {
         <div className="grade-rolagem">
           <div className="grade-alinhada" style={{ minWidth: LARGURA_MIN }}>
             <GraficoOcupacao dados={dados} medida={rotuloMedida}
-                             unidade={unidade} />
+                             unidade={unidade} tema={tema} />
             <TabelaMesOcupacao dados={dados} medida={rotuloMedida}
                                unidade={unidade} />
           </div>
@@ -460,12 +546,39 @@ export default async function Page({ searchParams }) {
 
       <div className="painel">
         <div className="painel-topo">
-          <h2>Por centro de trabalho</h2>
+          {/* Duas leituras da MESMA ocupação: por máquina e por produto. A aba
+              é um Link e não estado de tela porque a segunda custa duas
+              consultas — abrir tem que ser uma decisão, não um efeito. */}
+          <div className="chips" style={{ marginBottom: 0 }}>
+            <Link href={url({ abaSel: 'ct' })}
+                  className={`chip ${aba === 'ct' ? 'chip-on' : ''}`}>
+              Ocupação por centro de trabalho
+            </Link>
+            {podeAtributo && (
+              <Link href={url({ abaSel: 'atributo' })}
+                    className={`chip ${aba === 'atributo' ? 'chip-on' : ''}`}>
+                Ocupação por atributo
+              </Link>
+            )}
+          </div>
           <Suspense>
             <FiltrosRecurso ano={ano} periodo={periodo}
                             campos={naBarra} opcoes={opcoes} />
           </Suspense>
         </div>
+
+        {aba === 'atributo' && (
+          <div className="filtros" style={{ marginBottom: 12 }}>
+            <nav className="modo modo-ano">
+              {atributosFiltro.map((a) => (
+                <Link key={a.codigo} href={url({ attrTab: a.codigo })}
+                      className={a.codigo === attrTabela ? 'modo-on' : ''}>
+                  {a.nome}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
         {ativos.length > 0 && (
           <p className="filtro-resumo">
             Recortando por:
@@ -477,14 +590,52 @@ export default async function Page({ searchParams }) {
           <strong>▼</strong> ao lado do título da coluna filtra por aquele
           campo, com operador e vários valores.
         </p>
-        <p className="rodape" style={{ margin: '0 0 1rem' }}>
-          A comparação é no grão do <strong>CT</strong>, e não do recurso: a
-          capacidade é do recurso e a demanda é do centro de trabalho. Dois
-          recursos no mesmo CT dividem uma demanda que não sabe deles, e o dado
-          não tem por onde repartir.
-          {' '}Clique num título de coluna para ordenar.
-        </p>
 
+        {aba === 'ct' && (
+          <p className="rodape" style={{ margin: '0 0 1rem' }}>
+            A comparação é no grão do <strong>CT</strong>, e não do recurso: a
+            capacidade é do recurso e a demanda é do centro de trabalho. Dois
+            recursos no mesmo CT dividem uma demanda que não sabe deles, e o
+            dado não tem por onde repartir.
+            {' '}Clique num título de coluna para ordenar.
+          </p>
+        )}
+
+        {aba === 'atributo' && (
+          <p className="rodape" style={{ margin: '0 0 1rem' }}>
+            A mesma ocupação, por produto em vez de por máquina — um rótulo pode
+            estourar em junho sem que nenhum centro estoure, porque ele divide o
+            mês com os outros. Cada célula traz a <strong>ocupação</strong> e,
+            embaixo, demanda sobre {String(rotuloMedida).toLowerCase()}.
+            {' '}A capacidade vem <strong>rateada</strong> pela fatia de tempo de
+            cada rótulo; a demanda vem inteira, porque ela já é da linha e a
+            linha já é classificada.
+          </p>
+        )}
+
+        {aba === 'atributo' && !nivelMes && (
+          <p className="vazio">
+            A ocupação por atributo é mensal — a base de demanda vem carimbada
+            no mês, e reparti-la por dia inventaria uma distribuição que o plano
+            não deu. Volte ao ano inteiro para ver esta leitura.
+          </p>
+        )}
+
+        {aba === 'atributo' && nivelMes && (
+          <div className="grade-rolagem">
+            <div className="grade-alinhada" style={{ minWidth: LARGURA_MIN }}>
+              <TabelaAtributoOcupacao
+                linhas={porAtributo}
+                meses={mesesDaTabela}
+                unidade={unidade}
+                medida={rotuloMedida}
+                atributo={atributosFiltro.find((a) => a.codigo === attrTabela)?.nome
+                          ?? attrTabela} />
+            </div>
+          </div>
+        )}
+
+        {aba === 'ct' && (
         <div className="grade-rolagem">
           <table className="tabela-recursos">
             <thead>
@@ -527,8 +678,9 @@ export default async function Page({ searchParams }) {
             </tbody>
           </table>
         </div>
+        )}
 
-        {semRecurso.length > 0 && (
+        {aba === 'ct' && semRecurso.length > 0 && (
           <p className="rodape">
             <strong>{semRecurso.length} centro(s) com demanda e sem recurso
             cadastrado</strong> — o plano pede de uma máquina que este cadastro
@@ -537,7 +689,7 @@ export default async function Page({ searchParams }) {
             {semRecurso.length > 8 && ` … e mais ${semRecurso.length - 8}`}.
           </p>
         )}
-        {semDemanda.length > 0 && (
+        {aba === 'ct' && semDemanda.length > 0 && (
           <p className="rodape">
             {semDemanda.length} centro(s) com capacidade e sem demanda nesta
             base: ociosos no plano, ou máquina que este cenário não usa.

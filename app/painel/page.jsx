@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import {
   ultimaExecucao, areas, arraysDeFatia, capacidadePorCtMes, porMes, porDia,
@@ -11,6 +12,7 @@ import {
 } from '../../lib/periodo';
 import { MESES, DIAS, DIAS_CURTO, rotuloArea } from '../../lib/dias';
 import { leOrdem, ordenar } from '../../lib/ordem';
+import { COOKIE_TEMA, leTema } from '../../lib/tema';
 import { descreveFiltro, leFiltros, passaTodos } from '../../lib/filtro';
 import { LARGURA_MIN } from './grade';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
@@ -58,6 +60,7 @@ function serieDeMeses(linhas, meses, campo = '') {
 const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).toFixed(1) + '%');
 
 export default async function Page({ searchParams }) {
+  const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
   let listaAreas;
 
   try {
@@ -332,9 +335,15 @@ export default async function Page({ searchParams }) {
   // da coluna, que é onde a pessoa já está olhando o dado. Campo filtrado sobe
   // para a barra mesmo se não for um dos quatro, senão o recorte ficaria
   // escondido atrás de uma rolagem horizontal.
-  const naBarra = CAMPOS_FILTRO.filter((c) =>
-    ['sub_area', 'tipo_recurso', 'cc', 'ct', 'nome'].includes(c.campo)
-    || filtros[c.campo]);
+  // A ordem é a do funil como se pensa nele: do maior recorte para o menor,
+  // e o tipo por último porque ele quase nunca é a primeira pergunta. Campo
+  // filtrado por fora dessa lista entra depois — o recorte não pode ficar
+  // escondido atrás de uma rolagem horizontal.
+  const FIXOS = ['sub_area', 'cc', 'ct', 'nome', 'tipo_recurso'];
+  const naBarra = [
+    ...FIXOS.map((k) => CAMPOS_FILTRO.find((c) => c.campo === k)).filter(Boolean),
+    ...CAMPOS_FILTRO.filter((c) => !FIXOS.includes(c.campo) && filtros[c.campo]),
+  ];
 
   const pedido = searchParams?.recurso ? Number(searchParams.recurso) : null;
   const foco = recursos.find((r) => Number(r.id) === pedido) ?? null;
@@ -886,7 +895,7 @@ export default async function Page({ searchParams }) {
         <div className="grade-rolagem">
           <div className="grade-alinhada" style={{ minWidth: LARGURA_MIN }}>
             <Grafico dados={dados} mostrarInstalada={mostrarInstalada}
-                     unidade={unidade} sufixo={sufixo} />
+                     unidade={unidade} sufixo={sufixo} tema={tema} />
             <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada}
                        unidade={unidade} sufixo={sufixo} totais={totais} />
           </div>

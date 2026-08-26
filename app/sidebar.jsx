@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import BotaoTema from './tema';
 
 // Menu lateral com grupos expansíveis.
 //
@@ -60,7 +61,7 @@ const GRUPOS = [
   },
 ];
 
-export default function Sidebar({ versao }) {
+export default function Sidebar({ versao, tema }) {
   const caminho = usePathname();
 
   // Todos os grupos nascem abertos: com dois grupos e oito telas, tudo cabe
@@ -167,9 +168,16 @@ export default function Sidebar({ versao }) {
           );
         })}
 
-        {expandido && (
-          <span className="lado-versao" title="Commit que está rodando">{versao}</span>
-        )}
+        {/* O tema fica no rodapé do menu, longe do que se clica todo dia:
+            é uma escolha que se faz uma vez. */}
+        <div className="lado-rodape">
+          <BotaoTema tema={tema} />
+          {expandido && (
+            <span className="lado-versao" title="Commit que está rodando">
+              {versao}
+            </span>
+          )}
+        </div>
       </nav>
 
       {/* Fundo escuro só existe no celular, para fechar a gaveta ao tocar fora. */}

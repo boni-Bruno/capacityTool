@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { detalhe, emUnidade, formataUnidade, sufixoUnidade } from '../../lib/formato';
 import { EIXO, MARGEM_ESQ, TOTAL } from '../painel/grade';
+import { coresDoTema } from '../painel/cores';
 
 // A demanda em colunas, dentro da capacidade desenhada como área.
 //
@@ -31,8 +32,10 @@ const COR = {
 
 export default function GraficoOcupacao({
   dados, medida = 'Disponível', unidade = 'min', sufixo = null,
+  tema = 'claro',
 }) {
   const suf = sufixo ?? sufixoUnidade(unidade);
+  const cor = coresDoTema(tema);
   const router = useRouter();
 
   // Em hora a barra guarda hora, e o x60 recupera o minuto de origem para
@@ -65,22 +68,23 @@ export default function GraficoOcupacao({
         onClick={clicavel ? aoClicar : undefined}
         style={clicavel ? { cursor: 'pointer' } : undefined}
       >
-        <CartesianGrid stroke="#e5e3dd" vertical={false} />
-        <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: '#6b6a65' }}
-               axisLine={{ stroke: '#d8d6cf' }} tickLine={false} />
-        <YAxis tick={{ fontSize: 12, fill: '#6b6a65' }} axisLine={false}
+        <CartesianGrid stroke={cor.grade} vertical={false} />
+        <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: cor.rotulo }}
+               axisLine={{ stroke: cor.eixo }} tickLine={false} />
+        <YAxis tick={{ fontSize: 12, fill: cor.rotulo }} axisLine={false}
                tickLine={false} width={EIXO}
                tickFormatter={(v) =>
                  (v >= 1000
                    ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k ${suf}`
                    : `${formataUnidade(desfaz(v), unidade)} ${suf}`)} />
         <Tooltip
-          cursor={{ fill: 'rgba(42,120,214,.06)' }}
+          cursor={{ fill: cor.cursor }}
           formatter={(v, n) => [
             sufixo ? `${formataUnidade(desfaz(v), unidade)} ${suf}`
                    : detalhe(desfaz(v), unidade), n,
           ]}
-          contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e3dd' }} />
+          contentStyle={{ fontSize: 13, borderRadius: 8, background: cor.caixa,
+                          border: `1px solid ${cor.borda}` }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
 
         {/* A área vem ANTES no eixo de empilhamento para ficar atrás: ela é o

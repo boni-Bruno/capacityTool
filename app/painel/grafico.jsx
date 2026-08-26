@@ -9,6 +9,7 @@ import {
   detalhe, eFisica, emUnidade, formataUnidade, sufixoUnidade, eMinuto,
 } from '../../lib/formato';
 import { EIXO, MARGEM_ESQ, TOTAL } from './grade';
+import { coresDoTema } from './cores';
 
 // Um gráfico para os três níveis do drill-down: mês, dia e turno.
 //
@@ -23,8 +24,10 @@ import { EIXO, MARGEM_ESQ, TOTAL } from './grade';
 // grandeza a menos com o mesmo rótulo de antes.
 export default function Grafico({
   dados, mostrarInstalada = true, unidade = 'min', sufixo = null,
+  tema = 'claro',
 }) {
   const suf = sufixo ?? sufixoUnidade(unidade);
+  const cor = coresDoTema(tema);
   const router = useRouter();
 
   // A barra guarda o número já na unidade escolhida, e o rótulo precisa
@@ -63,10 +66,10 @@ export default function Grafico({
         onClick={clicavel ? aoClicar : undefined}
         style={clicavel ? { cursor: 'pointer' } : undefined}
       >
-        <CartesianGrid stroke="#e5e3dd" vertical={false} />
-        <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: '#6b6a65' }}
-               axisLine={{ stroke: '#d8d6cf' }} tickLine={false} />
-        <YAxis tick={{ fontSize: 12, fill: '#6b6a65' }} axisLine={false} tickLine={false}
+        <CartesianGrid stroke={cor.grade} vertical={false} />
+        <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: cor.rotulo }}
+               axisLine={{ stroke: cor.eixo }} tickLine={false} />
+        <YAxis tick={{ fontSize: 12, fill: cor.rotulo }} axisLine={false} tickLine={false}
                width={EIXO}
                tickFormatter={(v) =>
                  v >= 1000
@@ -74,7 +77,7 @@ export default function Grafico({
                      + 'k ' + suf
                    : formataUnidade(desfaz(v), unidade) + ' ' + suf} />
         <Tooltip
-          cursor={{ fill: 'rgba(42,120,214,.06)' }}
+          cursor={{ fill: cor.cursor }}
           formatter={(v, n) => [
             // `detalhe` já sabe o que a leitura exata significa em cada
             // unidade: hora e minuto no tempo, o número cheio no metro. Não
@@ -86,7 +89,8 @@ export default function Grafico({
             sufixo ? `${formataUnidade(desfaz(v), unidade)} ${suf}`
                    : detalhe(desfaz(v), unidade), n,
           ]}
-          contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e3dd' }} />
+          contentStyle={{ fontSize: 13, borderRadius: 8, background: cor.caixa,
+                          border: `1px solid ${cor.borda}` }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
         {mostrarInstalada && (
           <Bar dataKey="Instalada" fill="#c9c7c0" radius={[3, 3, 0, 0]} />

@@ -1,4 +1,6 @@
+import { cookies } from 'next/headers';
 import Sidebar from './sidebar';
+import { COOKIE_TEMA, leTema } from '../lib/tema';
 
 // Qual commit está de fato rodando. O Vercel preenche VERCEL_GIT_COMMIT_SHA no
 // build; quando um build falha ele continua servindo o deploy anterior, e sem
@@ -9,5 +11,6 @@ import Sidebar from './sidebar';
 const versao = (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7);
 
 export default function Nav() {
-  return <Sidebar versao={versao} />;
+  const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
+  return <Sidebar versao={versao} tema={tema} />;
 }
