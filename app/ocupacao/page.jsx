@@ -12,6 +12,7 @@ import {
 } from '../../lib/periodo';
 import { DIAS_CURTO, MESES, rotuloArea } from '../../lib/dias';
 import { leOrdem, ordenar } from '../../lib/ordem';
+import { descreveFiltro, leFiltros, passaTodos } from '../../lib/filtro';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
 import { FiltrosRecurso, FiltrosTopo, SeletorAno } from '../painel/filtros';
@@ -171,27 +172,36 @@ export default async function Page({ searchParams }) {
   // ferramenta fariam a pessoa aprender duas vezes. Sub-área, tipo, CC e CT.
   const todos = await porRecurso(exec.id, areaId, periodo.de, periodo.ate);
 
-  const subAreas = [...new Set(todos.map((r) => r.sub_area).filter(Boolean))].sort();
-  const sub = subAreas.includes(searchParams?.sub) ? searchParams.sub : null;
-  const tipo = ['MAQUINA', 'PESSOA'].includes(searchParams?.tipo)
-    ? searchParams.tipo : null;
+  // Os mesmos filtros de coluna do painel da capacidade, pelo mesmo motor e
+  // pelos mesmos parâmetros — ver lib/filtro.js.
+  const CAMPOS_FILTRO = [
+    { campo: 'planta',       rot: 'Planta' },
+    { campo: 'area',         rot: 'Área' },
+    { campo: 'cc',           rot: 'CC' },
+    { campo: 'ct',           rot: 'CT' },
+    { campo: 'codigo',       rot: 'Código' },
+    { campo: 'nome',         rot: 'Recurso' },
+    { campo: 'sub_area',     rot: 'Sub-área' },
+    { campo: 'tipo_recurso', rot: 'Tipo' },
+  ];
+  const filtros = leFiltros(searchParams, CAMPOS_FILTRO.map((c) => c.campo));
 
   const distintos = (lista, campo) =>
     [...new Set(lista.map((r) => r[campo]).filter(Boolean))]
       .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+  const opcoes = Object.fromEntries(
+    CAMPOS_FILTRO.map((c) => [c.campo, distintos(todos, c.campo)]));
 
-  const ccs = distintos(todos, 'cc');
-  const cc = ccs.includes(searchParams?.cc) ? searchParams.cc : null;
-  const cts = distintos(cc ? todos.filter((r) => r.cc === cc) : todos, 'ct');
-  const ct = cts.includes(searchParams?.ct) ? searchParams.ct : null;
+  const recursos = todos.filter((r) => passaTodos(r, filtros));
 
-  const recursos = todos.filter((r) =>
-    (sub === null || r.sub_area === sub)
-    && (tipo === null || r.tipo_recurso === tipo)
-    && (cc === null || r.cc === cc)
-    && (ct === null || r.ct === ct));
+  const ativos = CAMPOS_FILTRO
+    .filter((c) => filtros[c.campo])
+    .map((c) => descreveFiltro(c.rot, filtros[c.campo]));
+  const naBarra = CAMPOS_FILTRO.filter((c) =>
+    ['sub_area', 'tipo_recurso', 'cc', 'ct'].includes(c.campo)
+    || filtros[c.campo]);
 
-  const filtrado = sub !== null || tipo !== null || cc !== null || ct !== null;
+  const filtrado = ativos.length > 0;
   // '0' quando nada casa: nenhum recurso tem id 0, então as consultas voltam
   // zeradas em vez de estourar no cast.
   const listaIds = !filtrado ? null
@@ -207,8 +217,6 @@ export default async function Page({ searchParams }) {
     um = unidade,
     cg = cargaId,
     ordem: ord = searchParams?.ordem ?? null,
-    ccSel = cc,
-    ctSel = ct,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
@@ -218,10 +226,12 @@ export default async function Page({ searchParams }) {
     if (um !== 'min') p.set('unidade', um);
     if (cg) p.set('carga', String(cg));
     if (ord) p.set('ordem', ord);
-    if (sub !== null) p.set('sub', sub);
-    if (tipo !== null) p.set('tipo', tipo);
-    if (ccSel !== null) p.set('cc', ccSel);
-    if (ctSel !== null) p.set('ct', ctSel);
+    // Os filtros viajam como vieram: reescrevê-los aqui seria uma segunda
+    // serialização, livre para divergir da de lib/filtro.js.
+    for (const c of CAMPOS_FILTRO) {
+      const bruto = searchParams?.[`f_${c.campo}`];
+      if (filtros[c.campo] && bruto) p.set(`f_${c.campo}`, bruto);
+    }
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
     if (d1 && d2 && !inteiro) { p.set('de', d1); p.set('ate', d2); }
     return `?${p.toString()}`;
@@ -293,24 +303,7 @@ export default async function Page({ searchParams }) {
     { chave: 'planta', rot: 'Planta', celula: (r) => r.planta || '—' },
     { chave: 'area', rot: 'Área', celula: (r) => r.area || '—' },
     { chave: 'cc', rot: 'CC', celula: (r) => <code>{r.cc}</code> },
-    // Clicar no CT estreita tudo para ele — o mesmo gesto de clicar num
-    // recurso no painel da capacidade.
-    //
-    // O link manda CC e CT SEPARADOS porque é assim que o filtro lê: a coluna
-    // mostra o CC-CT inteiro, mas `mf.ct` guarda só a segunda metade, e mandar
-    // "515-004" onde se espera "004" fazia o clique não filtrar nada.
-    { chave: 'ct', rot: 'CT',
-      celula: (r) => {
-        const parte = String(r.ct).split('-').slice(1).join('-');
-        const aceso = cc === r.cc && ct === parte;
-        return (
-          <Link className="link-linha"
-                href={url(aceso ? { ccSel: null, ctSel: null }
-                                : { ccSel: r.cc, ctSel: parte })}>
-            <code>{r.ct}</code>
-          </Link>
-        );
-      } },
+    { chave: 'ct', rot: 'CT', celula: (r) => <code>{r.ct}</code> },
     { chave: 'recursos', rot: 'Recursos',
       celula: (r) => (r.recursos
         || <span className="muted">sem recurso cadastrado</span>) },
@@ -456,13 +449,19 @@ export default async function Page({ searchParams }) {
           <h2>Por centro de trabalho</h2>
           <Suspense>
             <FiltrosRecurso ano={ano} periodo={periodo}
-                            subAreas={subAreas} sub={sub} tipo={tipo}
-                            ccs={ccs} cc={cc} cts={cts} ct={ct} />
+                            campos={naBarra} opcoes={opcoes} />
           </Suspense>
         </div>
+        {ativos.length > 0 && (
+          <p className="filtro-resumo">
+            Recortando por:
+            {ativos.map((t) => <span key={t} className="filtro-selo">{t}</span>)}
+          </p>
+        )}
         <p className="rodape" style={{ margin: '0 0 1rem' }}>
-          Estes filtros valem para os indicadores e o gráfico acima também.
-          Clique num CT para estreitar só nele.
+          Estes filtros valem para os indicadores e o gráfico acima também. O{' '}
+          <strong>▼</strong> ao lado do título da coluna filtra por aquele
+          campo, com operador e vários valores.
         </p>
         <p className="rodape" style={{ margin: '0 0 1rem' }}>
           A comparação é no grão do <strong>CT</strong>, e não do recurso: a
@@ -496,9 +495,7 @@ export default async function Page({ searchParams }) {
             </thead>
             <tbody>
               {ordenados.map((r) => (
-                <tr key={r.ct}
-                    className={ct && cc === r.cc && r.ct.endsWith(`-${ct}`)
-                      ? 'linha-edit' : ''}>
+                <tr key={r.ct}>
                   {colunas.map((c) => (
                     <td key={c.chave} className={c.num ? 'num' : ''}>
                       {c.celula(r)}

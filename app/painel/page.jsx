@@ -11,6 +11,7 @@ import {
 } from '../../lib/periodo';
 import { MESES, DIAS, DIAS_CURTO, rotuloArea } from '../../lib/dias';
 import { leOrdem, ordenar } from '../../lib/ordem';
+import { descreveFiltro, leFiltros, passaTodos } from '../../lib/filtro';
 import { LARGURA_MIN } from './grade';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import {
@@ -32,6 +33,7 @@ import Grafico from './grafico';
 import { FiltrosTopo, FiltrosRecurso, SeletorAno } from './filtros';
 import TabelaMes from './tabela-mes';
 import TabelaAtributo from './tabela-atributo';
+import FiltroColuna from './filtro-coluna';
 import Memoria from './memoria';
 import Shell from '../shell';
 
@@ -280,30 +282,47 @@ export default async function Page({ searchParams }) {
 
   // Os filtros do cabeçalho são atributos do recurso, e a lista de opções sai
   // do que existe nesta área — sem cadastro à parte de sub-área.
-  const subAreas = [...new Set(todos.map((r) => r.sub_area).filter(Boolean))].sort();
-  const sub = subAreas.includes(searchParams?.sub) ? searchParams.sub : null;
-  const tipo = ['MAQUINA', 'PESSOA'].includes(searchParams?.tipo)
-    ? searchParams.tipo : null;
+  // OS FILTROS DE COLUNA
+  //
+  // Um campo, um operador e uma lista de valores, na URL — ver lib/filtro.js.
+  // A barra de cima e o botãozinho no cabeçalho da coluna escrevem no MESMO
+  // parâmetro, então não existe filtrar num lugar e o outro continuar aberto.
+  const CAMPOS_FILTRO = [
+    { campo: 'planta',     rot: 'Planta' },
+    { campo: 'area',       rot: 'Área' },
+    { campo: 'cc',         rot: 'CC' },
+    { campo: 'ct',         rot: 'CT' },
+    { campo: 'codigo',     rot: 'Código' },
+    { campo: 'nome',       rot: 'Recurso' },
+    { campo: 'sub_area',   rot: 'Sub-área' },
+    { campo: 'calendario', rot: 'Calendário' },
+    { campo: 'tipo_recurso', rot: 'Tipo' },
+  ];
+  const filtros = leFiltros(searchParams, CAMPOS_FILTRO.map((c) => c.campo));
 
-  // CC e CT: a identidade da máquina na controladoria. Em cascata, como nas
-  // telas de cadastro — escolher o CC limita os CTs oferecidos, e CT que não
-  // existe no CC escolhido é ignorado em vez de esvaziar a tela sem explicar.
+  // As opções saem do que EXISTE nesta área, e não de um cadastro: oferecer um
+  // valor que ninguém tem devolveria vazio sem explicar por quê.
   const distintos = (lista, campo) =>
     [...new Set(lista.map((r) => r[campo]).filter(Boolean))]
       .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
-
-  const ccs = distintos(todos, 'cc');
-  const cc = ccs.includes(searchParams?.cc) ? searchParams.cc : null;
-  const cts = distintos(cc ? todos.filter((r) => r.cc === cc) : todos, 'ct');
-  const ct = cts.includes(searchParams?.ct) ? searchParams.ct : null;
+  const opcoes = Object.fromEntries(
+    CAMPOS_FILTRO.map((c) => [c.campo, distintos(todos, c.campo)]));
 
   // Um lugar só decide quem entra: a tabela mostra exatamente os recursos que
   // alimentaram os indicadores e o gráfico.
-  const recursos = todos.filter((r) =>
-    (sub === null || r.sub_area === sub) &&
-    (tipo === null || r.tipo_recurso === tipo) &&
-    (cc === null || r.cc === cc) &&
-    (ct === null || r.ct === ct));
+  const recursos = todos.filter((r) => passaTodos(r, filtros));
+
+  const ativos = CAMPOS_FILTRO
+    .filter((c) => filtros[c.campo])
+    .map((c) => descreveFiltro(c.rot, filtros[c.campo]));
+
+  // Na barra de cima ficam os quatro mais usados; os outros vivem no cabeçalho
+  // da coluna, que é onde a pessoa já está olhando o dado. Campo filtrado sobe
+  // para a barra mesmo se não for um dos quatro, senão o recorte ficaria
+  // escondido atrás de uma rolagem horizontal.
+  const naBarra = CAMPOS_FILTRO.filter((c) =>
+    ['sub_area', 'tipo_recurso', 'cc', 'ct'].includes(c.campo)
+    || filtros[c.campo]);
 
   const pedido = searchParams?.recurso ? Number(searchParams.recurso) : null;
   const foco = recursos.find((r) => Number(r.id) === pedido) ?? null;
@@ -336,8 +355,7 @@ export default async function Page({ searchParams }) {
     : visiveis.every((r) => r.tipo_recurso === 'PESSOA')  ? 'PESSOA'
     : visiveis.every((r) => r.tipo_recurso === 'MAQUINA') ? 'MAQUINA'
     : 'MISTA';
-  const filtrado = sub !== null || tipo !== null || cc !== null || ct !== null
-    || foco !== null;
+  const filtrado = ativos.length > 0 || foco !== null;
   // '0' quando nada casa o filtro: nenhum recurso tem id 0, então as consultas
   // voltam zeradas. String vazia estouraria no cast de string_to_array.
   const listaIds = !filtrado ? null
@@ -362,21 +380,26 @@ export default async function Page({ searchParams }) {
     ordem: ord = ordemTexto,
     abaSel = aba,
     attrTab = attrTabela,
+    semFiltros = false,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
     p.set('ano', String(ano));
     p.set('unidade', um);
     p.set('origem', origem);
-    if (sub !== null) p.set('sub', sub);
-    if (tipo !== null) p.set('tipo', tipo);
+    // Os filtros de coluna viajam como vieram: reescrevê-los aqui seria uma
+    // segunda serialização, livre para divergir da de lib/filtro.js.
+    if (!semFiltros) {
+      for (const c of CAMPOS_FILTRO) {
+        const bruto = searchParams?.[`f_${c.campo}`];
+        if (filtros[c.campo] && bruto) p.set(`f_${c.campo}`, bruto);
+      }
+    }
     if (recurso !== null && recurso !== undefined) p.set('recurso', String(recurso));
     if (diaUtil) p.set('dia_util', '1');
     if (calId && calendarios.length > 1) p.set('cal', String(calId));
     if (attr) p.set('atributo', attr);
     if (attr && rot) p.set('rotulo', rot);
-    if (cc !== null) p.set('cc', cc);
-    if (ct !== null) p.set('ct', ct);
     if (ord) p.set('ordem', ord);
     if (abaSel === 'atributo') p.set('aba', 'atributo');
     if (abaSel === 'atributo' && attrTab) p.set('attr_tab', attrTab);
@@ -978,8 +1001,7 @@ export default async function Page({ searchParams }) {
           </div>
           <Suspense>
             <FiltrosRecurso ano={ano} periodo={periodo}
-                            subAreas={subAreas} sub={sub} tipo={tipo}
-                            ccs={ccs} cc={cc} cts={cts} ct={ct}
+                            campos={naBarra} opcoes={opcoes}
                             atributosDePara={atributosFiltro} atributo={atributo}
                             rotulos={rotulosDoAtributo} rotulo={rotulo} />
           </Suspense>
@@ -1020,11 +1042,22 @@ export default async function Page({ searchParams }) {
           </>
         )}
 
+        {ativos.length > 0 && (
+          <p className="filtro-resumo">
+            Recortando por:
+            {ativos.map((t) => (
+              <span key={t} className="filtro-selo">{t}</span>
+            ))}
+            <Link href={url({ semFiltros: true })}>tirar todos</Link>
+          </p>
+        )}
+
         {aba === 'recurso' && (
           <p className="rodape" style={{ margin: '0 0 1rem' }}>
             Estes filtros valem para os indicadores e o gráfico acima também.
-            Clique num recurso para estreitar ainda mais, ou num{' '}
-            <strong>título de coluna</strong> para ordenar por ele.
+            Clique num recurso para estreitar ainda mais, num{' '}
+            <strong>título de coluna</strong> para ordenar, ou no{' '}
+            <strong>▼</strong> ao lado dele para filtrar por aquele campo.
           </p>
         )}
         {aba === 'atributo' && periodo.nivel !== 'MES' && (
@@ -1073,6 +1106,15 @@ export default async function Page({ searchParams }) {
                           {atual ? (ordem.desc ? '▼' : '▲') : '⇅'}
                         </span>
                       </Link>
+                      {/* Coluna de texto ganha o filtro ali mesmo. As de
+                          número não: elas pedem maior/menor, que é outro
+                          desenho, e um "é um de" com 4.000 valores distintos
+                          não ajudaria ninguém. */}
+                      {!c.num && opcoes[c.chave] && (
+                        <FiltroColuna campo={c.chave}
+                                      rotulo={c.rot}
+                                      valores={opcoes[c.chave]} />
+                      )}
                     </th>
                   );
                 })}

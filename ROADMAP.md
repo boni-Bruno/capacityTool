@@ -406,6 +406,18 @@ e da de total moram em `app/painel/grade.js` — o gráfico as usa como margem, 
 tabela como largura de coluna — e os dois compartilham uma única caixa de
 rolagem, senão rolar um desalinharia do outro.
 
+**Os filtros dos dois painéis ganharam operador e vários valores**
+(`lib/filtro.js`, 14 verificações): é um de, não é nenhum de, contém, não
+contém, começa com, termina com, está vazio, não está vazio. Um campo, um
+operador e uma lista de valores, na URL como `f_<campo>=in:278,401`.
+
+O mesmo controle aparece na barra de cima e num **▼** ao lado do título de cada
+coluna de texto — os dois escrevem o mesmo parâmetro, então nunca discordam. As
+opções saem do que existe na tela, não de um cadastro. E entre campos, OU
+dentro do campo. Um resumo acima da tabela diz o que está recortando, porque
+filtro que mostra menos sem se anunciar faz o total menor parecer capacidade
+menor.
+
 **A tabela de baixo do painel virou um container de duas abas**, com a URL
 decidindo qual está aberta: *Capacidade por recurso* (padrão, a de sempre) e
 *Capacidade por atributo* — a mesma capacidade disponível repartida entre os

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { rotuloArea } from '../../lib/dias';
 import { ORIGENS, rotuloOrigem } from '../../lib/origens';
 import RecalcularTudo from './recalcular';
+import FiltroColuna from './filtro-coluna';
 
 // Os filtros do painel moram em dois lugares.
 //
@@ -42,12 +43,13 @@ function useMuda() {
 
     // O recurso clicado pode não estar mais na seleção, e o recorte aberto era
     // do conjunto antigo — manter mostraria número de um período que sumiu.
-    if (chaves.some((k) => ['sub', 'tipo', 'area', 'origem'].includes(k))) {
+    if (chaves.some((k) => ['area', 'origem'].includes(k))) {
       p.delete('recurso'); p.delete('de'); p.delete('ate');
     }
     // Recortar por rótulo pode tirar da seleção justamente o recurso em foco:
     // CT sem nada daquele rótulo sai da tabela. O período continua valendo.
-    if (chaves.some((k) => ['atributo', 'rotulo', 'cc', 'ct'].includes(k))) {
+    // Os filtros de coluna limpam o foco por conta própria, em FiltroColuna.
+    if (chaves.some((k) => ['atributo', 'rotulo'].includes(k))) {
       p.delete('recurso');
     }
     // Trocar de ano invalida um recorte que era de outro ano.
@@ -108,10 +110,10 @@ export function SeletorAno({ ano, anos = [] }) {
 }
 
 export function FiltrosRecurso({
-  ano, subAreas = [], sub = null, tipo = null, periodo = null,
-  // CC e CT: a identidade da máquina na controladoria. Em cascata — o CC
-  // limita os CTs oferecidos, e trocar de CC derruba o CT que era dele.
-  ccs = [], cc = null, cts = [], ct = null,
+  ano, periodo = null,
+  // Os campos que ganham o controle de operador e vários valores, com as
+  // opções que existem na tela. Ver lib/filtro.js.
+  campos = [], opcoes = {},
   // O DE/PARA: atributos derivados e os rótulos do que está escolhido. Este é
   // filtro de verdade — ele muda o que está sendo somado, e não só como o
   // número é dito.
@@ -151,33 +153,15 @@ export function FiltrosRecurso({
         </>
       )}
 
-      {subAreas.length > 0 && (
-        <select value={sub ?? ''} onChange={(e) => muda('sub', e.target.value)}>
-          <option value="">todas as sub-áreas</option>
-          {subAreas.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-      )}
-
-      <select value={tipo ?? ''} onChange={(e) => muda('tipo', e.target.value)}>
-        <option value="">máquina e pessoa</option>
-        <option value="MAQUINA">só máquina</option>
-        <option value="PESSOA">só pessoa</option>
-      </select>
-
-      {ccs.length > 0 && (
-        <select value={cc ?? ''}
-                onChange={(e) => muda({ cc: e.target.value, ct: '' })}>
-          <option value="">todo CC</option>
-          {ccs.map((c) => <option key={c} value={c}>CC {c}</option>)}
-        </select>
-      )}
-
-      {cts.length > 0 && (
-        <select value={ct ?? ''} onChange={(e) => muda('ct', e.target.value)}>
-          <option value="">todo CT</option>
-          {cts.map((c) => <option key={c} value={c}>CT {c}</option>)}
-        </select>
-      )}
+      {/* O mesmo controle do cabeçalho da coluna, e o mesmo parâmetro da URL:
+          filtrar aqui acende o botão lá, e vice-versa. */}
+      {campos.map((c) => (
+        <span key={c.campo} className="filtro-campo">
+          <span className="campo-rot">{c.rot}</span>
+          <FiltroColuna campo={c.campo} rotulo={c.rot}
+                        valores={opcoes[c.campo] ?? []} />
+        </span>
+      ))}
 
       {/* Trocar de atributo derruba o rótulo junto: rótulo de outro atributo
           não existe, e deixá-lo na URL mostraria a área inteira parecendo
