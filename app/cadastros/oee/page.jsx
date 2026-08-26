@@ -135,7 +135,8 @@ export default async function Page({ searchParams }) {
     },
   );
 
-  const escopo = ct ? `CT ${cc ? `${cc}-` : ''}${ct}`
+  // O CT já vem no formato CC-CT: repetir o CC aqui daria "CT 278-278-001".
+  const escopo = ct ? `CT ${ct}`
     : cc ? `CC ${cc}`
       : (rotuloArea(listaAreas.find((a) => a.id === areaId) ?? {}) ?? 'esta área');
 
