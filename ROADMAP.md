@@ -413,7 +413,9 @@ rótulos de um atributo escolhido, mês a mês, em qualquer unidade.
 
 Em minuto a soma dos rótulos fecha com o total (as fatias de um CT somam 1); em
 metro e peça ela não fecha, porque cada rótulo converte pela taxa DELE — e é
-essa diferença que a tabela existe para mostrar. O mix ajustado à mão vale ali
+essa diferença que a tabela existe para mostrar. Ela acompanha a leitura **por
+dia útil** como o resto do painel: cada mês pelos dias úteis dele, e o total
+pela soma dos dias do período. O mix ajustado à mão vale ali
 como no resto do painel. As duas consultas caras só acontecem com a aba aberta.
 
 **No painel, a tabela por recurso** mostra Planta, Área, CC, CT e Recurso, e

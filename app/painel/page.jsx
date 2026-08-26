@@ -493,10 +493,17 @@ export default async function Page({ searchParams }) {
     porAtributo = capacidadePorAtributo(capCt, combos, attrsDePara, regrasDePara,
       attrTabela, rotulos, { ano, manuais, taxas: taxasMix });
 
-    mesesDaTabela = mesesNoIntervalo(periodo.de, periodo.ate).map((m) => ({
-      chave: iso(m.ano, m.mes, 1),
-      rotulo: MESES[m.mes] + (m.parcial ? '*' : ''),
-    }));
+    // O divisor viaja junto do mês: é ele que permite a célula por dia útil e
+    // o total certo, que é a soma bruta sobre a soma dos dias.
+    mesesDaTabela = mesesNoIntervalo(periodo.de, periodo.ate).map((m) => {
+      const du = porDiaUtil ? Number(uteis?.[m.mes] ?? 0) : 1;
+      return {
+        chave: iso(m.ano, m.mes, 1),
+        dias: du,
+        rotulo: MESES[m.mes] + (m.parcial ? '*' : '')
+              + (porDiaUtil ? ` (${formataDiasUteis(du)})` : ''),
+      };
+    });
   }
 
   const dataISO = periodo.nivel === 'TURNO' ? periodo.de : null;
@@ -995,6 +1002,13 @@ export default async function Page({ searchParams }) {
               A mesma capacidade <strong>disponível</strong> de cima, repartida
               entre os rótulos deste atributo pela fatia de tempo que cada um
               ocupa em cada centro de trabalho.
+              {porDiaUtil && (
+                <>
+                  {' '}Ela acompanha a leitura <strong>por dia útil</strong>:
+                  cada mês dividido pelos dias úteis dele, e o total pela soma
+                  dos dias do período — somar médias não dá média.
+                </>
+              )}
               {fisica
                 ? ' Cada rótulo converte pela taxa DELE, e não pela média do '
                   + 'centro — por isso a soma dos rótulos não repete o total do '
@@ -1028,6 +1042,7 @@ export default async function Page({ searchParams }) {
                 linhas={porAtributo.linhas}
                 meses={mesesDaTabela}
                 unidade={unidade}
+                porDiaUtil={porDiaUtil}
                 atributo={atributosFiltro.find((a) => a.codigo === attrTabela)?.nome
                           ?? attrTabela}
                 semIndice={porAtributo.semIndice} />
