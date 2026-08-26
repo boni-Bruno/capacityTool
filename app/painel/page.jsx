@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import {
-  ultimaExecucao, areas, arraysDeFatia, porMes, porDia, porTurnoDoDia,
-  tetoDoDia, porRecurso, memoriaDoDia, anosComRodada,
+  ultimaExecucao, areas, arraysDeFatia, capacidadePorCtMes, porMes, porDia,
+  porTurnoDoDia, tetoDoDia, porRecurso, memoriaDoDia, anosComRodada,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
@@ -21,8 +21,8 @@ import {
   mixAjustesDoAno, taxasDoMix, todasAsRegras, todasAsTaxasDeMix,
 } from '../../lib/demanda';
 import {
-  CAMPOS_BASE, camposUsados, fatiasDoRotulo, indiceDoMixManual, rotulosDe,
-  valoresDe,
+  CAMPOS_BASE, camposUsados, capacidadePorAtributo, fatiasDoRotulo,
+  indiceDoMixManual, rotulosDe, valoresDe,
 } from '../../lib/regras';
 import {
   calendariosDaArea, diasTrabalhadosPorMes, pesosDoCalendario,
@@ -31,6 +31,7 @@ import { diasUteisPorMes, formataDiasUteis } from '../../lib/dia-util';
 import Grafico from './grafico';
 import { FiltrosTopo, FiltrosRecurso, SeletorAno } from './filtros';
 import TabelaMes from './tabela-mes';
+import TabelaAtributo from './tabela-atributo';
 import Memoria from './memoria';
 import Shell from '../shell';
 
@@ -316,6 +317,17 @@ export default async function Page({ searchParams }) {
   const ordemTexto = searchParams?.ordem ?? null;
   const ordem = leOrdem(ordemTexto, { campo: 'nome', desc: false });
 
+  // A tabela de baixo tem duas leituras da MESMA capacidade: por recurso —
+  // quanto cabe em cada máquina — e por atributo — quanto cabe de cada coisa.
+  // A aba vive na URL como o resto do painel, e é isso que permite a leitura
+  // cara da segunda só acontecer quando alguém a abre.
+  const podeAtributo = Boolean(carga && atributosFiltro.length);
+  const aba = podeAtributo && searchParams?.aba === 'atributo' ? 'atributo' : 'recurso';
+  const attrTabela = aba === 'atributo'
+    ? (atributosFiltro.some((a) => a.codigo === searchParams?.attr_tab)
+        ? searchParams.attr_tab : atributosFiltro[0].codigo)
+    : null;
+
   // De que é feito o teto desta seleção. Máquina tem teto físico de 24 h por
   // dia; pessoa tem o turno escalado, e ali a instalada é a própria planejada.
   // O indicador precisa dizer qual dos dois está somando, senão "teto físico
@@ -348,6 +360,8 @@ export default async function Page({ searchParams }) {
     attr = atributo,
     rot = rotulo,
     ordem: ord = ordemTexto,
+    abaSel = aba,
+    attrTab = attrTabela,
   } = {}) => {
     const p = new URLSearchParams();
     p.set('area', String(areaId));
@@ -364,6 +378,8 @@ export default async function Page({ searchParams }) {
     if (cc !== null) p.set('cc', cc);
     if (ct !== null) p.set('ct', ct);
     if (ord) p.set('ordem', ord);
+    if (abaSel === 'atributo') p.set('aba', 'atributo');
+    if (abaSel === 'atributo' && attrTab) p.set('attr_tab', attrTab);
     // Ano inteiro é a ausência de recorte, e some do endereço: parâmetro que
     // repete o padrão só atrapalha quem lê a URL.
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
@@ -440,6 +456,48 @@ export default async function Page({ searchParams }) {
   ];
 
   const ordenados = ordenar(visiveis, ordem);
+
+  // A CAPACIDADE REPARTIDA ENTRE OS RÓTULOS.
+  //
+  // Só quando a aba está aberta: são duas consultas caras — a capacidade por
+  // CT e mês, e as combinações da carga — e quem fica na tabela por recurso
+  // não tem por que pagar por elas.
+  //
+  // O rateio e a conversão acontecem em JavaScript, com o mesmo motor do resto
+  // do painel, então o mix ajustado à mão vale aqui do mesmo jeito.
+  let porAtributo = { linhas: [], semIndice: [] };
+  let mesesDaTabela = [];
+  if (aba === 'atributo' && periodo.nivel === 'MES') {
+    // Sempre a DISPONÍVEL: é a capacidade que se leva para uma decisão, e
+    // repetir a tabela três vezes por medida trocaria a pergunta desta aba
+    // ("de que é feita a capacidade?") pela do painel inteiro.
+    const [capCt, combos, manuais, taxasMix] = await Promise.all([
+      capacidadePorCtMes(exec.id, areaId, periodo.de, periodo.ate, listaIds,
+                         'disponivel'),
+      combinacoesPorMes(
+        carga.id,
+        [...new Set([...camposUsados(regrasDePara), attrTabela])]),
+      mixAjustes(attrTabela, ano),
+      taxasDoMix(attrTabela),
+    ]);
+
+    const ehBase = CAMPOS_BASE.some((c) => c.codigo === attrTabela);
+    const rotulos = [
+      ...(ehBase ? valoresDe(combos, attrTabela).map((v) => v.valor)
+                 : rotulosDe(regrasDePara, attrTabela)),
+      // O que nenhuma regra classifica entra como linha própria: escondê-lo
+      // faria a soma das outras não fechar com o total, sem dizer por quê.
+      null,
+    ];
+
+    porAtributo = capacidadePorAtributo(capCt, combos, attrsDePara, regrasDePara,
+      attrTabela, rotulos, { ano, manuais, taxas: taxasMix });
+
+    mesesDaTabela = mesesNoIntervalo(periodo.de, periodo.ate).map((m) => ({
+      chave: iso(m.ano, m.mes, 1),
+      rotulo: MESES[m.mes] + (m.parcial ? '*' : ''),
+    }));
+  }
 
   const dataISO = periodo.nivel === 'TURNO' ? periodo.de : null;
 
@@ -896,7 +954,21 @@ export default async function Page({ searchParams }) {
 
       <div className="painel">
         <div className="painel-topo">
-          <h2>Por recurso</h2>
+          {/* Duas leituras da MESMA capacidade: por máquina e por produto. A
+              aba é um Link e não estado de tela porque a segunda custa duas
+              consultas — abrir tem que ser uma decisão, não um efeito. */}
+          <div className="chips" style={{ marginBottom: 0 }}>
+            <Link href={url({ abaSel: 'recurso' })}
+                  className={`chip ${aba === 'recurso' ? 'chip-on' : ''}`}>
+              Capacidade por recurso
+            </Link>
+            {podeAtributo && (
+              <Link href={url({ abaSel: 'atributo' })}
+                    className={`chip ${aba === 'atributo' ? 'chip-on' : ''}`}>
+                Capacidade por atributo
+              </Link>
+            )}
+          </div>
           <Suspense>
             <FiltrosRecurso ano={ano} periodo={periodo}
                             subAreas={subAreas} sub={sub} tipo={tipo}
@@ -905,14 +977,68 @@ export default async function Page({ searchParams }) {
                             rotulos={rotulosDoAtributo} rotulo={rotulo} />
           </Suspense>
         </div>
-        <p className="rodape" style={{ margin: '0 0 1rem' }}>
-          Estes filtros valem para os indicadores e o gráfico acima também.
-          Clique num recurso para estreitar ainda mais, ou num{' '}
-          <strong>título de coluna</strong> para ordenar por ele.
-        </p>
+
+        {aba === 'atributo' && (
+          <>
+            <div className="filtros" style={{ marginBottom: 12 }}>
+              <nav className="modo modo-ano">
+                {atributosFiltro.map((a) => (
+                  <Link key={a.codigo} href={url({ attrTab: a.codigo })}
+                        className={a.codigo === attrTabela ? 'modo-on' : ''}>
+                    {a.nome}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <p className="rodape" style={{ margin: '0 0 1rem' }}>
+              A mesma capacidade <strong>disponível</strong> de cima, repartida
+              entre os rótulos deste atributo pela fatia de tempo que cada um
+              ocupa em cada centro de trabalho.
+              {fisica
+                ? ' Cada rótulo converte pela taxa DELE, e não pela média do '
+                  + 'centro — por isso a soma dos rótulos não repete o total do '
+                  + 'painel, e é essa diferença que a tabela existe para mostrar.'
+                : ' Em minuto a soma dos rótulos fecha com o total: as fatias '
+                  + 'de um centro somam 1.'}
+              {' '}O mix ajustado à mão vale aqui como vale no resto do painel.
+            </p>
+          </>
+        )}
+
+        {aba === 'recurso' && (
+          <p className="rodape" style={{ margin: '0 0 1rem' }}>
+            Estes filtros valem para os indicadores e o gráfico acima também.
+            Clique num recurso para estreitar ainda mais, ou num{' '}
+            <strong>título de coluna</strong> para ordenar por ele.
+          </p>
+        )}
+        {aba === 'atributo' && periodo.nivel !== 'MES' && (
+          <p className="vazio">
+            A capacidade por atributo é mensal — a demanda que dá as fatias vem
+            carimbada no mês, e reparti-la por dia inventaria uma distribuição
+            que o plano não deu. Volte ao ano inteiro para ver esta leitura.
+          </p>
+        )}
+
+        {aba === 'atributo' && periodo.nivel === 'MES' && (
+          <div className="grade-rolagem">
+            <div className="grade-alinhada" style={{ minWidth: LARGURA_MIN }}>
+              <TabelaAtributo
+                linhas={porAtributo.linhas}
+                meses={mesesDaTabela}
+                unidade={unidade}
+                atributo={atributosFiltro.find((a) => a.codigo === attrTabela)?.nome
+                          ?? attrTabela}
+                semIndice={porAtributo.semIndice} />
+            </div>
+          </div>
+        )}
+
         {/* Cabeçalho e célula na mesma definição de propósito: onze colunas
             declaradas em dois lugares divergem na primeira que alguém mexer, e
             o sintoma seria um valor embaixo do título errado. */}
+        {aba === 'recurso' && (
         <div className="grade-rolagem">
           <table className="tabela-recursos">
             <thead>
@@ -950,6 +1076,7 @@ export default async function Page({ searchParams }) {
             </tbody>
           </table>
         </div>
+        )}
 
         <p className="rodape">
           Rodada {exec.id} · OEE {rotuloOrigem(exec.origem)} · cenário{' '}

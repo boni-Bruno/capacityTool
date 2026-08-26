@@ -406,6 +406,16 @@ e da de total moram em `app/painel/grade.js` — o gráfico as usa como margem, 
 tabela como largura de coluna — e os dois compartilham uma única caixa de
 rolagem, senão rolar um desalinharia do outro.
 
+**A tabela de baixo do painel virou um container de duas abas**, com a URL
+decidindo qual está aberta: *Capacidade por recurso* (padrão, a de sempre) e
+*Capacidade por atributo* — a mesma capacidade disponível repartida entre os
+rótulos de um atributo escolhido, mês a mês, em qualquer unidade.
+
+Em minuto a soma dos rótulos fecha com o total (as fatias de um CT somam 1); em
+metro e peça ela não fecha, porque cada rótulo converte pela taxa DELE — e é
+essa diferença que a tabela existe para mostrar. O mix ajustado à mão vale ali
+como no resto do painel. As duas consultas caras só acontecem com a aba aberta.
+
 **No painel, a tabela por recurso** mostra Planta, Área, CC, CT e Recurso, e
 ordena por qualquer coluna — a ordem vive na URL, como o resto do painel.
 Filtros de CC e CT entraram ao lado de sub-área e tipo, e valem também para os
