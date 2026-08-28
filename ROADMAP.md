@@ -7,6 +7,10 @@ construído sai daqui e vira comentário no código ou no arquivo de migração 
 que fica é o desenho ainda por fazer, mais o registro do porquê de cada escolha,
 que continua valendo depois de pronta.
 
+Para **como trabalhar neste projeto** — o que nunca se roda na máquina local,
+quem executa as migrações, as convenções de código e os conceitos do domínio —
+ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
+
 ---
 
 ## 0. O que já está no ar

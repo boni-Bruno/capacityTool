@@ -1,0 +1,149 @@
+# capacityTool — como trabalhar neste projeto
+
+Ferramenta de planejamento de capacidade fabril, substituindo uma solução em
+Excel + Qlik Sense. **PostgreSQL (Neon) + Next.js 14 App Router em JavaScript
+puro, sem TypeScript, com deploy no Vercel.**
+
+Este arquivo é o acordo de trabalho. Ele existe porque o histórico de conversa
+não viaja entre máquinas, e as regras abaixo já foram aprendidas do jeito caro
+pelo menos uma vez.
+
+---
+
+## As duas regras que não se negociam
+
+### 1. Nada é instalado nem executado na máquina local
+
+Não rodar `npm install` (nem com `--package-lock-only`), `next dev`, `next
+build`, Docker, ou qualquer comando que crie ou altere `node_modules/`,
+`.next/`, ou instale pacote. **Isso vale mesmo para "só validar antes de
+subir".**
+
+O fluxo é: eu commito e faço push, e o **Vercel é o validador**. A máquina local
+é editor e git, mais nada.
+
+**Como verificar sem executar:** leitura e raciocínio, `node --check` num
+arquivo `.js` isolado, e `node --test lib/*.test.js` — que roda sem instalar
+nada porque os testes usam só o `node:test` embutido e os módulos de `lib/` são
+puros. Arquivo `.jsx` não passa no `node --check`; para eles, conferir por
+leitura e pela contagem de parênteses e chaves.
+
+Quando algo só puder ser confirmado rodando, **dizer explicitamente que não está
+verificado** e deixar o Vercel dizer. Não propor rodar local como alternativa.
+Se um passo exigir mesmo a máquina dele — regerar `package-lock.json`, por
+exemplo — entregar o comando pronto para ele executar.
+
+### 2. O ROADMAP.md é atualizado sempre, no mesmo commit
+
+Decisão nova de desenho entra; item construído sai e vira comentário no código
+ou no cabeçalho da migração. **Sem pedir autorização a cada vez** — essa
+autorização é permanente e vale só para documentação. Mexer em código, schema ou
+comportamento continua exigindo pedido explícito.
+
+O arquivo é a memória entre conversas, e ele já ficou desatualizado uma vez:
+duas seções descreviam como "não implementado" coisas que já estavam no ar.
+Roadmap que mente é pior que roadmap nenhum, porque alguém decide em cima dele.
+
+---
+
+## O fluxo de trabalho
+
+1. **Migrações de banco**: numeradas (`28_...sql`), com um cabeçalho longo
+   explicando o modelo e o porquê. **Quem roda é o Bruno**, no SQL Editor do
+   Neon, e sempre **antes** do deploy do código que depende delas. Ao entregar,
+   dizer o nome do arquivo em bloco de código para ele copiar.
+2. **Commit e push imediatos**, sem esperar confirmação. Mensagem em português,
+   explicando o *porquê* e não o *o quê* — o diff já diz o quê.
+3. Se o erro que ele reportar for uma **migração esquecida**, apenas dizer qual
+   arquivo rodar. Não investigar como se fosse defeito de código.
+
+---
+
+## Convenções que o projeto seguiu sem exceção
+
+**Comentário explica o porquê, nunca o quê.** O padrão é: a decisão, e o que
+daria errado se fosse o contrário. Comentário que descreve a linha abaixo é
+ruído; comentário que conta a armadilha é o que salva a próxima pessoa.
+
+**Motor puro antes de tela.** Toda regra que decide número mora num módulo de
+`lib/` sem `import` de banco, com testes em `node:test`. Depois a tela consome.
+Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
+`faixas.js`, `periodo.js`, `formato.js`, `ap.js`, `parquet.js`, `dia-util.js`,
+`ordem.js`, `anos.js`, `tema.js`, `origens.js`, `dias.js`, `grade.js`,
+`cores.js`. Nenhum deles importa `./db`.
+
+**Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
+quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número
+par de crases rebalanceia o arquivo em algo que o parser do Node aceita e o SWC
+recusa. Existe um teste guardando isso (`lib/crase-em-sql.test.js`) — ele
+precisa continuar passando.
+
+**Driver Neon HTTP**: só tagged template, uma requisição por instrução.
+Para lote, `unnest` de arrays paralelos; para atomicidade, `sql.transaction([])`.
+
+**Fronteira cliente/servidor**: nenhum `lib/*.js` que importe `./db` pode ser
+importado por um componente `'use client'`.
+
+**Estado na URL.** Filtros, recortes, unidade, aba, ordenação — tudo vive em
+`searchParams`. O endereço descreve por inteiro o que está na tela, e recarregar
+cai no mesmo lugar. Cookie só para o que o servidor precisa saber antes de
+pintar: tema e ordenação de cadastro.
+
+**Arredondar é decisão da camada de exibição, uma vez só.** O minuto admite
+fração no banco de propósito, porque `planejada × OEE` quase nunca é inteiro e a
+soma do mês tem que bater com a multiplicação.
+
+**Divisão de somas, nunca média de divisões.** Vale para dia útil, ocupação,
+índice de conversão. Somar médias não dá média, e o total tem que bater com o
+indicador.
+
+---
+
+## Onde as coisas moram
+
+```
+lib/db.js          consultas do painel, ocupação e extração
+lib/demanda.js     carga de demanda, índice, DE/PARA e mix (tudo que toca demanda)
+lib/regras.js      o motor: classificação, rateio, mix, capacidade por atributo
+lib/cadastro.js    turnos, turnos do recurso
+lib/estrutura.js   plantas, áreas, recursos, máquinas
+app/painel/        Painel da Capacidade — "quanto cabe"
+app/ocupacao/      Painel da Ocupação — "cabe?"
+app/cadastros/     todas as telas de cadastro
+NN_*.sql           migrações, na ordem em que devem rodar
+```
+
+## Conceitos do domínio
+
+- **instalada** = teto físico, 24 h por dia, todo dia. Para recurso do tipo
+  PESSOA ela é a própria planejada: não existe teto de 24 h para gente.
+- **planejada** = turnos, menos intervalos e paradas.
+- **disponível** = planejada × OEE. Setup já está embutido no OEE.
+- **CC-CT** é a identidade do centro na controladoria, e o vínculo com a demanda
+  é **derivado** de `maquina_fisica.cc || '-' || ct`. Nunca houve tabela de-para,
+  e é isso que faz um CT passar a valer no instante em que o recurso é
+  cadastrado, sem reimportar nada.
+- **índice de conversão** = `Σ quantidade ÷ Σ minutos`, por CT e mês. Isso é
+  identicamente a média das taxas ponderada pelo tempo — e é por isso que mexer
+  no mix muda o índice.
+- **fatia / rateio**: a capacidade é do RECURSO e o atributo é da LINHA de
+  demanda. Filtrar por um rótulo soma a *fatia* de cada CT que aquele rótulo
+  ocupa. As fatias de um CT somam 1, e é essa propriedade que faz a soma dos
+  rótulos fechar com o total.
+- **uma rodada por (área, ano, origem)**: a nova substitui a anterior. O sistema
+  mostra a capacidade atual; rodada velha não é consultada por ninguém.
+
+## O que a ferramenta não faz de propósito
+
+- Não recalcula sozinho ao mudar cadastro. **Recalcular tudo** é um botão, e o
+  laço roda no navegador — uma requisição por rodada, porque função serverless
+  tem minuto contado.
+- Não guarda histórico de rodada.
+- Não espalha demanda mensal por dia: a base é mensal, e reparti-la inventaria
+  uma distribuição que o plano não deu.
+
+---
+
+Para o estado atual do produto e o que ficou pendente, ler o **ROADMAP.md**. Para
+o porquê de uma linha específica, ler o comentário ao lado dela e o commit que a
+criou — as mensagens de commit deste repositório carregam o raciocínio.
