@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { escreveZip, lerZip, texto } from '../../../lib/zip';
 import {
-  MARCA, acharSlideMarcado, clonaSlideMarcado, linhasDasSecoes, preencheSlide,
-  slidesDo,
+  MARCA, acharSlideMarcado, clonaSlideMarcado, insereFormas, linhasDasSecoes,
+  preencheSlide, retanguloDoSlideMarcado, slidesDo, tamanhoDoSlide,
 } from '../../../lib/pptx';
 import {
-  GRANULARIDADES, MEDIDAS, agrupa, secoesDoGrupo,
+  GRANULARIDADES, MEDIDAS, agrupa, fmt as fmtNum, secoesDoGrupo, secoesDoTitulo,
+  visualDoGrupo,
 } from '../../../lib/documento';
+import { areaDoVisual, formasDoVisual } from '../../../lib/slide-visual';
 import { iso, ultimoDiaDoMes } from '../../../lib/periodo';
 import Arvore from './arvore';
 
@@ -20,6 +22,12 @@ import Arvore from './arvore';
 // do lado do cliente. Fazer isso numa função serverless significaria
 // descompactar, recompactar e devolver megabytes dentro de um limite de tempo
 // que existe para consulta, não para manipulação de arquivo.
+//
+// O GRÁFICO É DESENHADO À MÃO EM DrawingML, dentro da caixa que tem a marca —
+// barras para a capacidade, linha para a demanda, e embaixo uma grade com o mês,
+// o OEE e cada turno na MESMA coluna da barra do mês. É a leitura que o slide
+// existe para permitir: a barra de março caiu porque o OEE caiu, ou porque
+// perdeu um turno?
 //
 // O .PDF É A IMPRESSÃO DO NAVEGADOR. Escrever PDF à mão daria fonte básica,
 // sem acento decente e sem quebra de página — pior que o que o próprio
@@ -205,11 +213,25 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
 
   // As duas saídas montam o texto da mesma função: slide e papel dizendo
   // números diferentes da mesma seleção seria o defeito mais difícil de ver.
-  const secoesPorSlide = (j) => agrupa(j.grupos, granularidade).map((g) =>
-    secoesDoGrupo(g, {
+  //
+  // COM GRÁFICO, o texto encolhe para a identidade: capacidade, demanda, OEE e
+  // turnos estão todos no desenho, mês a mês, e repeti-los em texto roubaria a
+  // altura de que ele precisa. Sem série — recorte sem rodada — o slide volta a
+  // ser o de antes, todo em texto, em vez de sair vazio.
+  const paginasDe = (j) => agrupa(j.grupos, granularidade).map((grupo) => {
+    const opcoes = {
       de: j.de ?? de, ate: j.ate ?? ate, medida, origem,
       cenario: carga?.cenario ?? null,
-    }));
+    };
+    const visual = visualDoGrupo({
+      grupo, granularidade, serie: j.serie, turnos: j.turnos,
+      medida, cenario: carga?.cenario ?? null,
+    });
+    return {
+      visual,
+      secoes: visual ? secoesDoTitulo(grupo, opcoes) : secoesDoGrupo(grupo, opcoes),
+    };
+  });
 
   // ---- .pptx --------------------------------------------------------------
   async function exportarPptx() {
@@ -222,7 +244,7 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
         pede('/api/modelo-slide', undefined, 'GET'),
       ]);
 
-      const slides = secoesPorSlide(j);
+      const slides = paginasDe(j);
       if (!slides.length) {
         throw new Error('O recorte não tem recurso nenhum — nada para contar.');
       }
@@ -235,10 +257,21 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
         throw new Error('O modelo guardado perdeu a marca — importe de novo.');
       }
 
+      // A área do desenho sai da própria caixa da marca, lida ANTES de o texto
+      // entrar: depois de preenchida a marca já não está lá para ser achada.
+      // Todas as cópias saíram do mesmo slide, então o retângulo é um só.
+      const area = areaDoVisual(retanguloDoSlideMarcado(texto(dentro.get(alvos[0]))),
+                                tamanhoDoSlide(dentro));
+
       alvos.forEach((nome, i) => {
         const { xml } = preencheSlide(texto(dentro.get(nome)),
-                                      linhasDasSecoes(slides[i]));
-        dentro.set(nome, new TextEncoder().encode(xml));
+                                      linhasDasSecoes(slides[i].secoes));
+        const cheio = slides[i].visual
+          ? insereFormas(xml, formasDoVisual({
+            area, visual: slides[i].visual, fmt: fmtNum,
+          }))
+          : xml;
+        dentro.set(nome, new TextEncoder().encode(cheio));
       });
 
       const saida = await escreveZip(dentro);
@@ -318,17 +351,19 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
             está no <code>{String(modelo.slide_marca).split('/').pop()}</code> ·
             importado em{' '}
             {new Date(modelo.criado_em).toLocaleDateString('pt-BR')}.
-            {' '}O conteúdo entra ali com a formatação que a caixa já tem —
-            fonte, tamanho e cor vêm do seu modelo, não daqui. Quando sai mais
-            de um slide, o slide da marca é repetido e os outros passam
-            intactos.
+            {' '}O texto entra ali com a formatação que a caixa já tem — fonte,
+            tamanho e cor vêm do seu modelo. <strong>O retângulo dessa caixa é
+            a área que o gráfico ocupa</strong>, então marque a caixa que cobre
+            o corpo do slide: mova ou redimensione, e o desenho acompanha. Cores
+            e fonte do gráfico vêm do tema do modelo. Quando sai mais de um
+            slide, o da marca é repetido e os outros passam intactos.
           </p>
         ) : (
           <p className="vazio">
             Sem modelo, o .pptx não sai. Monte a apresentação como ela deve ser,
-            ponha <code>{MARCA}</code> numa caixa de texto do slide que vai
-            receber o conteúdo, e importe aqui. Os outros slides passam
-            intactos.
+            ponha <code>{MARCA}</code> numa caixa de texto <strong>do tamanho do
+            corpo do slide</strong> — é o retângulo dela que o gráfico ocupa — e
+            importe aqui. Os outros slides passam intactos.
           </p>
         )}
       </div>
@@ -415,10 +450,12 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
       <div className="painel">
         <h2>Exportar</h2>
         <p className="rodape" style={{ margin: '0 0 12px' }}>
-          Cada slide leva a <strong>configuração</strong> do seu recorte —
-          quantos recursos, turnos, calendários, faixas de OEE e paradas — e a
-          <strong> capacidade</strong> que ela produz no período, lida da mesma
-          rodada que o painel mostra.
+          Cada slide leva um <strong>gráfico mês a mês</strong> — barras com a
+          capacidade escolhida, linha com a demanda do cenário — e, alinhada
+          coluna a coluna com ele, uma grade com o <strong>OEE</strong> e a
+          quantidade de recursos de <strong>cada turno</strong>. Assim dá para
+          ver se a barra de março caiu porque o OEE caiu ou porque perdeu um
+          turno. Recorte sem cálculo cai no documento em texto, como antes.
         </p>
         <div className="acoes">
           <button type="button" className="btn btn-primario"

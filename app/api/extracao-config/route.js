@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { detalheDoRecorte } from '../../../lib/db';
+import {
+  detalheDoRecorte, serieDoRecorte, turnosDoRecorte,
+} from '../../../lib/db';
 import { resolvePeriodo } from '../../../lib/periodo';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeSessao } from '../../../lib/sessao';
@@ -14,6 +16,11 @@ import { exigeSessao } from '../../../lib/sessao';
 // em silêncio — o resumo e a soma dos slides pareceriam certos cada um sozinho,
 // e ninguém confere um slide contra o outro num .pptx. É a mesma razão pela qual
 // as duas saídas montam o texto na mesma função.
+//
+// Junto vêm a SÉRIE MENSAL e os TURNOS POR MÊS, que alimentam o gráfico e a
+// grade alinhada embaixo dele. As três consultas partem do mesmo recorte e são
+// agrupadas pela mesma chave (`chaveDoGrupo`) — cada uma com a sua regra de
+// grupo seria o jeito de um slide de CC mostrar o gráfico de outro.
 export async function POST(req) {
   try {
     await exigeSessao();
@@ -35,9 +42,13 @@ export async function POST(req) {
     const carga = Number.isInteger(Number(b.carga)) && Number(b.carga) > 0
       ? Number(b.carga) : null;
 
-    const grupos = await detalheDoRecorte(areas, ccs, ano, de, ate, origem, carga);
+    const [grupos, serie, turnos] = await Promise.all([
+      detalheDoRecorte(areas, ccs, ano, de, ate, origem, carga),
+      serieDoRecorte(areas, ccs, ano, de, ate, origem, carga),
+      turnosDoRecorte(areas, ccs, ano, de, ate),
+    ]);
 
-    return NextResponse.json({ ok: true, de, ate, grupos });
+    return NextResponse.json({ ok: true, de, ate, grupos, serie, turnos });
   } catch (e) {
     console.error('[extracao-config POST]', e);
     return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },

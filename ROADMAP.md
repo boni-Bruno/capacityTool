@@ -788,6 +788,51 @@ verificações). Antes eram três consultas, e três lugares capazes de discorda
 silêncio — os números pareceriam certos cada um sozinho, e ninguém confere um
 slide contra o outro.
 
+### O slide é visual
+
+Cada slide leva um **gráfico mês a mês** — barras com a capacidade escolhida,
+linha com a demanda do cenário — e, **alinhada coluna a coluna** com ele, uma
+grade com o mês, o **OEE** e a quantidade de recursos de **cada turno**. É a
+leitura que o desenho existe para permitir: a barra de março caiu porque o OEE
+caiu, ou porque perdeu um turno?
+
+O alinhamento é a exigência do desenho, e por isso a geometria é UMA função
+(`lib/visual.js`, 7 verificações) usada pelas duas saídas: DrawingML no .pptx,
+SVG na página de impressão. Duas contas de coluna batem hoje e param de bater na
+primeira mudança de margem, num defeito que só se enxerga projetado.
+
+**Formas à mão, e não um gráfico do PowerPoint.** Um gráfico de verdade é uma
+parte `charts/chart1.xml` mais uma planilha .xlsx embutida no .pptx, com o
+relacionamento entre as duas — e o que se ganha é poder editar os números no
+PowerPoint, coisa que ninguém faz num documento que sai pronto do sistema e é
+regerado a cada mudança. Formas simples abrem em qualquer versão e não têm o que
+corromper. `lib/slide-visual.js`, 10 verificações.
+
+**As cores e a fonte vêm do TEMA do modelo** — `accent1`, `accent2`, `tx1`,
+`+mn-lt`. Nenhum hexadecimal nosso: um azul do sistema no meio da paleta da
+empresa denuncia de longe que aquele slide foi colado.
+
+**O retângulo da caixa marcada é a área pintada.** A marca já diz "o conteúdo
+entra aqui"; usar a geometria dela faz o desenho seguir quem a moveu no modelo.
+Uma posição fixa em código estaria errada no dia em que o modelo ganhasse uma
+faixa lateral — e errada em silêncio, por cima do logotipo. Caixa baixa demais
+faz o desenho descer até a margem de baixo em vez de sair achatado.
+
+**Com gráfico, o texto encolhe para a identidade** — título, planta, área,
+período. Capacidade, demanda, OEE e turnos estão todos no desenho, mês a mês;
+repeti-los em texto roubaria a altura de que ele precisa e daria ao leitor duas
+versões da mesma informação para conferir. Recorte sem rodada volta ao documento
+todo em texto, em vez de sair vazio.
+
+**O OEE do slide é `disponível ÷ planejada`**, e não a faixa cadastrada lida de
+novo: divisão de somas, como o resto do projeto. A segunda fonte poderia mostrar
+78% embaixo de uma barra calculada com 75% — a rodada é de ontem, o cadastro é
+de hoje, e o slide não teria como avisar.
+
+**Os turnos são mês a mês porque a vigência muda.** Um turno que entra em maio
+apareceria o ano inteiro numa contagem única, e a linha embaixo do gráfico diria
+que a fábrica tinha três turnos em janeiro.
+
 **As escolhas moram em estado do React, e não na URL** — é a única tela do
 projeto assim. A marcação da árvore é estado, e trocar `searchParams` remontaria
 o componente e apagaria o recorte que a pessoa acabou de montar clicando em
