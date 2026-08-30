@@ -353,6 +353,12 @@ uma linha ajustável como as outras; rótulo que o CT não produz na base pede
 **taxa apontada** (CT doador ou média de CC — o doador empresta a taxa dele
 para o rótulo em questão, não a média geral).
 
+**Voltar ao mix da base** é sempre possível, de dois jeitos: o botão *usar o da
+base*, no editor de um CT, apaga o ajuste daquele CT/ano/atributo; e um mês com
+todas as células zeradas não é gravado, então aquele mês volta ao cálculo da
+base sozinho. O ajuste é uma camada por cima — o mix da base nunca é
+sobrescrito, e continua sendo recalculado a cada carga.
+
 **O mix ajustado muda o índice de conversão do painel**, com ou sem filtro. O
 índice de um CT é a média das taxas dos produtos dele ponderada pelo tempo —
 metade a 15 m/min e metade a 5 dá 10; 100% do primeiro dá 15 — então mexer no
@@ -713,14 +719,6 @@ por quê — útil para não redecidir, mas já construído.
 - **Apagar `produto`, `recurso_taxa` e `recurso_taxa.min_setup`.** A base de
   demanda tornou o cadastro de taxa desnecessário, e as três estão no banco
   prometendo uma coisa que não acontece. Vale uma migração.
-
-### Ajuste de mix
-
-- **Não existe "voltar tudo ao mix da base".** Dá para desfazer um CT (botão
-  "usar o da base") e um mês (zerando as células), mas quem ajustou cinquenta
-  CTs precisa abrir os cinquenta. Falta um botão que valha para o atributo e o
-  ano abertos, respeitando os filtros de planta/área/CC, com confirmação
-  dizendo quantos CTs seriam afetados.
 
 ### Dívidas conhecidas do motor
 
