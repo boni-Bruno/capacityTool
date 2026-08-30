@@ -7,6 +7,10 @@ construído sai daqui e vira comentário no código ou no arquivo de migração 
 que fica é o desenho ainda por fazer, mais o registro do porquê de cada escolha,
 que continua valendo depois de pronta.
 
+**O que ainda falta está reunido em [O QUE FALTA](#o-que-falta)**, perto do fim.
+O resto é registro do que já foi decidido e construído — útil para não
+redecidir, e para entender por que uma coisa é como é.
+
 Para **como trabalhar neste projeto** — o que nunca se roda na máquina local,
 quem executa as migrações, as convenções de código e os conceitos do domínio —
 ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
@@ -206,13 +210,6 @@ comuns do Arrow e não estão na biblioteca padrão de lugar nenhum — o leitor
 tenta adivinhar: recusa a carga dizendo qual compressão veio e qual é a
 esperada. Errar em silêncio aqui seria importar número errado.
 
-### Em aberto
-
-- 2027 vem com 17.196 linhas e **zero minutos**: o período existe no plano mas
-  a demanda dele ainda não foi calculada na origem
-- `produto`, `recurso_taxa` e `recurso_taxa.min_setup` ficaram **sem uso** — a
-  base de demanda tornou o cadastro de taxa desnecessário. Estão no banco
-  prometendo uma coisa que não acontece, e vale uma migração que as apague
 
 ### Regra de leitura do período
 
@@ -281,21 +278,11 @@ A correção é no **cadastro**, não na comparação. Dois motivos:
 - Comparação por `=` puro não se esquece. Função de normalização precisa ser
   lembrada em toda consulta, e esquecer uma vez dá divergência silenciosa.
 
-### Pendências do casamento, para o fim
-
-**Oito CTs cadastrados sem par na base:** `226-2`, `313-1`, `313-2`, `313-7`,
-`313-9`, `401-3`, `401-4`, `401-5`. O CC existe, aquele CT não. São máquinas
-cadastradas que o plano não usa, ou numeração que ainda vai mudar — resolver
-quando o cadastro sair do estágio de teste.
-
-**Validar o CT na entrada do cadastro.** Os zeros de agora foram acertados à
-mão; nada impede alguém de digitar `5` de novo amanhã. Ao salvar um recurso, CT
-numérico deveria ser gravado com 3 dígitos — sem truncar, para um CT de 4
-dígitos futuro entrar como veio.
+As pendências do casamento estão em **O QUE FALTA**, no fim deste arquivo.
 
 ---
 
-## 3. DE/PARA e regras de classificação da demanda — EM CONSTRUÇÃO
+## 3. DE/PARA e regras de classificação da demanda — PRONTO
 
 O motor está em `lib/regras.js`, as três tabelas na migração `23`, e a tela em
 `/cadastros/de-para`.
@@ -706,22 +693,36 @@ demanda_regra_cond  regra_id · bloco · atributo · operador · valor
 
 ---
 
-## 4. Capacidade contra demanda — o "cabe?"
+## O QUE FALTA
 
-As duas pontas já estão na mesma moeda: a base traz 2.019.523 h de demanda e o
-motor calcula a capacidade em minuto. O vínculo por CT está resolvido e a
-herança de índice também. Falta pôr as duas séries lado a lado.
+Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
+por quê — útil para não redecidir, mas já construído.
 
-É a pergunta que a fábrica realmente faz, e a que exige menos código novo de
-tudo que sobrou.
+### Do cadastro, para quando ele sair do estágio de teste
 
-Um cuidado que já está registrado na seção 3 e vale repetir aqui: CT que herda
-índice **não herda demanda**. Somar a carga do irmão dobraria o total da
-fábrica.
+- **Oito CTs cadastrados sem par na base**: `226-2`, `313-1`, `313-2`, `313-7`,
+  `313-9`, `401-3`, `401-4`, `401-5`. O CC existe, aquele CT não. São máquinas
+  que o plano não usa, ou numeração que ainda vai mudar.
+- **Validar o CT na entrada do cadastro.** Os zeros à esquerda foram acertados à
+  mão; nada impede alguém de digitar `5` de novo amanhã. Ao salvar um recurso,
+  CT numérico deveria ser gravado com 3 dígitos — sem truncar, para um CT de 4
+  dígitos futuro entrar como veio.
 
----
+### Limpeza de schema
 
-## 5. Dívidas conhecidas do motor
+- **Apagar `produto`, `recurso_taxa` e `recurso_taxa.min_setup`.** A base de
+  demanda tornou o cadastro de taxa desnecessário, e as três estão no banco
+  prometendo uma coisa que não acontece. Vale uma migração.
+
+### Ajuste de mix
+
+- **Não existe "voltar tudo ao mix da base".** Dá para desfazer um CT (botão
+  "usar o da base") e um mês (zerando as células), mas quem ajustou cinquenta
+  CTs precisa abrir os cinquenta. Falta um botão que valha para o atributo e o
+  ano abertos, respeitando os filtros de planta/área/CC, com confirmação
+  dizendo quantos CTs seriam afetados.
+
+### Dívidas conhecidas do motor
 
 Levantadas, aceitas na época e ainda abertas.
 
@@ -734,9 +735,14 @@ Levantadas, aceitas na época e ainda abertas.
 Ambos são decisões pendentes, não defeitos: falta definir o que "abate
 disponível" deve significar na cadeia.
 
+### Da origem, fora do nosso alcance
+
+- **2027 vem com 17.196 linhas e zero minutos.** O período existe no plano mas a
+  demanda dele ainda não foi calculada lá.
+
 ---
 
-## 6. Fora de escopo até alguém precisar
+## Fora de escopo até alguém precisar
 
 - Usuários com perfil e escopo por área (hoje é senha única via `APP_SENHA`)
 - Multi-empresa com Row Level Security

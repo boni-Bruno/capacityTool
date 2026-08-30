@@ -33,16 +33,31 @@ verificado** e deixar o Vercel dizer. Não propor rodar local como alternativa.
 Se um passo exigir mesmo a máquina dele — regerar `package-lock.json`, por
 exemplo — entregar o comando pronto para ele executar.
 
-### 2. O ROADMAP.md é atualizado sempre, no mesmo commit
+### 2. A documentação é atualizada sempre, no mesmo commit
 
-Decisão nova de desenho entra; item construído sai e vira comentário no código
-ou no cabeçalho da migração. **Sem pedir autorização a cada vez** — essa
-autorização é permanente e vale só para documentação. Mexer em código, schema ou
-comportamento continua exigindo pedido explícito.
+**Sem pedir autorização a cada vez** — essa autorização é permanente e vale só
+para documentação. Mexer em código, schema ou comportamento continua exigindo
+pedido explícito.
 
-O arquivo é a memória entre conversas, e ele já ficou desatualizado uma vez:
-duas seções descreviam como "não implementado" coisas que já estavam no ar.
-Roadmap que mente é pior que roadmap nenhum, porque alguém decide em cima dele.
+Os dois arquivos têm papéis diferentes, e confundi-los estraga os dois:
+
+**ROADMAP.md — o QUE.** Toda mudança passa por ele. Decisão nova de desenho
+entra; item construído sai da lista de pendências e vira comentário no código ou
+no cabeçalho da migração. A seção **O QUE FALTA** é a única que descreve o
+futuro; o resto é registro do que já foi decidido, para não se redecidir.
+
+Ele é a memória entre conversas, e já ficou desatualizado duas vezes: seções
+descrevendo como "não implementado" ou "em construção" coisas que já estavam no
+ar. Roadmap que mente é pior que roadmap nenhum, porque alguém decide em cima
+dele. Ao fechar qualquer construção, conferir se alguma seção ficou mentindo.
+
+**CLAUDE.md — o COMO.** Só muda quando muda uma REGRA, uma CONVENÇÃO, um
+CONCEITO do domínio ou a estrutura de pastas. Não é changelog: se cada tela nova
+acrescentasse um parágrafo aqui, o arquivo deixaria de ser lido de uma sentada —
+e um acordo de trabalho que ninguém lê não governa nada.
+
+Na prática: tela nova vai só para o ROADMAP; convenção nova, motor puro novo ou
+regra de trabalho nova vem para os dois.
 
 ---
 
