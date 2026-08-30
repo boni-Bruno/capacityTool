@@ -4,21 +4,30 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { escreveZip, lerZip, texto } from '../../../lib/zip';
 import {
-  MARCA, acharSlideMarcado, linhasDasSecoes, preencheSlide, slidesDo,
+  MARCA, acharSlideMarcado, clonaSlideMarcado, linhasDasSecoes, preencheSlide,
+  slidesDo,
 } from '../../../lib/pptx';
+import {
+  GRANULARIDADES, MEDIDAS, agrupa, secoesDoGrupo,
+} from '../../../lib/documento';
+import { iso, ultimoDiaDoMes } from '../../../lib/periodo';
 import Arvore from './arvore';
 
 // A tela da extração das configurações.
 //
 // O .PPTX É MONTADO NO NAVEGADOR. O modelo vem do banco em base64, é aberto
-// aqui, tem o slide da marca preenchido e é fechado de volta — tudo do lado do
-// cliente. Fazer isso numa função serverless significaria descompactar,
-// recompactar e devolver megabytes dentro de um limite de tempo que existe para
-// consulta, não para manipulação de arquivo.
+// aqui, tem o slide da marca clonado e preenchido, e é fechado de volta — tudo
+// do lado do cliente. Fazer isso numa função serverless significaria
+// descompactar, recompactar e devolver megabytes dentro de um limite de tempo
+// que existe para consulta, não para manipulação de arquivo.
 //
 // O .PDF É A IMPRESSÃO DO NAVEGADOR. Escrever PDF à mão daria fonte básica,
 // sem acento decente e sem quebra de página — pior que o que o próprio
 // navegador entrega de graça, com o diálogo de salvar que a pessoa já conhece.
+//
+// AS ESCOLHAS MORAM EM ESTADO, e não na URL como no resto do projeto: a
+// marcação da árvore é estado, e navegar remontaria o componente e apagaria o
+// recorte que a pessoa montou clicando em vinte centros de custo.
 
 const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 const bytesDeBase64 = (b64) =>
@@ -40,6 +49,29 @@ function base64DeBytes(bytes) {
 // é codificado por conta própria: cortar o base64 no meio de um grupo de quatro
 // daria um arquivo corrompido que só o PowerPoint reclamaria.
 const PEDACO = 512 * 1024;
+
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+               'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+// Um documento de trezentos slides não é documento: é uma espera longa seguida
+// de um arquivo que ninguém abre. O número não impede, só avisa.
+const MUITOS_SLIDES = 60;
+
+// A mesma forma para as cinco escolhas: são todas a mesma pergunta — "qual
+// destes?" — e responder a todas do mesmo jeito é o que dispensa aprender cada
+// uma. Fora do componente porque, definida dentro, ela nasceria de novo a cada
+// clique, e o React remontaria a barra inteira em vez de repintar um botão.
+const Grupo = ({ opcoes, valor, onEscolhe, mini }) => (
+  <nav className={mini ? 'modo modo-ano' : 'modo'}>
+    {opcoes.map((o) => (
+      <button key={o.valor} type="button" title={o.dica ?? ''}
+              className={o.valor === valor ? 'modo-on' : ''}
+              onClick={() => onEscolhe(o.valor)}>
+        {o.rotulo}
+      </button>
+    ))}
+  </nav>
+);
 
 /**
  * `fetch` que devolve JSON ou uma frase que se possa ler.
@@ -72,14 +104,34 @@ async function pede(url, corpo, metodo = 'POST') {
   return j;
 }
 
-export default function Exportar({ linhas, modelo, ano, origem }) {
+export default function Exportar({ linhas, modelo, ano: anoInicial, origem: origemInicial,
+                                   anos, cargas, cargaCorrente }) {
   const router = useRouter();
-  const [escolha, setEscolha] = useState({ areas: [], ccs: [], recursos: 0 });
+  const [escolha, setEscolha] = useState({ areas: [], ccs: [], recursos: 0, folhas: 0 });
   const [ocupado, setOcupado] = useState(null);
   const [erro, setErro] = useState(null);
   const [aviso, setAviso] = useState(null);
 
+  // O que sai, e como. O cenário nasce no corrente porque é o que a pessoa
+  // esperaria ver sem escolher nada; nulo é uma escolha legítima — o documento
+  // fala só de capacidade e não inventa uma demanda que ninguém pediu.
+  const [ano, setAno] = useState(anoInicial);
+  const [mesDe, setMesDe] = useState(1);
+  const [mesAte, setMesAte] = useState(12);
+  const [medida, setMedida] = useState('disponivel');
+  const [origem, setOrigem] = useState(origemInicial);
+  const [cargaId, setCargaId] = useState(cargaCorrente ?? null);
+  const [granularidade, setGranularidade] = useState('RESUMO');
+
   const temEscolha = escolha.areas.length > 0;
+  const carga = (cargas ?? []).find((c) => c.id === cargaId) ?? null;
+
+  // Invertido vira intervalo válido em vez de intervalo vazio: quem escolheu
+  // "de dezembro a março" quis março a dezembro, e uma tabela vazia sem
+  // explicação é a pior resposta possível para um erro de clique.
+  const de = iso(ano, Math.min(mesDe, mesAte), 1);
+  const ate = iso(ano, Math.max(mesDe, mesAte),
+                  ultimoDiaDoMes(ano, Math.max(mesDe, mesAte)));
 
   // ---- o modelo -----------------------------------------------------------
   async function importar(e) {
@@ -147,43 +199,17 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
 
   // ---- os números do recorte ----------------------------------------------
   const numeros = () => pede('/api/extracao-config', {
-    areas: escolha.areas, ccs: escolha.ccs, ano, origem,
+    areas: escolha.areas, ccs: escolha.ccs, ano, de, ate, origem,
+    carga: cargaId,
   });
 
   // As duas saídas montam o texto da mesma função: slide e papel dizendo
   // números diferentes da mesma seleção seria o defeito mais difícil de ver.
-  const secoesDe = (j) => {
-    const c = j.cadastro ?? {};
-    const k = j.capacidade ?? {};
-    return [
-      {
-        titulo: `Recorte · ${ano} · OEE ${origem === 'META' ? 'meta' : 'simulado'}`,
-        linhas: [
-          `${escolha.areas.length} área(s), ${escolha.ccs.length} centro(s) de custo`,
-          `${fmt(c.recursos)} recursos · ${fmt(c.postos)} postos`,
-        ],
-      },
-      {
-        titulo: 'Configuração',
-        linhas: [
-          `${fmt(c.maquinas)} máquinas e ${fmt(c.pessoas)} postos de pessoa`,
-          `${fmt(c.cts)} centros de trabalho em ${fmt(c.ccs)} centros de custo`,
-          `${fmt(c.turnos)} turnos e ${fmt(c.calendarios)} calendários em uso`,
-          `${fmt(c.faixas_oee)} faixas de OEE · ${fmt(c.paradas)} paradas cadastradas`,
-        ],
-      },
-      {
-        titulo: 'Capacidade do ano',
-        linhas: k.rodadas
-          ? [
-            `Instalada: ${fmt(Math.round(k.instalada))} min`,
-            `Planejada: ${fmt(Math.round(k.planejada))} min`,
-            `Disponível: ${fmt(Math.round(k.disponivel))} min`,
-          ]
-          : ['Sem cálculo para este recorte — rode Recalcular tudo no painel.'],
-      },
-    ];
-  };
+  const secoesPorSlide = (j) => agrupa(j.grupos, granularidade).map((g) =>
+    secoesDoGrupo(g, {
+      de: j.de ?? de, ate: j.ate ?? ate, medida, origem,
+      cenario: carga?.cenario ?? null,
+    }));
 
   // ---- .pptx --------------------------------------------------------------
   async function exportarPptx() {
@@ -196,21 +222,31 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
         pede('/api/modelo-slide', undefined, 'GET'),
       ]);
 
+      const slides = secoesPorSlide(j);
+      if (!slides.length) {
+        throw new Error('O recorte não tem recurso nenhum — nada para contar.');
+      }
+
       const dentro = await lerZip(bytesDeBase64(m.base64));
-      const alvo = acharSlideMarcado(dentro);
-      if (!alvo) {
+      // O slide da marca vira um por grupo. O original é o primeiro deles, e
+      // por isso continua exatamente onde o modelo o pôs.
+      const alvos = clonaSlideMarcado(dentro, slides.length);
+      if (!alvos) {
         throw new Error('O modelo guardado perdeu a marca — importe de novo.');
       }
 
-      const { xml } = preencheSlide(texto(dentro.get(alvo)),
-                                    linhasDasSecoes(secoesDe(j)));
-      dentro.set(alvo, new TextEncoder().encode(xml));
+      alvos.forEach((nome, i) => {
+        const { xml } = preencheSlide(texto(dentro.get(nome)),
+                                      linhasDasSecoes(slides[i]));
+        dentro.set(nome, new TextEncoder().encode(xml));
+      });
 
       const saida = await escreveZip(dentro);
       baixar(new Blob([saida], {
         type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       }), `configuracoes_${ano}.pptx`);
-      setAviso(`Slide ${alvo.split('/').pop()} preenchido.`);
+      setAviso(`${slides.length} slide(s) preenchido(s) a partir de `
+        + `${alvos[0].split('/').pop()}.`);
     } catch (ex) {
       setErro(ex.message ?? 'Falhou');
     } finally {
@@ -232,10 +268,24 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
       areas: escolha.areas.join(','),
       ccs: escolha.ccs.join(','),
       ano: String(ano),
+      de,
+      ate,
       origem,
+      medida,
+      grao: granularidade,
     });
+    if (cargaId) p.set('carga', String(cargaId));
     window.open(`/cadastros/extracao-config/imprimir?${p}`, '_blank');
   }
+
+  // Quantos slides vão sair: é o número que decide entre "exporta" e "escolhe
+  // um recorte menor", e ele precisa aparecer ANTES do clique.
+  // `folhas` e não `ccs.length`: a folha da árvore é a combinação área+CC, que
+  // é exatamente o que vira um slide. Um CC presente em duas áreas conta uma
+  // vez na lista de CCs e duas na contagem de slides.
+  const quantos = granularidade === 'RESUMO' ? 1
+    : granularidade === 'CC' ? escolha.folhas
+    : null;
 
   return (
     <>
@@ -269,7 +319,9 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
             importado em{' '}
             {new Date(modelo.criado_em).toLocaleDateString('pt-BR')}.
             {' '}O conteúdo entra ali com a formatação que a caixa já tem —
-            fonte, tamanho e cor vêm do seu modelo, não daqui.
+            fonte, tamanho e cor vêm do seu modelo, não daqui. Quando sai mais
+            de um slide, o slide da marca é repetido e os outros passam
+            intactos.
           </p>
         ) : (
           <p className="vazio">
@@ -291,12 +343,82 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
       </div>
 
       <div className="painel">
+        <h2>Como sai</h2>
+
+        <div className="linha-opcao">
+          <span className="rotulo-opcao">Slides</span>
+          <Grupo opcoes={GRANULARIDADES} valor={granularidade}
+                 onEscolhe={setGranularidade} />
+          <span className="muted">
+            {granularidade === 'CT'
+              ? 'um centro de trabalho em cada slide'
+              : granularidade === 'CC'
+                ? 'todos os CTs do centro de custo no mesmo slide'
+                : 'o recorte inteiro somado num slide só'}
+          </span>
+        </div>
+
+        <div className="linha-opcao">
+          <span className="rotulo-opcao">Ano</span>
+          <Grupo mini valor={ano} onEscolhe={setAno}
+                 opcoes={(anos ?? []).map((a) => ({ valor: a, rotulo: String(a) }))} />
+        </div>
+
+        <div className="linha-opcao">
+          <span className="rotulo-opcao">Período</span>
+          <select value={mesDe}
+                  onChange={(e) => setMesDe(Number(e.target.value))}>
+            {MESES.map((m, i) => (
+              <option key={m} value={i + 1}>{m}</option>
+            ))}
+          </select>
+          <span className="muted">até</span>
+          <select value={mesAte}
+                  onChange={(e) => setMesAte(Number(e.target.value))}>
+            {MESES.map((m, i) => (
+              <option key={m} value={i + 1}>{m}</option>
+            ))}
+          </select>
+          <span className="muted">
+            {mesDe === 1 && mesAte === 12 ? 'o ano inteiro' : `de ${de} a ${ate}`}
+          </span>
+        </div>
+
+        <div className="linha-opcao">
+          <span className="rotulo-opcao">Capacidade</span>
+          <Grupo opcoes={MEDIDAS} valor={medida} onEscolhe={setMedida} />
+          <Grupo mini valor={origem} onEscolhe={setOrigem} opcoes={[
+            { valor: 'META', rotulo: 'OEE meta' },
+            { valor: 'SIMULADO', rotulo: 'OEE simulado' },
+          ]} />
+        </div>
+
+        <div className="linha-opcao">
+          <span className="rotulo-opcao">Demanda</span>
+          <select value={cargaId ?? ''}
+                  onChange={(e) => setCargaId(
+                    e.target.value ? Number(e.target.value) : null)}>
+            <option value="">sem demanda — só a capacidade</option>
+            {(cargas ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.cenario}{c.corrente ? ' (no ar)' : ''}
+              </option>
+            ))}
+          </select>
+          <span className="muted">
+            {carga ? 'a ocupação sai ao lado da capacidade'
+              : 'sem cenário, o documento não fala de ocupação'}
+          </span>
+        </div>
+      </div>
+
+      <div className="painel">
         <h2>Exportar</h2>
         <p className="rodape" style={{ margin: '0 0 12px' }}>
-          O documento leva duas seções: a <strong>configuração</strong> do
-          recorte — quantos recursos, turnos, calendários, faixas de OEE e
-          paradas — e a <strong>capacidade</strong> que ela produz no ano, lida
-          da mesma rodada que o painel mostra.
+          Cada slide leva a <strong>configuração</strong> do seu recorte —
+          quantos recursos, turnos, calendários, faixas de OEE e paradas — e a
+          <strong> capacidade</strong> que ela produz no período, lida da mesma
+          rodada que o painel mostra.
         </p>
         <div className="acoes">
           <button type="button" className="btn btn-primario"
@@ -316,9 +438,17 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
           {temEscolha && (
             <span className="muted">
               {fmt(escolha.recursos)} recurso(s) no recorte
+              {quantos !== null && ` · ${fmt(quantos)} slide(s)`}
+              {granularidade === 'CT' && ' · um slide por CT do recorte'}
             </span>
           )}
         </div>
+        {temEscolha && quantos !== null && quantos > MUITOS_SLIDES && (
+          <p className="rodape" style={{ color: 'var(--aviso-fg)' }}>
+            São {fmt(quantos)} slides. Vai sair, mas leva um tempo e dá um
+            arquivo grande — um recorte menor costuma ser o que se queria.
+          </p>
+        )}
         <p className="rodape">
           O <strong>.pdf</strong> abre a versão para impressão numa aba nova, e
           você escolhe <em>Salvar como PDF</em> no diálogo — sai com fonte de

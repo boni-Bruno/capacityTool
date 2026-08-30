@@ -1,6 +1,12 @@
-import { capacidadeDoRecorte, configuracaoDoRecorte, areas } from '../../../../lib/db';
-import { rotuloOrigem, ORIGENS } from '../../../../lib/origens';
+import { areas, detalheDoRecorte } from '../../../../lib/db';
+import { cargas } from '../../../../lib/demanda';
+import { ORIGENS, rotuloOrigem } from '../../../../lib/origens';
 import { rotuloArea } from '../../../../lib/dias';
+import { resolvePeriodo } from '../../../../lib/periodo';
+import {
+  GRANULARIDADES, agrupa, ehGranularidade, ehMedida, rotuloIntervalo,
+  secoesDoGrupo,
+} from '../../../../lib/documento';
 import Imprime from './imprime';
 
 export const dynamic = 'force-dynamic';
@@ -12,9 +18,12 @@ export const dynamic = 'force-dynamic';
 // salvar que a pessoa já conhece. Aqui a página é montada em HTML com regras de
 // `@media print`, e o "Salvar como PDF" faz o resto.
 //
+// O TEXTO É O MESMO DO .PPTX, montado por `lib/documento.js`: um slide vira uma
+// página, e as duas saídas nunca contam números diferentes da mesma seleção.
+// Duas montagens do mesmo texto divergem na primeira mudança, e a divergência
+// sai num documento que ninguém confere contra o outro.
+//
 // Fora do Shell de propósito: menu lateral não vai para o papel.
-
-const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 
 const lista = (t) => String(t ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 
@@ -24,56 +33,31 @@ export default async function Page({ searchParams }) {
   const ano = Number(searchParams?.ano) || new Date().getFullYear();
   const origem = ORIGENS.includes(searchParams?.origem)
     ? searchParams.origem : 'META';
+  const medida = ehMedida(searchParams?.medida) ? searchParams.medida : 'disponivel';
+  const grao = ehGranularidade(searchParams?.grao) ? searchParams.grao : 'RESUMO';
+  const { de, ate } = resolvePeriodo(searchParams, ano);
 
   if (!areaIds.length) {
     return <p style={{ padding: '2rem' }}>Nenhuma área no recorte.</p>;
   }
 
-  const [todasAreas, cadastro, capacidade] = await Promise.all([
+  const cargaId = Number(searchParams?.carga) || null;
+  const [todasAreas, listaCargas, detalhe] = await Promise.all([
     areas(),
-    configuracaoDoRecorte(areaIds, ccs),
-    capacidadeDoRecorte(areaIds, ccs, ano, origem),
+    cargas(),
+    detalheDoRecorte(areaIds, ccs, ano, de, ate, origem, cargaId),
   ]);
 
-  const c = cadastro[0] ?? {};
-  const k = capacidade[0] ?? {};
+  const carga = listaCargas.find((c) => c.id === cargaId) ?? null;
   const escolhidas = todasAreas.filter((a) => areaIds.includes(a.id));
-
-  const secoes = [
-    {
-      titulo: 'Configuração',
-      itens: [
-        ['Recursos', fmt(c.recursos)],
-        ['Postos (soma das quantidades)', fmt(c.postos)],
-        ['Máquinas', fmt(c.maquinas)],
-        ['Postos de pessoa', fmt(c.pessoas)],
-        ['Centros de custo', fmt(c.ccs)],
-        ['Centros de trabalho', fmt(c.cts)],
-        ['Turnos em uso', fmt(c.turnos)],
-        ['Calendários em uso', fmt(c.calendarios)],
-        ['Faixas de OEE cadastradas', fmt(c.faixas_oee)],
-        ['Paradas cadastradas', fmt(c.paradas)],
-      ],
-    },
-    {
-      titulo: `Capacidade de ${ano}`,
-      itens: k.rodadas
-        ? [
-          ['Instalada', `${fmt(Math.round(k.instalada))} min`],
-          ['Planejada', `${fmt(Math.round(k.planejada))} min`],
-          ['Disponível', `${fmt(Math.round(k.disponivel))} min`],
-          ['Disponível em horas', `${fmt(Math.round(k.disponivel / 60))} h`],
-        ]
-        : [['Sem cálculo para este recorte',
-            'rode Recalcular tudo no painel']],
-    },
-  ];
+  const grupos = agrupa(detalhe, grao);
 
   return (
     <Imprime>
       <h1>Configurações da capacidade</h1>
       <p className="sub">
-        {ano} · OEE {rotuloOrigem(origem)} ·{' '}
+        {rotuloIntervalo(de, ate)} · OEE {rotuloOrigem(origem)} ·{' '}
+        {GRANULARIDADES.find((g) => g.valor === grao).rotulo.toLowerCase()} ·{' '}
         gerado em {new Date().toLocaleDateString('pt-BR')}
       </p>
 
@@ -82,25 +66,36 @@ export default async function Page({ searchParams }) {
         {escolhidas.map((a) => <li key={a.id}>{rotuloArea(a)}</li>)}
       </ul>
       {ccs.length > 0 && (
+        <p className="sub">Centros de custo: {ccs.join(' · ')}</p>
+      )}
+      {carga && <p className="sub">Cenário de demanda: {carga.cenario}</p>}
+
+      {!grupos.length && (
         <p className="sub">
-          Centros de custo: {ccs.join(' · ')}
+          O recorte não tem recurso nenhum — não há configuração para descrever.
         </p>
       )}
 
-      {secoes.map((s) => (
-        <div key={s.titulo} className="bloco">
-          <h2>{s.titulo}</h2>
-          <table>
-            <tbody>
-              {s.itens.map(([rot, val]) => (
-                <tr key={rot}>
-                  <td>{rot}</td>
-                  <td className="v">{val}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {grupos.map((g, i) => (
+        // Uma página por grupo, como um slide por grupo. A primeira segue o
+        // cabeçalho: começar o documento com uma folha quase vazia seria
+        // desperdiçar a página que mais se olha.
+        <section key={g.chave} className={i > 0 ? 'pagina quebra' : 'pagina'}>
+          {secoesDoGrupo(g, {
+            de, ate, medida, origem, cenario: carga?.cenario ?? null,
+          }).map((s) => (
+            <div key={s.titulo} className="bloco">
+              <h2>{s.titulo}</h2>
+              <table>
+                <tbody>
+                  {s.linhas.map((l, k) => (
+                    <tr key={`${s.titulo}-${k}`}><td>{l}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </section>
       ))}
 
       <p className="nota">

@@ -610,6 +610,23 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
   .modo-caixa { align-items: flex-start; }
 }
 
+/* Uma escolha por linha, com o rotulo sempre na mesma coluna. Empilhar os
+   grupos de botoes sem rotulo fixo obriga a ler o conteudo de cada um para
+   descobrir o que ele decide — e sao cinco escolhas seguidas. */
+.linha-opcao {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 0; border-top: 1px solid var(--border);
+}
+.linha-opcao:first-of-type { border-top: none; padding-top: 0; }
+.rotulo-opcao {
+  min-width: 96px; font-size: 13px; font-weight: 500; color: var(--muted);
+}
+.linha-opcao .muted { font-size: 13px; }
+
+@media (max-width: 640px) {
+  .rotulo-opcao { min-width: 100%; }
+}
+
 /* ---- DE/PARA da demanda ---- */
 
 /* Os atributos derivados, um por chip. Lista curta e horizontal porque a
@@ -893,6 +910,12 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
               font-weight: 600; white-space: nowrap; }
 .folha ul { margin: 0 0 6px; padding-left: 18px; }
 .folha .nota { margin-top: 22px; font-size: 10px; color: #6b6a65; }
+
+/* Uma pagina por grupo, como um slide por grupo. Na tela a quebra e so um
+   espaco maior: fingir folhas de papel numa aba do navegador so atrapalha
+   quem esta conferindo antes de imprimir. */
+.folha .pagina + .pagina { margin-top: 28px; }
+@media print { .folha .quebra { break-before: page; } }
 
 @media print {
   .nao-imprime { display: none; }

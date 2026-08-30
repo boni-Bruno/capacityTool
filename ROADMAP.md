@@ -744,10 +744,55 @@ mover, renomear e reordenar slides; posição e título não.
 
 Nada disso usa biblioteca: `lib/zip.js` lê e escreve ZIP (8 verificações, e
 validado contra um .xlsx real do Bruno, reescrito byte a byte), e `lib/pptx.js`
-acha a marca e preenche (12 verificações).
+acha a marca, clona e preenche (20 verificações).
 
 **Os outros slides do modelo passam intactos** — trabalhar neles ficou para
 depois, por decisão.
+
+### As cinco escolhas da extração
+
+Antes saía um slide só, do ano inteiro, com as três capacidades e sem demanda.
+Agora a tela pergunta cinco coisas, e todas com a mesma forma — é sempre "qual
+destes?", e responder do mesmo jeito dispensa aprender cada uma:
+
+| escolha | opções |
+|---|---|
+| **Slides** | um slide só (resumo) · um por CC · um por CT |
+| **Ano** | os anos com rodada, mais a janela em volta do corrente |
+| **Período** | de mês a mês, dentro do ano |
+| **Capacidade** | disponível · planejada · instalada, e OEE meta ou simulado |
+| **Demanda** | um cenário de carga, ou nenhum |
+
+**Um slide por grupo exige CLONAR o slide da marca**, e clonar um slide do .pptx
+é mais do que copiar o `.xml`: ele é citado em quatro lugares — o tipo da parte,
+os relacionamentos da apresentação, a ordem dos slides e o `_rels` do próprio
+slide. Faltar em qualquer um dá o mesmo estrago: o PowerPoint diz que o arquivo
+está corrompido e oferece reparar. O original vira o primeiro do lote, e as
+cópias nascem logo depois dele — assim o conteúdo não vai parar depois do slide
+de encerramento. As anotações do orador ficam para trás de propósito: uma
+notesSlide aponta de volta para UM slide.
+
+**Turnos e calendários vêm em lista de ids, não em contagem.** Dois CTs costumam
+dividir o mesmo turno; somar "1 turno" com "1 turno" diria que a fábrica tem o
+dobro dos turnos que tem. Com a lista, juntar é união de conjunto e a conta
+fecha nos três níveis.
+
+**A ocupação é soma sobre soma**, como no resto do projeto: a de um CC é a
+demanda somada dividida pela capacidade somada, e não a média das ocupações dos
+CTs — isso daria o mesmo peso a um CT que roda o mês inteiro e a um que quase
+não roda.
+
+**Uma consulta só para os três níveis** (`detalheDoRecorte`, aberta por CT): o
+CC é a soma dela, e o resumo é a soma de tudo, em `lib/documento.js` (15
+verificações). Antes eram três consultas, e três lugares capazes de discordar em
+silêncio — os números pareceriam certos cada um sozinho, e ninguém confere um
+slide contra o outro.
+
+**As escolhas moram em estado do React, e não na URL** — é a única tela do
+projeto assim. A marcação da árvore é estado, e trocar `searchParams` remontaria
+o componente e apagaria o recorte que a pessoa acabou de montar clicando em
+vinte centros de custo. Ano e origem continuam sendo lidos da URL para um link
+antigo continuar valendo.
 
 ---
 

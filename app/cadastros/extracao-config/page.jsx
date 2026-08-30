@@ -1,6 +1,5 @@
-import {
-  anosComRodada, arvoreDeConfiguracao, resumoModeloSlide,
-} from '../../../lib/db';
+import { anosComRodada, arvoreDeConfiguracao, resumoModeloSlide } from '../../../lib/db';
+import { cargaCorrente, cargas } from '../../../lib/demanda';
 import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { ORIGENS } from '../../../lib/origens';
 import AvisoBanco from '../aviso-banco';
@@ -18,15 +17,24 @@ export const dynamic = 'force-dynamic';
 // O recorte é planta › área › CC, escolhido em árvore. A extração para o AP, ao
 // lado, é outra coisa: lá saem os minutos por CT e mês para importar de volta;
 // aqui sai um documento para alguém ler.
+//
+// AS ESCOLHAS DA EXTRAÇÃO NÃO VÃO PARA A URL, e é a única tela do projeto assim.
+// A marcação da árvore mora em estado do React, e cada mudança de searchParams
+// remonta o componente e apaga o recorte que a pessoa acabou de montar clicando
+// em vinte centros de custo. Ano e origem continuam sendo LIDOS da URL para um
+// link antigo continuar valendo; daí em diante quem manda é a tela.
 // =============================================================================
 
 export default async function Page({ searchParams }) {
   let linhas;
   let modelo;
   let anos;
+  let listaCargas;
+  let corrente;
   try {
-    [linhas, modelo, anos] = await Promise.all([
+    [linhas, modelo, anos, listaCargas, corrente] = await Promise.all([
       arvoreDeConfiguracao(), resumoModeloSlide(), anosComRodada(),
+      cargas(), cargaCorrente(),
     ]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
@@ -52,7 +60,9 @@ export default async function Page({ searchParams }) {
           </p>
         </div>
       ) : (
-        <Exportar linhas={linhas} modelo={modelo} ano={ano} origem={origem} />
+        <Exportar linhas={linhas} modelo={modelo} ano={ano} origem={origem}
+                  anos={lista} cargas={listaCargas}
+                  cargaCorrente={corrente?.id ?? null} />
       )}
     </>
   );
