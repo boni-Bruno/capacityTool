@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
-import {
-  capacidadeDoRecorte, configuracaoDoRecorte, detalheDoRecorte,
-} from '../../../lib/db';
+import { detalheDoRecorte } from '../../../lib/db';
 import { resolvePeriodo } from '../../../lib/periodo';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeSessao } from '../../../lib/sessao';
 
 // Os números do recorte escolhido, para o .pptx e para a página de impressão.
 //
-// As duas saídas leem daqui, e não cada uma da sua consulta: o slide e o papel
-// mostrando números diferentes da mesma seleção seria o defeito mais difícil de
-// perceber desta tela, porque os dois pareceriam certos separadamente.
+// UMA CONSULTA SÓ, aberta por centro de trabalho. Os três níveis do documento
+// saem dela em `lib/documento.js`: um slide por CT usa as linhas direto, um
+// slide por CC soma as do centro de custo, e o resumo soma todas.
 //
-// Vêm três coisas: o cadastro do recorte inteiro, a capacidade dele no período,
-// e o mesmo recorte aberto por CT. O agrupamento em CC acontece no navegador,
-// somando as linhas de CT — abrir uma segunda consulta por CC daria dois
-// caminhos capazes de discordar em silêncio.
+// Antes eram três consultas, uma por nível, e três lugares capazes de discordar
+// em silêncio — o resumo e a soma dos slides pareceriam certos cada um sozinho,
+// e ninguém confere um slide contra o outro num .pptx. É a mesma razão pela qual
+// as duas saídas montam o texto na mesma função.
 export async function POST(req) {
   try {
     await exigeSessao();
@@ -37,20 +35,9 @@ export async function POST(req) {
     const carga = Number.isInteger(Number(b.carga)) && Number(b.carga) > 0
       ? Number(b.carga) : null;
 
-    const [cadastro, capacidade, grupos] = await Promise.all([
-      configuracaoDoRecorte(areas, ccs),
-      capacidadeDoRecorte(areas, ccs, ano, de, ate, origem, carga),
-      detalheDoRecorte(areas, ccs, ano, de, ate, origem, carga),
-    ]);
+    const grupos = await detalheDoRecorte(areas, ccs, ano, de, ate, origem, carga);
 
-    return NextResponse.json({
-      ok: true,
-      de,
-      ate,
-      cadastro: cadastro[0] ?? null,
-      capacidade: capacidade[0] ?? null,
-      grupos,
-    });
+    return NextResponse.json({ ok: true, de, ate, grupos });
   } catch (e) {
     console.error('[extracao-config POST]', e);
     return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },
