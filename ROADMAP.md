@@ -280,6 +280,25 @@ A correção é no **cadastro**, não na comparação. Dois motivos:
 
 As pendências do casamento estão em **O QUE FALTA**, no fim deste arquivo.
 
+### O cadastro grava o CT como foi digitado — decidido
+
+O formato canônico existe e é objetivo: na base de demanda, **os 123 CTs são
+`CCC-CCC` sem exceção**. No arquivo de recursos do AP, 189 de 193 também; as
+quatro fora do padrão — `383-11`, `513-14`, `513-17`, `513-45` — são facção com
+quantidade zero, que o AP não usa para calcular capacidade, e não existem na
+demanda em nenhuma das duas grafias.
+
+Chegou a ser proposto normalizar na gravação: CC e CT numéricos com
+`padStart(3, '0')`, sem truncar. **Recusado pelo Bruno em 30/08/2026**: o
+cadastro grava o que a pessoa digitou, e digitar certo é responsabilidade de
+quem cadastra.
+
+Fica registrado para não ser reproposto. O efeito conhecido de um CT mal
+digitado continua valendo e está documentado acima: ele não casa com a demanda,
+o recurso converte para zero, e isso não dá erro em lugar nenhum — a tela de
+Demanda mostra o CT na lista de "capacidade sem demanda", que é onde se
+percebe.
+
 ---
 
 ## 3. DE/PARA e regras de classificação da demanda — PRONTO
@@ -709,10 +728,6 @@ por quê — útil para não redecidir, mas já construído.
 - **Oito CTs cadastrados sem par na base**: `226-2`, `313-1`, `313-2`, `313-7`,
   `313-9`, `401-3`, `401-4`, `401-5`. O CC existe, aquele CT não. São máquinas
   que o plano não usa, ou numeração que ainda vai mudar.
-- **Validar o CT na entrada do cadastro.** Os zeros à esquerda foram acertados à
-  mão; nada impede alguém de digitar `5` de novo amanhã. Ao salvar um recurso,
-  CT numérico deveria ser gravado com 3 dígitos — sem truncar, para um CT de 4
-  dígitos futuro entrar como veio.
 
 ### Limpeza de schema
 
