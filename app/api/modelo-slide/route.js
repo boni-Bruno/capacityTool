@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
-  apagarModeloSlide, modeloSlideBase64, salvarModeloSlide,
+  anexarModeloSlide, apagarModeloSlide, concluirModeloSlide,
+  iniciarModeloSlide, modeloSlideBase64,
 } from '../../../lib/db';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeSessao } from '../../../lib/sessao';
@@ -13,34 +14,39 @@ import { revalidarCadastros } from '../../../lib/revalidar';
 // acabaria discordando da primeira. O servidor recebe os bytes já conferidos,
 // com o slide da marca já identificado, e só guarda.
 //
-// 4 MB é o teto. O arquivo viaja em base64 — um terço maior — e um modelo de
-// apresentação com logotipo e fundo não passa perto disso; acima, é imagem que
-// não devia estar num modelo.
-const LIMITE = 4 * 1024 * 1024;
-
+// EM PEDAÇOS, como a base de demanda. O arquivo sobe em base64 — um terço maior
+// — dentro de um JSON, e o corpo de uma requisição serverless tem teto; um
+// modelo com logotipo e imagem de fundo passa dele com facilidade. Ver
+// `iniciarModeloSlide` em lib/db.js.
 export async function POST(req) {
   try {
     await exigeSessao();
     const b = await req.json();
 
-    const base64 = String(b.base64 ?? '');
-    if (!base64) throw new Error('Modelo vazio.');
-    if ((base64.length * 3) / 4 > LIMITE) {
-      throw new Error('O modelo passa de 4 MB. Isso costuma ser imagem grande '
-        + 'dentro do arquivo — comprima as imagens e importe de novo.');
-    }
-    if (!b.slide_marca) {
-      throw new Error('Nenhum slide do modelo tem {{CAPACITY_TOOL}}. '
-        + 'Ponha essa marca numa caixa de texto do slide que vai receber o '
-        + 'conteúdo e importe de novo.');
+    if (b.acao === 'abrir') {
+      if (!b.slide_marca) {
+        throw new Error('Nenhum slide do modelo tem {{CAPACITY_TOOL}}. '
+          + 'Ponha essa marca numa caixa de texto do slide que vai receber o '
+          + 'conteúdo e importe de novo.');
+      }
+      await iniciarModeloSlide({
+        arquivo: b.arquivo, slideMarca: b.slide_marca, slides: b.slides,
+      });
+      return NextResponse.json({ ok: true });
     }
 
-    await salvarModeloSlide({
-      arquivo: b.arquivo, base64,
-      slideMarca: b.slide_marca, slides: b.slides,
-    });
-    revalidarCadastros();
-    return NextResponse.json({ ok: true });
+    if (b.acao === 'parte') {
+      await anexarModeloSlide(String(b.base64 ?? ''));
+      return NextResponse.json({ ok: true });
+    }
+
+    if (b.acao === 'fechar') {
+      const m = await concluirModeloSlide();
+      revalidarCadastros();
+      return NextResponse.json({ ok: true, ...m });
+    }
+
+    throw new Error('Ação desconhecida.');
   } catch (e) {
     console.error('[modelo-slide POST]', e);
     return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },

@@ -735,7 +735,9 @@ navegador**. As duas saídas montam o texto da mesma função — slide e papel
 dizendo números diferentes da mesma seleção seria o defeito mais difícil de ver.
 
 **O modelo é importado e guardado** (migração `28_modelo_slide.sql`, uma linha
-só: importar substitui). Um slide dele leva `{{CAPACITY_TOOL}}` numa caixa de
+só: importar substitui). Ele sobe **em pedaços de meio megabyte**, como a base
+de demanda: em base64 dentro de um JSON, um modelo com logotipo e fundo passa
+do teto de corpo de uma requisição serverless com facilidade. Um slide dele leva `{{CAPACITY_TOOL}}` numa caixa de
 texto, e é ali que o conteúdo entra — herdando fonte, tamanho e cor da caixa,
 porque o parágrafo é clonado em vez de recriado. Marca em texto sobrevive a
 mover, renomear e reordenar slides; posição e título não.

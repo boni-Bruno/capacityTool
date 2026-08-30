@@ -35,6 +35,43 @@ function base64DeBytes(bytes) {
   return btoa(s);
 }
 
+// Meio megabyte de arquivo por requisição, que vira uns 700 KB de base64 — bem
+// abaixo de qualquer teto de corpo. Os BYTES é que são fatiados, e cada pedaço
+// é codificado por conta própria: cortar o base64 no meio de um grupo de quatro
+// daria um arquivo corrompido que só o PowerPoint reclamaria.
+const PEDACO = 512 * 1024;
+
+/**
+ * `fetch` que devolve JSON ou uma frase que se possa ler.
+ *
+ * Quando o corpo estoura o limite, o que volta é "Request Entity Too Large" em
+ * texto puro — e `r.json()` sobre isso vira "Unexpected token 'R'", uma
+ * mensagem sobre sintaxe para um problema de tamanho. Aqui o corpo só é lido
+ * como JSON quando o servidor diz que é JSON.
+ */
+async function pede(url, corpo, metodo = 'POST') {
+  const r = await fetch(url, {
+    method: metodo,
+    headers: { 'Content-Type': 'application/json' },
+    body: corpo === undefined ? undefined : JSON.stringify(corpo),
+  });
+
+  const tipo = r.headers.get('content-type') ?? '';
+  if (!tipo.includes('application/json')) {
+    const bruto = (await r.text()).trim().slice(0, 120);
+    if (r.status === 413) {
+      throw new Error('O servidor recusou o envio por tamanho. '
+        + 'Se isto apareceu com o modelo em pedaços, o pedaço está grande '
+        + 'demais para este ambiente.');
+    }
+    throw new Error(`O servidor respondeu ${r.status} sem JSON: ${bruto || '(vazio)'}`);
+  }
+
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.erro);
+  return j;
+}
+
 export default function Exportar({ linhas, modelo, ano, origem }) {
   const router = useRouter();
   const [escolha, setEscolha] = useState({ areas: [], ccs: [], recursos: 0 });
@@ -70,20 +107,26 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
           + 'conteúdo e importe de novo.');
       }
 
-      const r = await fetch('/api/modelo-slide', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          arquivo: arq.name,
-          base64: base64DeBytes(bytes),
-          slide_marca: marcado,
-          slides: slides.length,
-        }),
+      // Abre, manda os pedaços, fecha. O cabeçalho vai primeiro para o banco
+      // nunca ficar com bytes de um modelo e o nome de outro.
+      await pede('/api/modelo-slide', {
+        acao: 'abrir',
+        arquivo: arq.name,
+        slide_marca: marcado,
+        slides: slides.length,
       });
-      const j = await r.json();
-      if (!j.ok) throw new Error(j.erro);
-      setAviso(`Modelo guardado. A marca está no ${marcado.split('/').pop()}, `
-        + `de ${slides.length} slides.`);
+
+      for (let i = 0; i < bytes.length; i += PEDACO) {
+        setAviso(`Enviando… ${Math.round((i * 100) / bytes.length)}%`);
+        await pede('/api/modelo-slide', {
+          acao: 'parte',
+          base64: base64DeBytes(bytes.subarray(i, i + PEDACO)),
+        });
+      }
+
+      const fim = await pede('/api/modelo-slide', { acao: 'fechar' });
+      setAviso(`Modelo guardado — ${fmt(Math.round(fim.tamanho / 1024))} KB. `
+        + `A marca está no ${marcado.split('/').pop()}, de ${slides.length} slides.`);
       router.refresh();
     } catch (ex) {
       setErro(ex.message ?? 'Não consegui ler o modelo.');
@@ -95,7 +138,7 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
   async function apagarModelo() {
     setOcupado('modelo');
     try {
-      await fetch('/api/modelo-slide', { method: 'DELETE' });
+      await pede('/api/modelo-slide', undefined, 'DELETE');
       router.refresh();
     } finally {
       setOcupado(null);
@@ -103,18 +146,9 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
   }
 
   // ---- os números do recorte ----------------------------------------------
-  async function numeros() {
-    const r = await fetch('/api/extracao-config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        areas: escolha.areas, ccs: escolha.ccs, ano, origem,
-      }),
-    });
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.erro);
-    return j;
-  }
+  const numeros = () => pede('/api/extracao-config', {
+    areas: escolha.areas, ccs: escolha.ccs, ano, origem,
+  });
 
   // As duas saídas montam o texto da mesma função: slide e papel dizendo
   // números diferentes da mesma seleção seria o defeito mais difícil de ver.
@@ -157,9 +191,10 @@ export default function Exportar({ linhas, modelo, ano, origem }) {
     setErro(null);
     setAviso(null);
     try {
-      const [j, resp] = await Promise.all([numeros(), fetch('/api/modelo-slide')]);
-      const m = await resp.json();
-      if (!m.ok) throw new Error(m.erro);
+      const [j, m] = await Promise.all([
+        numeros(),
+        pede('/api/modelo-slide', undefined, 'GET'),
+      ]);
 
       const dentro = await lerZip(bytesDeBase64(m.base64));
       const alvo = acharSlideMarcado(dentro);
