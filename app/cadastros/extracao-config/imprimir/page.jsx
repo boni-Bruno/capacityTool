@@ -7,7 +7,7 @@ import { rotuloArea } from '../../../../lib/dias';
 import { resolvePeriodo } from '../../../../lib/periodo';
 import {
   GRANULARIDADES, agrupa, ehGranularidade, ehMedida, fmt, rotuloIntervalo,
-  secoesDoGrupo, secoesDoTitulo, visualDoGrupo,
+  secoesDoGrupo, subtituloDoSlide, tituloDoSlide, visualDoGrupo,
 } from '../../../../lib/documento';
 import { colunas, geometriaDoGrafico } from '../../../../lib/visual';
 import Imprime from './imprime';
@@ -126,20 +126,22 @@ export default async function Page({ searchParams }) {
       )}
 
       {grupos.map((g, i) => {
+        const opcoes = { de, ate, medida, origem, cenario: carga?.cenario ?? null };
         const visual = visualDoGrupo({
           grupo: g, granularidade: grao, serie, turnos,
-          medida, cenario: carga?.cenario ?? null,
+          medida, cenario: carga?.cenario ?? null, de, ate, origem,
         });
-        const opcoes = { de, ate, medida, origem, cenario: carga?.cenario ?? null };
-        const secoes = visual
-          ? secoesDoTitulo(g, opcoes) : secoesDoGrupo(g, opcoes);
 
         // Uma página por grupo, como um slide por grupo. A primeira segue o
         // cabeçalho: começar o documento com uma folha quase vazia seria
         // desperdiçar a página que mais se olha.
         return (
           <section key={g.chave} className={i > 0 ? 'pagina quebra' : 'pagina'}>
-            {secoes.map((s) => (
+            {/* O mesmo par do slide: planta e área em cima, CC e CTs embaixo. */}
+            <h2 className="titulo-grupo">{tituloDoSlide(g)}</h2>
+            <p className="sub">{subtituloDoSlide(g)}</p>
+
+            {!visual && secoesDoGrupo(g, opcoes).map((s) => (
               <div key={s.titulo} className="bloco">
                 <h2>{s.titulo}</h2>
                 <table>
@@ -161,6 +163,7 @@ export default async function Page({ searchParams }) {
                       {'  '}<span className="chave dem" /> {visual.rotuloDemanda}
                     </>
                   )}
+                  {visual.rodape && <span className="quando">{visual.rodape}</span>}
                 </p>
                 <Grafico visual={visual} />
                 <table className="grade">

@@ -790,6 +790,26 @@ slide contra o outro.
 
 ### O slide é visual
 
+**O título e o subtítulo são os do próprio modelo**: a caixa que aparece escrito
+"Título" recebe `Planta - Área`, e a do "Subtítulo" recebe `CC - CTs`. Eles ficam
+no alto, com a posição, a fonte e o tamanho que o modelo já decidiu, e a caixa
+da marca fica INTEIRA para o desenho — escrever o título dentro dela gastaria a
+altura de que o gráfico precisa e ignoraria o campo que existe justamente para
+isso. A busca é por TIPO de espaço reservado (`title`, `ctrTitle`, `subTitle`) e,
+como alternativa, pela caixa comum em que alguém escreveu literalmente "Título"
+— que é como um modelo montado à mão costuma ficar. Espaço reservado vazio
+também é preenchido: o "Título" que aparece na tela é sugestão do leiaute, não
+conteúdo do arquivo, e sem esse caso o título sumiria justo no modelo bem
+montado. Modelo sem título nenhum faz o texto voltar para dentro da caixa da
+marca, e o desenho cede a faixa de cima.
+
+A legenda diz a medida e o cenário por extenso — **"Capacidade disponível"** e
+**"Demanda cenário X"**. "Disponível" e "Demanda" sozinhos deixam quem lê sem
+saber qual das três capacidades está na barra e contra qual plano a linha
+compara, e essas duas escolhas são exatamente o que muda de um documento para o
+outro. O período e a origem do OEE ficam no canto oposto: são o "quando", e o
+título é o "de quem".
+
 Cada slide leva um **gráfico mês a mês** — barras com a capacidade escolhida,
 linha com a demanda do cenário — e, **alinhada coluna a coluna** com ele, uma
 grade com o mês, o **OEE** e a quantidade de recursos de **cada turno**. É a
@@ -818,11 +838,11 @@ Uma posição fixa em código estaria errada no dia em que o modelo ganhasse uma
 faixa lateral — e errada em silêncio, por cima do logotipo. Caixa baixa demais
 faz o desenho descer até a margem de baixo em vez de sair achatado.
 
-**Com gráfico, o texto encolhe para a identidade** — título, planta, área,
-período. Capacidade, demanda, OEE e turnos estão todos no desenho, mês a mês;
-repeti-los em texto roubaria a altura de que ele precisa e daria ao leitor duas
-versões da mesma informação para conferir. Recorte sem rodada volta ao documento
-todo em texto, em vez de sair vazio.
+**Com gráfico, o texto sai da caixa do conteúdo.** Capacidade, demanda, OEE e
+turnos estão todos no desenho, mês a mês; repeti-los em texto roubaria a altura
+de que ele precisa e daria ao leitor duas versões da mesma informação para
+conferir. Recorte sem rodada volta ao documento todo em texto, em vez de sair
+vazio.
 
 **O OEE do slide é `disponível ÷ planejada`**, e não a faixa cadastrada lida de
 novo: divisão de somas, como o resto do projeto. A segunda fonte poderia mostrar

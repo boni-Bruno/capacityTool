@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { escreveZip, lerZip, texto } from '../../../lib/zip';
 import {
   MARCA, acharSlideMarcado, clonaSlideMarcado, insereFormas, linhasDasSecoes,
-  preencheSlide, retanguloDoSlideMarcado, slidesDo, tamanhoDoSlide,
+  preencheCampo, preencheSlide, retanguloDoSlideMarcado, slidesDo,
+  tamanhoDoSlide,
 } from '../../../lib/pptx';
 import {
   GRANULARIDADES, MEDIDAS, agrupa, fmt as fmtNum, secoesDoGrupo, secoesDoTitulo,
-  visualDoGrupo,
+  subtituloDoSlide, tituloDoSlide, visualDoGrupo,
 } from '../../../lib/documento';
 import { areaDoVisual, formasDoVisual } from '../../../lib/slide-visual';
 import { iso, ultimoDiaDoMes } from '../../../lib/periodo';
@@ -226,9 +227,12 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
     const visual = visualDoGrupo({
       grupo, granularidade, serie: j.serie, turnos: j.turnos,
       medida, cenario: carga?.cenario ?? null,
+      de: opcoes.de, ate: opcoes.ate, origem,
     });
     return {
+      grupo,
       visual,
+      opcoes,
       secoes: visual ? secoesDoTitulo(grupo, opcoes) : secoesDoGrupo(grupo, opcoes),
     };
   });
@@ -257,21 +261,39 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
         throw new Error('O modelo guardado perdeu a marca — importe de novo.');
       }
 
-      // A área do desenho sai da própria caixa da marca, lida ANTES de o texto
-      // entrar: depois de preenchida a marca já não está lá para ser achada.
-      // Todas as cópias saíram do mesmo slide, então o retângulo é um só.
+      // O modelo tem onde escrever o título — a caixa que aparece escrito
+      // "Título" quando está vazia. Se ela existe, o título e o subtítulo vão
+      // para lá, no alto, com a posição e a fonte que o modelo já decidiu — e a
+      // caixa da marca fica INTEIRA para o desenho. Se não existe, o texto volta
+      // para dentro dela e o desenho cede a faixa de cima.
+      const temTitulo = preencheCampo(texto(dentro.get(alvos[0])), 'titulo', 'x')
+        .trocou;
+
+      // A área sai da própria caixa da marca, lida ANTES de o texto entrar:
+      // depois de preenchida, a marca já não está lá para ser achada. Todas as
+      // cópias saíram do mesmo slide, então o retângulo é um só.
       const area = areaDoVisual(retanguloDoSlideMarcado(texto(dentro.get(alvos[0]))),
-                                tamanhoDoSlide(dentro));
+                                tamanhoDoSlide(dentro),
+                                { reservaTitulo: !temTitulo });
 
       alvos.forEach((nome, i) => {
-        const { xml } = preencheSlide(texto(dentro.get(nome)),
-                                      linhasDasSecoes(slides[i].secoes));
-        const cheio = slides[i].visual
-          ? insereFormas(xml, formasDoVisual({
-            area, visual: slides[i].visual, fmt: fmtNum,
-          }))
-          : xml;
-        dentro.set(nome, new TextEncoder().encode(cheio));
+        const { grupo, visual, secoes } = slides[i];
+        let xml = texto(dentro.get(nome));
+
+        if (temTitulo) {
+          xml = preencheCampo(xml, 'titulo', tituloDoSlide(grupo)).xml;
+          xml = preencheCampo(xml, 'subtitulo', subtituloDoSlide(grupo)).xml;
+        }
+
+        // Com o título no alto, a caixa da marca fica vazia de propósito: o que
+        // ela tinha para dizer já está dito, e ela existe agora só para marcar
+        // onde o desenho entra.
+        xml = preencheSlide(xml, temTitulo && visual
+          ? [] : linhasDasSecoes(secoes)).xml;
+
+        dentro.set(nome, new TextEncoder().encode(
+          visual ? insereFormas(xml, formasDoVisual({ area, visual, fmt: fmtNum }))
+            : xml));
       });
 
       const saida = await escreveZip(dentro);

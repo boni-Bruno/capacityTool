@@ -933,7 +933,9 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 .folha .grade .cabecalho td { font-weight: 600; }
 .folha .grade .cabecalho th, .folha .grade .cabecalho td { border-bottom: none; }
 
+.folha .titulo-grupo { font-size: 16px; margin: 0 0 2px; }
 .folha .legenda { margin: 0 0 4px; font-size: 11px; color: #6b6a65; }
+.folha .legenda .quando { float: right; }
 .folha .chave {
   display: inline-block; width: 9px; height: 9px; margin-right: 3px;
   vertical-align: -1px;
