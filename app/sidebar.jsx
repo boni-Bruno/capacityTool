@@ -56,7 +56,8 @@ const GRUPOS = [
     // A saída: o resultado do cálculo no formato que o sistema de lá entende.
     nome: 'Extração',
     itens: [
-      { href: '/cadastros/extracao-ap', rotulo: 'Extração para o AP' },
+      { href: '/cadastros/extracao-ap',     rotulo: 'Extração para o AP' },
+      { href: '/cadastros/extracao-config', rotulo: 'Extração das configurações' },
     ],
   },
 ];

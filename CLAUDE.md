@@ -83,9 +83,9 @@ ruído; comentário que conta a armadilha é o que salva a próxima pessoa.
 **Motor puro antes de tela.** Toda regra que decide número mora num módulo de
 `lib/` sem `import` de banco, com testes em `node:test`. Depois a tela consome.
 Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
-`faixas.js`, `periodo.js`, `formato.js`, `ap.js`, `parquet.js`, `dia-util.js`,
-`ordem.js`, `anos.js`, `tema.js`, `origens.js`, `dias.js`, `grade.js`,
-`cores.js`. Nenhum deles importa `./db`.
+`faixas.js`, `periodo.js`, `formato.js`, `ap.js`, `parquet.js`, `zip.js`,
+`pptx.js`, `dia-util.js`, `ordem.js`, `anos.js`, `tema.js`, `origens.js`,
+`dias.js`, `grade.js`, `cores.js`. Nenhum deles importa `./db`.
 
 **Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
 quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número
@@ -95,6 +95,13 @@ precisa continuar passando.
 
 **Driver Neon HTTP**: só tagged template, uma requisição por instrução.
 Para lote, `unnest` de arrays paralelos; para atomicidade, `sql.transaction([])`.
+Binário vai e volta em base64, com `decode(…, 'base64')` e `encode(…)`.
+
+**Formato de arquivo é lido e escrito à mão**, sem dependência: parquet em
+`lib/parquet.js`, ZIP em `lib/zip.js`. A compressão o runtime resolve —
+`DecompressionStream` e `CompressionStream` existem no navegador e no Node 18+.
+Arquivo pesado é manipulado no NAVEGADOR, não em função serverless: o limite de
+tempo de lá existe para consulta, não para descompactar e recompactar megabytes.
 
 **Fronteira cliente/servidor**: nenhum `lib/*.js` que importe `./db` pode ser
 importado por um componente `'use client'`.

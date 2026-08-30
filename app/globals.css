@@ -856,3 +856,46 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 /* Recolhido, sobra o simbolo: o texto nao caberia e o simbolo ja diz. */
 .lado-estreito .lado-tema { justify-content: center; }
 .lado-estreito .lado-tema-txt { display: none; }
+
+/* ---- extracao das configuracoes ---- */
+
+.arvore-planta {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 10px; background: var(--card);
+}
+.arvore-linha {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 4px 0;
+}
+.arvore-linha input[type="checkbox"] { width: auto; height: auto; }
+.arvore-area { padding-left: 22px; border-top: 1px solid var(--border); }
+.arvore-ccs {
+  padding-left: 26px; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2px;
+  padding-bottom: 8px;
+}
+
+/* ---- a folha, que e como o PDF sai ---- */
+
+/* Fora do Shell: menu lateral nao vai para o papel. Medidas em milimetro
+   porque o destino e A4, e nao a tela. */
+.folha {
+  max-width: 180mm; margin: 0 auto; padding: 16mm 0;
+  font-size: 12px; color: #1a1a19; background: #fff;
+}
+.folha h1 { font-size: 21px; margin: 0 0 4px; }
+.folha h2 { font-size: 14px; margin: 18px 0 8px; }
+.folha .sub { color: #6b6a65; margin: 0 0 6px; font-size: 12px; }
+.folha .bloco { break-inside: avoid; }
+.folha table { width: 100%; border-collapse: collapse; }
+.folha td { padding: 5px 2px; border-bottom: 1px solid #e5e3dd; }
+.folha td.v { text-align: right; font-variant-numeric: tabular-nums;
+              font-weight: 600; white-space: nowrap; }
+.folha ul { margin: 0 0 6px; padding-left: 18px; }
+.folha .nota { margin-top: 22px; font-size: 10px; color: #6b6a65; }
+
+@media print {
+  .nao-imprime { display: none; }
+  .folha { padding: 0; max-width: none; }
+  @page { margin: 16mm; }
+}

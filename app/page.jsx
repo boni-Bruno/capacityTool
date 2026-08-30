@@ -101,6 +101,12 @@ const EXTRACAO = [
     texto: 'A capacidade calculada em .csv — CT, período AAAA.MM e minutos, ' +
            'condensada por mês, com prévia antes de baixar.',
   },
+  {
+    href: '/cadastros/extracao-config',
+    titulo: 'Extração das configurações',
+    texto: 'Como a fábrica está configurada num recorte, e quanta capacidade ' +
+           'isso produz. Em .pptx dentro do seu modelo, ou em PDF.',
+  },
 ];
 
 function Cartao({ href, titulo, texto }) {

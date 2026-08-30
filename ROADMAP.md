@@ -718,6 +718,37 @@ demanda_regra_cond  regra_id · bloco · atributo · operador · valor
 
 ---
 
+## Extração das configurações — PRONTO
+
+Segunda tela do grupo Extração, em `/cadastros/extracao-config`. A do AP entrega
+minutos por CT e mês para importar de volta; esta entrega um **documento para
+alguém ler**: como a fábrica está configurada num recorte, e quanta capacidade
+essa configuração produz.
+
+O recorte é uma árvore **planta › área › CC**, com um botão por nível que marca
+tudo abaixo e vira "desmarcar" quando já está tudo marcado. A marcação mora na
+folha — no CC — e os níveis de cima só refletem o que ela diz: guardar marcação
+em três níveis daria três verdades sobre a mesma escolha.
+
+Sai em **.pptx dentro do modelo da empresa** ou em **PDF pela impressão do
+navegador**. As duas saídas montam o texto da mesma função — slide e papel
+dizendo números diferentes da mesma seleção seria o defeito mais difícil de ver.
+
+**O modelo é importado e guardado** (migração `28_modelo_slide.sql`, uma linha
+só: importar substitui). Um slide dele leva `{{CAPACITY_TOOL}}` numa caixa de
+texto, e é ali que o conteúdo entra — herdando fonte, tamanho e cor da caixa,
+porque o parágrafo é clonado em vez de recriado. Marca em texto sobrevive a
+mover, renomear e reordenar slides; posição e título não.
+
+Nada disso usa biblioteca: `lib/zip.js` lê e escreve ZIP (8 verificações, e
+validado contra um .xlsx real do Bruno, reescrito byte a byte), e `lib/pptx.js`
+acha a marca e preenche (12 verificações).
+
+**Os outros slides do modelo passam intactos** — trabalhar neles ficou para
+depois, por decisão.
+
+---
+
 ## O QUE FALTA
 
 Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
