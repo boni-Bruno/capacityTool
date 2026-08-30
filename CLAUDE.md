@@ -84,8 +84,8 @@ ruído; comentário que conta a armadilha é o que salva a próxima pessoa.
 `lib/` sem `import` de banco, com testes em `node:test`. Depois a tela consome.
 Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
 `faixas.js`, `periodo.js`, `formato.js`, `ap.js`, `parquet.js`, `zip.js`,
-`pptx.js`, `dia-util.js`, `ordem.js`, `anos.js`, `tema.js`, `origens.js`,
-`dias.js`, `grade.js`, `cores.js`. Nenhum deles importa `./db`.
+`pptx.js`, `documento.js`, `dia-util.js`, `ordem.js`, `anos.js`, `tema.js`,
+`origens.js`, `dias.js`, `grade.js`, `cores.js`. Nenhum deles importa `./db`.
 
 **Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
 quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número
