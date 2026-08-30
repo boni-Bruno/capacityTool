@@ -810,11 +810,29 @@ compara, e essas duas escolhas são exatamente o que muda de um documento para o
 outro. O período e a origem do OEE ficam no canto oposto: são o "quando", e o
 título é o "de quem".
 
-Cada slide leva um **gráfico mês a mês** — barras com a capacidade escolhida,
-linha com a demanda do cenário — e, **alinhada coluna a coluna** com ele, uma
-grade com o mês, o **OEE** e a quantidade de recursos de **cada turno**. É a
-leitura que o desenho existe para permitir: a barra de março caiu porque o OEE
-caiu, ou porque perdeu um turno?
+Cada slide leva um **gráfico mês a mês** — **a capacidade é a linha com área,
+a demanda é a barra**, como no Painel da Ocupação. A capacidade é um teto: vale
+o mês inteiro, e uma superfície contínua é o que se parece com isso. A demanda é
+o que foi pedido, e cai bem em coluna. Invertido, o desenho diz que a demanda é
+o contínuo e a capacidade o discreto — o contrário do que a fábrica é.
+
+**Alinhada coluna a coluna** com ele vem a grade, nesta ordem: mês,
+**capacidade**, **demanda**, **ocupação**, **OEE** e a quantidade de recursos de
+**cada turno**. Primeiro o que o gráfico desenhou, depois o que explica o
+desenho — quem olha quer primeiro o número da barra que está vendo. É a leitura
+que tudo isso existe para permitir: a barra de março caiu porque o OEE caiu, ou
+porque perdeu um turno?
+
+**O totalizador do período fica numa coluna à direita**, fora das colunas de mês
+— deixá-la entrar na divisão faria as doze barras encolherem para caber um treze
+que não existe no gráfico. Cada medida totaliza do jeito dela, e é aí que se
+erra: capacidade e demanda **somam**; ocupação e OEE são **divisão de somas**,
+nunca a média das colunas. Somar doze porcentagens e dividir por doze daria o
+mesmo peso a dezembro, que tem recesso, e a março, que roda cheio — e o total
+deixaria de bater com a conta que a própria linha de cima mostra. **Turno não
+totaliza**: somar "6 recursos em janeiro" com "6 em fevereiro" daria doze numa
+fábrica que tem seis, porque turno é estado, não fluxo. A coluna se chama "Ano"
+só quando são doze meses; num recorte menor, "Total".
 
 O alinhamento é a exigência do desenho, e por isso a geometria é UMA função
 (`lib/visual.js`, 7 verificações) usada pelas duas saídas: DrawingML no .pptx,

@@ -6,10 +6,10 @@ import { ORIGENS, rotuloOrigem } from '../../../../lib/origens';
 import { rotuloArea } from '../../../../lib/dias';
 import { resolvePeriodo } from '../../../../lib/periodo';
 import {
-  GRANULARIDADES, agrupa, ehGranularidade, ehMedida, fmt, rotuloIntervalo,
+  GRANULARIDADES, agrupa, ehGranularidade, ehMedida, rotuloIntervalo,
   secoesDoGrupo, subtituloDoSlide, tituloDoSlide, visualDoGrupo,
 } from '../../../../lib/documento';
-import { colunas, geometriaDoGrafico } from '../../../../lib/visual';
+import { geometriaDoGrafico } from '../../../../lib/visual';
 import Imprime from './imprime';
 
 export const dynamic = 'force-dynamic';
@@ -34,40 +34,39 @@ export const dynamic = 'force-dynamic';
 // Fora do Shell de propósito: menu lateral não vai para o papel.
 
 // O desenho é em coordenadas próprias e o SVG estica para a largura da folha.
-// A calha da esquerda vale 14% dos dois lados — do gráfico e da tabela — e é o
-// que faz as colunas coincidirem.
+// A calha da esquerda e a coluna do total valem os mesmos 14% e 12% dos dois
+// lados — do gráfico e da tabela — e é isso que faz as colunas coincidirem.
 const LARGURA = 1000;
-const ALTURA = 260;
+const ALTURA = 230;
 const CALHA = 140;
+const TOTAL = 120;
+
+// Duas cores de papel, e não as do tema: aqui não existe modelo de onde herdar.
+const COR_CAPACIDADE = '#3f5d7d';
+const COR_DEMANDA = '#c0552b';
 
 function Grafico({ visual }) {
   const g = geometriaDoGrafico({
     x: 0, y: 0, largura: LARGURA, altura: ALTURA,
-    serie: visual.pontos, rotulo: CALHA,
+    serie: visual.pontos, rotulo: CALHA, total: TOTAL,
   });
-  const cols = colunas(0, LARGURA, visual.pontos.length, CALHA);
 
   return (
     <svg viewBox={`0 0 ${LARGURA} ${ALTURA}`} className="desenho"
          preserveAspectRatio="none" role="img">
-      <line x1={CALHA} y1={g.base} x2={LARGURA} y2={g.base}
-            stroke="#c9c6bd" strokeWidth="1" />
+      {/* A área primeiro: é o fundo contra o qual as barras se leem. */}
+      <polygon fill={COR_CAPACIDADE} fillOpacity="0.18"
+               points={g.poligono.map((p) => `${p.x},${p.y}`).join(' ')} />
       {g.barras.filter((b) => b.altura > 0).map((b) => (
-        <g key={b.i}>
-          <rect x={b.x} y={b.y} width={b.largura} height={b.altura} fill="#3f5d7d" />
-          <text x={cols[b.i].centro} y={b.y - 5} textAnchor="middle"
-                fontSize="13" fill="#57544d">{fmt(b.valor)}</text>
-        </g>
+        <rect key={b.i} x={b.x} y={b.y} width={b.largura} height={b.altura}
+              fill={COR_DEMANDA} />
       ))}
-      {visual.rotuloDemanda && (
-        <>
-          <polyline fill="none" stroke="#c0552b" strokeWidth="2.5"
-                    points={g.pontos.map((p) => `${p.x},${p.y}`).join(' ')} />
-          {g.pontos.map((p) => (
-            <circle key={p.i} cx={p.x} cy={p.y} r="4" fill="#c0552b" />
-          ))}
-        </>
-      )}
+      {/* A linha da capacidade por cima de tudo: é o teto, e teto encoberto
+          por barra deixa de ser teto. */}
+      <polyline fill="none" stroke={COR_CAPACIDADE} strokeWidth="2.5"
+                points={g.pontos.map((p) => `${p.x},${p.y}`).join(' ')} />
+      <line x1={CALHA} y1={g.base} x2={LARGURA - TOTAL} y2={g.base}
+            stroke="#c9c6bd" strokeWidth="1" />
     </svg>
   );
 }
@@ -175,6 +174,7 @@ export default async function Page({ searchParams }) {
                         {l.valores.map((v, c) => (
                           <td key={`${k}-${c}`}>{v}</td>
                         ))}
+                        <td className="total">{l.total}</td>
                       </tr>
                     ))}
                   </tbody>

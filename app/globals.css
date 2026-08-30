@@ -930,6 +930,13 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 }
 .folha .grade td { text-align: center; font-size: 11px;
                    font-variant-numeric: tabular-nums; }
+
+/* A coluna do total tem os mesmos 12% que o desenho reserva a ela: o grafico
+   ocupa so os meses, e o total fica a direita, fora deles. Mexer num sem mexer
+   no outro desalinha a grade inteira. */
+.folha .grade .total {
+  width: 12%; font-weight: 600; border-left: 1px solid #e5e3dd;
+}
 .folha .grade .cabecalho td { font-weight: 600; }
 .folha .grade .cabecalho th, .folha .grade .cabecalho td { border-bottom: none; }
 
@@ -940,8 +947,12 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
   display: inline-block; width: 9px; height: 9px; margin-right: 3px;
   vertical-align: -1px;
 }
-.folha .chave.cap { background: #3f5d7d; }
-.folha .chave.dem { background: #c0552b; border-radius: 50%; }
+/* A forma da chave imita a do desenho: a capacidade e uma faixa, como a area
+   embaixo da linha; a demanda e um bloco, como a coluna. Chave que nao parece
+   com o que representa obriga a ler a legenda duas vezes. */
+.folha .chave.cap { background: #3f5d7d; opacity: 0.55; height: 5px;
+                    vertical-align: 1px; }
+.folha .chave.dem { background: #c0552b; }
 @media print { .folha .quebra { break-before: page; } }
 
 @media print {
