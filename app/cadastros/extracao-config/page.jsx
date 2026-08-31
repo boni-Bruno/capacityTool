@@ -1,4 +1,6 @@
-import { anosComRodada, arvoreDeConfiguracao, resumoModeloSlide } from '../../../lib/db';
+import {
+  anosComRodada, arvoreDeConfiguracao, faixasDeOcupacao, resumoModeloSlide,
+} from '../../../lib/db';
 import { cargaCorrente, cargas } from '../../../lib/demanda';
 import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { ORIGENS } from '../../../lib/origens';
@@ -31,10 +33,11 @@ export default async function Page({ searchParams }) {
   let anos;
   let listaCargas;
   let corrente;
+  let faixas;
   try {
-    [linhas, modelo, anos, listaCargas, corrente] = await Promise.all([
+    [linhas, modelo, anos, listaCargas, corrente, faixas] = await Promise.all([
       arvoreDeConfiguracao(), resumoModeloSlide(), anosComRodada(),
-      cargas(), cargaCorrente(),
+      cargas(), cargaCorrente(), faixasDeOcupacao(),
     ]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
@@ -61,7 +64,7 @@ export default async function Page({ searchParams }) {
         </div>
       ) : (
         <Exportar linhas={linhas} modelo={modelo} ano={ano} origem={origem}
-                  anos={lista} cargas={listaCargas}
+                  anos={lista} cargas={listaCargas} faixas={faixas}
                   cargaCorrente={corrente?.id ?? null} />
       )}
     </>

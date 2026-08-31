@@ -15,6 +15,7 @@ import {
 import { areaDoVisual, formasDoVisual } from '../../../lib/slide-visual';
 import { iso, ultimoDiaDoMes } from '../../../lib/periodo';
 import Arvore from './arvore';
+import Faixas from './faixas';
 
 // A tela da extração das configurações.
 //
@@ -114,7 +115,8 @@ async function pede(url, corpo, metodo = 'POST') {
 }
 
 export default function Exportar({ linhas, modelo, ano: anoInicial, origem: origemInicial,
-                                   anos, cargas, cargaCorrente }) {
+                                   anos, cargas, cargaCorrente,
+                                   faixas: faixasIniciais }) {
   const router = useRouter();
   const [escolha, setEscolha] = useState({ areas: [], ccs: [], recursos: 0, folhas: 0 });
   const [ocupado, setOcupado] = useState(null);
@@ -131,6 +133,9 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
   const [origem, setOrigem] = useState(origemInicial);
   const [cargaId, setCargaId] = useState(cargaCorrente ?? null);
   const [granularidade, setGranularidade] = useState('RESUMO');
+  // As faixas de cor vivem aqui porque o pop-up as grava sem recarregar a
+  // página: recarregar remontaria a árvore e apagaria o recorte marcado.
+  const [faixas, setFaixas] = useState(faixasIniciais ?? []);
 
   const temEscolha = escolha.areas.length > 0;
   const carga = (cargas ?? []).find((c) => c.id === cargaId) ?? null;
@@ -227,7 +232,7 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
     const visual = visualDoGrupo({
       grupo, granularidade, serie: j.serie, turnos: j.turnos,
       medida, cenario: carga?.cenario ?? null,
-      de: opcoes.de, ate: opcoes.ate, origem,
+      de: opcoes.de, ate: opcoes.ate, origem, faixas,
     });
     return {
       grupo,
@@ -466,6 +471,11 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
             {carga ? 'a ocupação sai ao lado da capacidade'
               : 'sem cenário, o documento não fala de ocupação'}
           </span>
+        </div>
+
+        <div className="linha-opcao">
+          <span className="rotulo-opcao">Cores</span>
+          <Faixas faixas={faixas} onMudar={setFaixas} />
         </div>
       </div>
 

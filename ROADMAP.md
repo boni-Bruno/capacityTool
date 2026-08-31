@@ -871,6 +871,42 @@ de hoje, e o slide não teria como avisar.
 apareceria o ano inteiro numa contagem única, e a linha embaixo do gráfico diria
 que a fábrica tinha três turnos em janeiro.
 
+### As cores da ocupação
+
+Um botão **Cores da ocupação** abre um pop-up onde se cadastra faixa por faixa:
+de quanto a quanto, e qual cor. A célula da ocupação sai pintada com a cor da
+faixa em que o mês caiu — no slide e no papel. Migração `29_faixa_ocupacao.sql`.
+
+**Por que existe:** ler doze porcentagens e achar as que estouram é o que
+ninguém faz numa reunião. A cor faz o mês problemático saltar antes de alguém
+terminar de ler a linha.
+
+**Por que é cadastrada e não fixa:** numa fábrica 95% já é aperto; noutra, 105%
+é normal porque o plano é agressivo de propósito. Chutar essa régua em código
+seria pintar de vermelho um mês que o Bruno considera bom, e ele não teria como
+discordar.
+
+**É a única cor do documento que não vem do tema do modelo.** As do gráfico vêm
+(`accent1`, `accent2`, `tx1`) porque decoram, e um azul nosso no meio da paleta
+da empresa denuncia que o slide foi colado. Esta informa, e quem escolheu foi
+quem conhece a régua. Um teste guarda a fronteira: sem faixa cadastrada, nenhum
+hexadecimal sai no XML.
+
+**O intervalo é `[de, ate)`** — fechado embaixo, aberto em cima. "85 a 100" e
+"100 a 115" se encostam sem se sobrepor, e 100% cai na segunda, que é como se lê
+"de 100 em diante". Ponta em branco é infinito daquele lado.
+
+**Sobreposição é recusada; buraco é permitido.** Duas faixas cobrindo 90% dariam
+duas cores para o mesmo número, e a que ganhasse dependeria da ordem em que o
+banco devolvesse — ou seja, mudaria sozinha; o `exclude using gist` do banco e a
+validação de `lib/faixa-cor.js` recusam as duas. Já faixa nenhuma cobrindo 40%
+quer dizer "40% não merece cor", que é resposta legítima: obrigar a cobrir de
+zero a infinito forçaria a inventar cor para o que não interessa.
+
+**A cor pinta a célula inteira, não a letra**, e o texto sai preto ou branco
+pelo que contrasta melhor — a conta é a do sRGB, sem limiar chutado. Célula
+ilegível num slide projetado é pior que célula sem cor.
+
 **As escolhas moram em estado do React, e não na URL** — é a única tela do
 projeto assim. A marcação da árvore é estado, e trocar `searchParams` remontaria
 o componente e apagaria o recorte que a pessoa acabou de montar clicando em

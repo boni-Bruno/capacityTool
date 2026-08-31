@@ -627,6 +627,37 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
   .rotulo-opcao { min-width: 100%; }
 }
 
+/* As faixas de cor da ocupacao, a regua a vista ao lado do botao: e ela que
+   explica por que um mes saiu vermelho no documento da semana passada. */
+.amostras { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.amostra {
+  padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 500;
+  white-space: nowrap;
+}
+
+/* `dialog` do proprio navegador: ele ja traz o fundo escurecido, o Esc que
+   fecha, o foco preso dentro e a devolucao do foco ao sair. Refazer isso a mao
+   e refazer errado. */
+.pop {
+  border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  background: var(--card); color: var(--text);
+  max-width: min(680px, 92vw); box-shadow: 0 18px 48px rgba(0, 0, 0, .28);
+}
+.pop::backdrop { background: rgba(0, 0, 0, .45); }
+.pop h3 { margin: 0 0 6px; font-size: 16px; }
+.pop .acoes { display: flex; align-items: center; gap: 8px; }
+
+.tabela-faixas input[type="number"], .tabela-faixas input[type="text"] {
+  width: 100%; min-width: 64px;
+}
+/* O seletor de cor nativo precisa de altura declarada: sem ela alguns
+   navegadores o desenham com dois pixels. */
+.tabela-faixas input[type="color"] {
+  width: 44px; height: 30px; padding: 2px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--card); cursor: pointer;
+}
+.tabela-faixas td { vertical-align: middle; }
+
 /* ---- DE/PARA da demanda ---- */
 
 /* Os atributos derivados, um por chip. Lista curta e horizontal porque a

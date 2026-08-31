@@ -1,5 +1,5 @@
 import {
-  areas, detalheDoRecorte, serieDoRecorte, turnosDoRecorte,
+  areas, detalheDoRecorte, faixasDeOcupacao, serieDoRecorte, turnosDoRecorte,
 } from '../../../../lib/db';
 import { cargas } from '../../../../lib/demanda';
 import { ORIGENS, rotuloOrigem } from '../../../../lib/origens';
@@ -10,6 +10,7 @@ import {
   secoesDoGrupo, subtituloDoSlide, tituloDoSlide, visualDoGrupo,
 } from '../../../../lib/documento';
 import { geometriaDoGrafico } from '../../../../lib/visual';
+import { corDoTexto } from '../../../../lib/faixa-cor';
 import Imprime from './imprime';
 
 export const dynamic = 'force-dynamic';
@@ -88,12 +89,13 @@ export default async function Page({ searchParams }) {
   }
 
   const cargaId = Number(searchParams?.carga) || null;
-  const [todasAreas, listaCargas, detalhe, serie, turnos] = await Promise.all([
+  const [todasAreas, listaCargas, detalhe, serie, turnos, faixas] = await Promise.all([
     areas(),
     cargas(),
     detalheDoRecorte(areaIds, ccs, ano, de, ate, origem, cargaId),
     serieDoRecorte(areaIds, ccs, ano, de, ate, origem, cargaId),
     turnosDoRecorte(areaIds, ccs, ano, de, ate),
+    faixasDeOcupacao(),
   ]);
 
   const carga = listaCargas.find((c) => c.id === cargaId) ?? null;
@@ -128,7 +130,7 @@ export default async function Page({ searchParams }) {
         const opcoes = { de, ate, medida, origem, cenario: carga?.cenario ?? null };
         const visual = visualDoGrupo({
           grupo: g, granularidade: grao, serie, turnos,
-          medida, cenario: carga?.cenario ?? null, de, ate, origem,
+          medida, cenario: carga?.cenario ?? null, de, ate, origem, faixas,
         });
 
         // Uma página por grupo, como um slide por grupo. A primeira segue o
@@ -172,9 +174,20 @@ export default async function Page({ searchParams }) {
                           className={l.cabecalho ? 'cabecalho' : ''}>
                         <th scope="row">{l.rotulo}</th>
                         {l.valores.map((v, c) => (
-                          <td key={`${k}-${c}`}>{v}</td>
+                          // A cor pinta a célula inteira, e não a letra: no meio
+                          // de doze números iguais, letra colorida se perde e
+                          // faixa colorida salta.
+                          <td key={`${k}-${c}`} style={l.cores?.[c] ? {
+                            background: l.cores[c], color: corDoTexto(l.cores[c]),
+                          } : undefined}>
+                            {v}
+                          </td>
                         ))}
-                        <td className="total">{l.total}</td>
+                        <td className="total" style={l.corTotal ? {
+                          background: l.corTotal, color: corDoTexto(l.corTotal),
+                        } : undefined}>
+                          {l.total}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
