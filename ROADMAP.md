@@ -903,9 +903,16 @@ validação de `lib/faixa-cor.js` recusam as duas. Já faixa nenhuma cobrindo 40
 quer dizer "40% não merece cor", que é resposta legítima: obrigar a cobrir de
 zero a infinito forçaria a inventar cor para o que não interessa.
 
-**A cor pinta a célula inteira, não a letra**, e o texto sai preto ou branco
-pelo que contrasta melhor — a conta é a do sRGB, sem limiar chutado. Célula
-ilegível num slide projetado é pior que célula sem cor.
+**A cor pinta o número, não o fundo da célula.** Faixa colorida atrás dele vira
+tarja, e tarja no meio de uma grade de porcentagens compete com o gráfico em vez
+de ajudá-lo a ser lido. O número sai em negrito, porque cor sozinha em corpo 7
+quase não muda o peso da linha.
+
+Isso deixa a legibilidade nas mãos de quem escolhe — tom claro demais some na
+folha branca —, então o pop-up avisa: abaixo de 3:1 contra o branco, que é o
+piso das regras de acessibilidade, a cor aparece marcada como *clara demais*. A
+amostra ao lado do botão mostra o texto colorido, e não sobre fundo colorido:
+amostra que não se parece com o resultado é amostra que engana.
 
 **As escolhas moram em estado do React, e não na URL** — é a única tela do
 projeto assim. A marcação da árvore é estado, e trocar `searchParams` remontaria

@@ -10,7 +10,6 @@ import {
   secoesDoGrupo, subtituloDoSlide, tituloDoSlide, visualDoGrupo,
 } from '../../../../lib/documento';
 import { geometriaDoGrafico } from '../../../../lib/visual';
-import { corDoTexto } from '../../../../lib/faixa-cor';
 import Imprime from './imprime';
 
 export const dynamic = 'force-dynamic';
@@ -174,17 +173,17 @@ export default async function Page({ searchParams }) {
                           className={l.cabecalho ? 'cabecalho' : ''}>
                         <th scope="row">{l.rotulo}</th>
                         {l.valores.map((v, c) => (
-                          // A cor pinta a célula inteira, e não a letra: no meio
-                          // de doze números iguais, letra colorida se perde e
-                          // faixa colorida salta.
+                          // A cor pinta o NÚMERO, e não o fundo: faixa colorida
+                          // atrás dele vira tarja, e tarja no meio de uma grade
+                          // de porcentagens compete com o gráfico.
                           <td key={`${k}-${c}`} style={l.cores?.[c] ? {
-                            background: l.cores[c], color: corDoTexto(l.cores[c]),
+                            color: l.cores[c], fontWeight: 600,
                           } : undefined}>
                             {v}
                           </td>
                         ))}
                         <td className="total" style={l.corTotal ? {
-                          background: l.corTotal, color: corDoTexto(l.corTotal),
+                          color: l.corTotal,
                         } : undefined}>
                           {l.total}
                         </td>

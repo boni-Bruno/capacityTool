@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { corDoTexto, rotuloFaixa, validaFaixas } from '../../../lib/faixa-cor';
+import { corFraca, rotuloFaixa, validaFaixas } from '../../../lib/faixa-cor';
 
 // AS CORES DA OCUPAÇÃO, num pop-up.
 //
@@ -92,8 +92,11 @@ export default function Faixas({ faixas: iniciais, onMudar }) {
           <span className="muted">nenhuma faixa — a ocupação sai sem cor</span>
         )}
         {gravadas.map((f) => (
+          // A amostra mostra o texto COLORIDO, e não sobre fundo colorido: é
+          // assim que a cor vai sair no documento, e uma amostra que não se
+          // parece com o resultado é uma amostra que engana.
           <span key={`${f.pct_de}-${f.pct_ate}`} className="amostra"
-                style={{ background: f.cor, color: corDoTexto(f.cor) }}>
+                style={{ color: f.cor }}>
             {f.rotulo || rotuloFaixa(f)}
           </span>
         ))}
@@ -102,12 +105,17 @@ export default function Faixas({ faixas: iniciais, onMudar }) {
       <dialog ref={dialogo} className="pop">
         <h3>Cores da ocupação no documento</h3>
         <p className="rodape" style={{ margin: '0 0 12px' }}>
-          A célula da ocupação sai pintada com a cor da faixa em que o mês cai.
+          O número da ocupação sai na cor da faixa em que o mês cai.
           O intervalo é <strong>fechado no início e aberto no fim</strong>: 85 a
           100 e 100 a 115 se encostam sem se sobrepor, e 100% cai na segunda.
           Deixe o fim em branco para dizer &ldquo;daí em diante&rdquo;, e o
           início em branco para &ldquo;até aqui&rdquo;. Valor fora de toda faixa
           sai sem cor.
+        </p>
+        <p className="rodape" style={{ margin: '0 0 12px' }}>
+          A cor pinta <strong>o número</strong>, não o fundo da célula — então
+          tom claro demais desaparece na folha branca do slide. O aviso ao lado
+          da cor diz quando isso acontece.
         </p>
 
         {erro && <p className="erro">{erro}</p>}
@@ -137,6 +145,14 @@ export default function Faixas({ faixas: iniciais, onMudar }) {
                 <td>
                   <input type="color" value={l.cor}
                          onChange={(e) => troca(i, 'cor', e.target.value)} />
+                  {/* Avisar antes de gravar, e não deixar descobrir na reunião:
+                      3:1 é o piso das regras de acessibilidade, e abaixo disso
+                      a cor não é estilo, é um número que não se lê. */}
+                  {corFraca(l.cor) && (
+                    <span className="muted" style={{ fontSize: 11 }}>
+                      {' '}clara demais
+                    </span>
+                  )}
                 </td>
                 <td>
                   <input type="text" value={l.rotulo} maxLength={40}
