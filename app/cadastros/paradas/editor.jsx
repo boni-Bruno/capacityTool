@@ -16,7 +16,8 @@ const vazio = () => ({
 const porCodigo = (lista) =>
   [...lista].sort((a, b) => String(a.codigo).localeCompare(String(b.codigo), 'pt-BR'));
 
-export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
+export default function EditorParadas({ recursos, tipos, turnos, paradas,
+                                        filtrado = false }) {
   const router = useRouter();
   const [form, setForm] = useState(vazio);
   const [erro, setErro] = useState(null);
@@ -147,7 +148,15 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas }) {
       <div className="painel">
         <h2>Paradas do período</h2>
         {paradas.length === 0 ? (
-          <p className="muted">Nenhuma parada cadastrada neste ano.</p>
+          // Com filtro ativo, "nenhuma parada neste ano" seria mentira: elas
+          // podem existir e estar fora do recorte. A frase precisa dizer onde
+          // procurar, senão alguém cadastra a mesma parada duas vezes.
+          <p className="muted">
+            {filtrado
+              ? 'Nenhuma parada neste recorte — limpe os filtros de CC, CT ou '
+                + 'recurso para ver o ano inteiro da área.'
+              : 'Nenhuma parada cadastrada neste ano.'}
+          </p>
         ) : (
           <table>
             <thead>

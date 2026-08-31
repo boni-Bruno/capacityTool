@@ -405,6 +405,17 @@ mix mostra o nome do recurso ao lado do CT.
 Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
 seletores separados, que estreitam a lista de Código/Recurso em cascata.
 
+Em **Paradas planejadas**, os mesmos CC e CT mais o **recurso**, também em
+cascata. Eles estreitam o formulário e **a tabela do período junto**: mostrar o
+cadastro estreitado e a lista inteira faria a tela dizer duas coisas ao mesmo
+tempo, e a segunda é a que ninguém repara que não é a pedida. Com filtro ativo,
+a lista vazia diz "nenhuma parada neste recorte" em vez de "neste ano" — a
+segunda frase seria mentira, e mentira que faz alguém cadastrar a mesma parada
+duas vezes. O recurso é escolhido por id e não por nome: dois podem se chamar
+igual. Área sem recurso nenhum agora diz **qual** área está vazia e some com o
+formulário morto — a tela abre na primeira área da lista, que pode não ser a que
+a pessoa queria, e sem o nome ela procura o defeito no lugar errado.
+
 Em **OEE**, os mesmos filtros de CC e CT — e eles também definem o alcance do
 **Aplicar em vários**: filtrar o CC 278 é dizer "os nove CTs dele", e o painel
 de lote lista quais são, um por um, desmarcáveis. Ali **mês em branco não apaga
