@@ -842,7 +842,10 @@ mudar.
 
 Cada bloco tem um **cartão à esquerda** com o nome e uma frase dizendo o que ele
 é — quem lê o slide não tem a quem perguntar o que "cadastros" quer dizer —,
-ligado às linhas por uma **chave** `{`. As linhas do bloco ficam sobre uma tinta
+ligado às linhas por uma **chave** `{`. As frases são curtas de propósito: o
+cartão do bloco menor tem três linhas de altura, e uma frase que não cabe some
+inteira, deixando um título sozinho num retângulo. Antes de escrever, o desenho
+estima quantas linhas ela ocuparia e só a põe se couber. As linhas do bloco ficam sobre uma tinta
 leve; tinta em vez de moldura, porque moldura vira mais uma borda no meio de uma
 tabela que já é feita de bordas.
 
