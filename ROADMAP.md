@@ -835,12 +835,25 @@ desenho — quem olha quer primeiro o número da barra que está vendo. É a lei
 que tudo isso existe para permitir: a barra de março caiu porque o OEE caiu, ou
 porque perdeu um turno?
 
-**A linha de Paradas** mostra os minutos de parada planejada do mês, e eles vêm
-de `capacidade_fato.min_parada_planejada` — o que o motor DESCONTOU naquela
-mesma rodada, e não uma soma da tabela `parada`. Somar o cadastro daria outro
-número: parada vale por turno, o intervalo dela pode cair fora do calendário do
-recurso, e "dia inteiro" não é uma quantidade de minutos, é um dia zerado. O
-slide mostraria um desconto que a barra ao lado não teve.
+**A grade é dividida em dois blocos, marcados à esquerda**: `cálculo`
+(capacidade, demanda, ocupação) e `cadastros` (OEE, os turnos, as paradas). Sem
+a separação, OEE e turno parecem saída do motor, e quem lê não sabe o que pode
+mudar para o número mudar.
+
+**A linha de Paradas** mostra os minutos que o motor descontou por parada
+planejada, e fica **por último**: a lista de turnos é o corpo do bloco de
+cadastro, e partir esse bloco em dois com uma linha de minutos no meio faz o
+olho perder onde ele começa e onde termina.
+
+O número **não** sai de `capacidade_fato.min_parada_planejada`, que foi a
+primeira tentativa e estava errada: essa coluna só conta parada com MINUTOS.
+Parada de dia inteiro não tem minutos — ela zera o dia —, então caía como zero,
+e o slide mostrava "0" num mês em que a capacidade tinha desabado à vista de
+todos. A conta certa é o degrau da cadeia: o que o dia valia depois do
+calendário, menos o que sobrou como planejada. Dia não útil dá zero (a perda é
+do feriado, não da parada) e dia inteiro dá o dia todo. E a multiplicação por
+`qt_recursos` e `equivalencia` tem que estar lá: `min_turno_liquido` é o turno
+de UMA máquina, e sem ela um recurso de seis declararia um sexto da parada.
 
 **Todos os turnos cadastrados aparecem, com "N/A" onde nada roda** — e não só os
 que o recorte usa. Turno ausente da lista é indistinguível de turno zerado, e a
