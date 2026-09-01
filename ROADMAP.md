@@ -840,12 +840,35 @@ ocupação) e `cadastros` (OEE, os turnos, as paradas). Sem a separação, OEE e
 turno parecem saída do motor, e quem lê não sabe o que pode mudar para o número
 mudar.
 
-A marcação é uma **chave** — o `{` — com o nome do bloco ao lado, e uma régua na
-largura toda separando um do outro. A primeira tentativa foi um filete cinza com
-o nome pequeno ao lado, e não agrupava nada: filete fino é decoração, e o olho
-passa por cima. A chave é `prst="leftBrace"`, forma pronta do DrawingML —
-desenhá-la num caminho livre daria uma chave que engorda quando o bloco cresce,
-porque o traço acompanharia a escala; a pronta mantém a espessura e só estica.
+Cada bloco tem um **cartão à esquerda** com o nome e uma frase dizendo o que ele
+é — quem lê o slide não tem a quem perguntar o que "cadastros" quer dizer —,
+ligado às linhas por uma **chave** `{`. As linhas do bloco ficam sobre uma tinta
+leve; tinta em vez de moldura, porque moldura vira mais uma borda no meio de uma
+tabela que já é feita de bordas.
+
+A chave é `prst="leftBrace"`, forma pronta do DrawingML: desenhá-la num caminho
+livre daria uma chave que engorda quando o bloco cresce, porque o traço
+acompanharia a escala. A pronta mantém a espessura e só estica.
+
+### O leiaute do slide
+
+O desenho seguiu um modelo que o Bruno montou à mão, e o que ele resolve:
+
+- **O gráfico mora num cartão** de canto arredondado, com **eixo de verdade**:
+  linhas de grade e números redondos (`escalaY` em `lib/visual.js`). Terminar o
+  eixo no maior valor da série daria marcas em 8.688,2 — o olho para para
+  decifrar em vez de comparar. As réguas vêm ANTES do desenho, senão riscam a
+  barra que medem.
+- **O mês é escrito uma vez só**, na faixa do cabeçalho da tabela, que fica
+  encostada embaixo do gráfico: ela nomeia a coluna de cima e a de baixo ao
+  mesmo tempo. Escrito nos dois, seria a mesma palavra duas vezes na vertical.
+- **A legenda é centrada** sobre o desenho, e a chave de cada série imita a forma
+  dela: traço para a linha da capacidade, bloco para a coluna da demanda.
+- **O período e a origem do OEE viram uma pílula** no canto oposto, fora do
+  cartão: são o "quando", e colados no "o quê" as duas viram uma frase só.
+- **O OEE mudou de bloco**: ele é premissa, não resultado, e o rótulo leva a
+  origem — "OEE 75%" não diz se é a meta ou o simulado, e são duas conversas
+  diferentes na mesma reunião.
 
 **A linha de Paradas** mostra os minutos que o motor descontou por parada
 planejada, e fica **por último**: a lista de turnos é o corpo do bloco de
