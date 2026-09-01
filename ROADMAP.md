@@ -835,10 +835,17 @@ desenho — quem olha quer primeiro o número da barra que está vendo. É a lei
 que tudo isso existe para permitir: a barra de março caiu porque o OEE caiu, ou
 porque perdeu um turno?
 
-**A grade é dividida em dois blocos, marcados à esquerda**: `cálculo`
-(capacidade, demanda, ocupação) e `cadastros` (OEE, os turnos, as paradas). Sem
-a separação, OEE e turno parecem saída do motor, e quem lê não sabe o que pode
-mudar para o número mudar.
+**A grade é dividida em dois blocos**: `cálculo` (capacidade, demanda,
+ocupação) e `cadastros` (OEE, os turnos, as paradas). Sem a separação, OEE e
+turno parecem saída do motor, e quem lê não sabe o que pode mudar para o número
+mudar.
+
+A marcação é uma **chave** — o `{` — com o nome do bloco ao lado, e uma régua na
+largura toda separando um do outro. A primeira tentativa foi um filete cinza com
+o nome pequeno ao lado, e não agrupava nada: filete fino é decoração, e o olho
+passa por cima. A chave é `prst="leftBrace"`, forma pronta do DrawingML —
+desenhá-la num caminho livre daria uma chave que engorda quando o bloco cresce,
+porque o traço acompanharia a escala; a pronta mantém a espessura e só estica.
 
 **A linha de Paradas** mostra os minutos que o motor descontou por parada
 planejada, e fica **por último**: a lista de turnos é o corpo do bloco de
