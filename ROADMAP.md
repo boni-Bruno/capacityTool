@@ -741,9 +741,10 @@ tudo abaixo e vira "desmarcar" quando já está tudo marcado. A marcação mora 
 folha — no CC — e os níveis de cima só refletem o que ela diz: guardar marcação
 em três níveis daria três verdades sobre a mesma escolha.
 
-Sai em **.pptx dentro do modelo da empresa** ou em **PDF pela impressão do
-navegador**. As duas saídas montam o texto da mesma função — slide e papel
-dizendo números diferentes da mesma seleção seria o defeito mais difícil de ver.
+Sai em **.pptx dentro do modelo da empresa**, e só. A saída em PDF pela
+impressão do navegador existiu e foi retirada a pedido: com o documento inteiro
+desenhado dentro do modelo, o papel era uma segunda versão do mesmo conteúdo
+para manter atualizada, e ninguém usava.
 
 **O modelo é importado e guardado** (migração `28_modelo_slide.sql`, uma linha
 só: importar substitui). Ele sobe **em pedaços de meio megabyte**, como a base
@@ -834,6 +835,20 @@ desenho — quem olha quer primeiro o número da barra que está vendo. É a lei
 que tudo isso existe para permitir: a barra de março caiu porque o OEE caiu, ou
 porque perdeu um turno?
 
+**A linha de Paradas** mostra os minutos de parada planejada do mês, e eles vêm
+de `capacidade_fato.min_parada_planejada` — o que o motor DESCONTOU naquela
+mesma rodada, e não uma soma da tabela `parada`. Somar o cadastro daria outro
+número: parada vale por turno, o intervalo dela pode cair fora do calendário do
+recurso, e "dia inteiro" não é uma quantidade de minutos, é um dia zerado. O
+slide mostraria um desconto que a barra ao lado não teve.
+
+**Todos os turnos cadastrados aparecem, com "N/A" onde nada roda** — e não só os
+que o recorte usa. Turno ausente da lista é indistinguível de turno zerado, e a
+pergunta que o slide responde é como a fábrica está montada: "o terceiro turno
+não roda aqui" é resposta, e resposta que só existe se a linha estiver lá para
+dizê-la. Célula em branco seria ambígua entre "não tem" e "não consegui contar",
+e as duas mereciam reações diferentes de quem lê.
+
 **O totalizador do período fica numa coluna à direita**, fora das colunas de mês
 — deixá-la entrar na divisão faria as doze barras encolherem para caber um treze
 que não existe no gráfico. Cada medida totaliza do jeito dela, e é aí que se
@@ -846,9 +861,10 @@ fábrica que tem seis, porque turno é estado, não fluxo. A coluna se chama "An
 só quando são doze meses; num recorte menor, "Total".
 
 O alinhamento é a exigência do desenho, e por isso a geometria é UMA função
-(`lib/visual.js`, 7 verificações) usada pelas duas saídas: DrawingML no .pptx,
-SVG na página de impressão. Duas contas de coluna batem hoje e param de bater na
-primeira mudança de margem, num defeito que só se enxerga projetado.
+(`lib/visual.js`, 8 verificações) e não uma conta dentro do gerador de XML: o
+rótulo do mês na grade tem que cair debaixo da barra daquele mês, e duas contas
+de coluna batem hoje e param de bater na primeira mudança de margem — num
+defeito que só se enxerga projetado.
 
 **Formas à mão, e não um gráfico do PowerPoint.** Um gráfico de verdade é uma
 parte `charts/chart1.xml` mais uma planilha .xlsx embutida no .pptx, com o
@@ -885,8 +901,8 @@ que a fábrica tinha três turnos em janeiro.
 ### As cores da ocupação
 
 Um botão **Cores da ocupação** abre um pop-up onde se cadastra faixa por faixa:
-de quanto a quanto, e qual cor. A célula da ocupação sai pintada com a cor da
-faixa em que o mês caiu — no slide e no papel. Migração `29_faixa_ocupacao.sql`.
+de quanto a quanto, e qual cor. O número da ocupação sai na cor da faixa em que
+o mês caiu. Migração `29_faixa_ocupacao.sql`.
 
 **Por que existe:** ler doze porcentagens e achar as que estouram é o que
 ninguém faz numa reunião. A cor faz o mês problemático saltar antes de alguém

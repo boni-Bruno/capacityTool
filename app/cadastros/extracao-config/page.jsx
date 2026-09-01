@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
 // EXTRAÇÃO DAS CONFIGURAÇÕES
 //
 // Um documento que conta como a fábrica está configurada num recorte, e quanta
-// capacidade essa configuração produz. Sai em .pptx dentro do modelo da empresa,
-// ou em PDF pela impressão do navegador.
+// capacidade essa configuração produz. Sai em .pptx, dentro do modelo da
+// empresa.
 //
 // O recorte é planta › área › CC, escolhido em árvore. A extração para o AP, ao
 // lado, é outra coisa: lá saem os minutos por CT e mês para importar de volta;

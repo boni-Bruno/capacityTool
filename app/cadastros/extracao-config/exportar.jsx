@@ -31,10 +31,6 @@ import Faixas from './faixas';
 // existe para permitir: a barra de março caiu porque o OEE caiu, ou porque
 // perdeu um turno?
 //
-// O .PDF É A IMPRESSÃO DO NAVEGADOR. Escrever PDF à mão daria fonte básica,
-// sem acento decente e sem quebra de página — pior que o que o próprio
-// navegador entrega de graça, com o diálogo de salvar que a pessoa já conhece.
-//
 // AS ESCOLHAS MORAM EM ESTADO, e não na URL como no resto do projeto: a
 // marcação da árvore é estado, e navegar remontaria o componente e apagaria o
 // recorte que a pessoa montou clicando em vinte centros de custo.
@@ -217,8 +213,8 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
     carga: cargaId,
   });
 
-  // As duas saídas montam o texto da mesma função: slide e papel dizendo
-  // números diferentes da mesma seleção seria o defeito mais difícil de ver.
+  // O texto e o desenho saem de `lib/documento.js`, que é puro e testado: a
+  // tela não decide número nenhum.
   //
   // COM GRÁFICO, o texto encolhe para a identidade: capacidade, demanda, OEE e
   // turnos estão todos no desenho, mês a mês, e repeti-los em texto roubaria a
@@ -233,6 +229,7 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
       grupo, granularidade, serie: j.serie, turnos: j.turnos,
       medida, cenario: carga?.cenario ?? null,
       de: opcoes.de, ate: opcoes.ate, origem, faixas,
+      turnosCadastrados: j.cadastrados,
     });
     return {
       grupo,
@@ -320,22 +317,6 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
     a.download = nome;
     a.click();
     URL.revokeObjectURL(a.href);
-  }
-
-  // ---- .pdf: a impressão do navegador -------------------------------------
-  function exportarPdf() {
-    const p = new URLSearchParams({
-      areas: escolha.areas.join(','),
-      ccs: escolha.ccs.join(','),
-      ano: String(ano),
-      de,
-      ate,
-      origem,
-      medida,
-      grao: granularidade,
-    });
-    if (cargaId) p.set('carga', String(cargaId));
-    window.open(`/cadastros/extracao-config/imprimir?${p}`, '_blank');
   }
 
   // Quantos slides vão sair: é o número que decide entre "exporta" e "escolhe
@@ -495,11 +476,6 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
                   onClick={exportarPptx}>
             {ocupado === 'pptx' ? 'Montando…' : 'Exportar .pptx'}
           </button>
-          <button type="button" className="btn"
-                  disabled={!temEscolha}
-                  onClick={exportarPdf}>
-            Exportar .pdf
-          </button>
           {!temEscolha && <span className="muted">escolha ao menos uma área</span>}
           {temEscolha && !modelo && (
             <span className="muted">o .pptx precisa de um modelo importado</span>
@@ -519,10 +495,8 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
           </p>
         )}
         <p className="rodape">
-          O <strong>.pdf</strong> abre a versão para impressão numa aba nova, e
-          você escolhe <em>Salvar como PDF</em> no diálogo — sai com fonte de
-          verdade, acento certo e quebra de página. O <strong>.pptx</strong> é
-          montado aqui no navegador, dentro do seu modelo.
+          O <strong>.pptx</strong> é montado aqui no navegador, dentro do seu
+          modelo — o servidor só entrega os números.
         </p>
       </div>
     </>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   detalheDoRecorte, serieDoRecorte, turnosDoRecorte,
 } from '../../../lib/db';
+import { turnos as turnosCadastrados } from '../../../lib/cadastro';
 import { resolvePeriodo } from '../../../lib/periodo';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeSessao } from '../../../lib/sessao';
@@ -42,13 +43,19 @@ export async function POST(req) {
     const carga = Number.isInteger(Number(b.carga)) && Number(b.carga) > 0
       ? Number(b.carga) : null;
 
-    const [grupos, serie, turnos] = await Promise.all([
+    // Os turnos CADASTRADOS vêm junto, e não só os que o recorte usa: o
+    // documento lista todos e marca "N/A" onde nada roda. Turno ausente da
+    // lista é indistinguível de turno zerado.
+    const [grupos, serie, turnos, cadastrados] = await Promise.all([
       detalheDoRecorte(areas, ccs, ano, de, ate, origem, carga),
       serieDoRecorte(areas, ccs, ano, de, ate, origem, carga),
       turnosDoRecorte(areas, ccs, ano, de, ate),
+      turnosCadastrados(),
     ]);
 
-    return NextResponse.json({ ok: true, de, ate, grupos, serie, turnos });
+    return NextResponse.json({
+      ok: true, de, ate, grupos, serie, turnos, cadastrados,
+    });
   } catch (e) {
     console.error('[extracao-config POST]', e);
     return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },
