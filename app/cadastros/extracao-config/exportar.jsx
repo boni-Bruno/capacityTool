@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { escreveZip, lerZip, texto } from '../../../lib/zip';
 import {
   MARCA, acharSlideMarcado, clonaSlideMarcado, insereFormas, linhasDasSecoes,
-  preencheCampo, preencheSlide, retanguloDoSlideMarcado, slidesDo,
-  tamanhoDoSlide,
+  preencheCampo, preencheSlide, retanguloDoCampo, retanguloDoSlideMarcado,
+  slidesDo, tamanhoDoSlide,
 } from '../../../lib/pptx';
 import {
   GRANULARIDADES, MEDIDAS, agrupa, fmt as fmtNum, secoesDoGrupo, secoesDoTitulo,
@@ -274,9 +274,17 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
       // A área sai da própria caixa da marca, lida ANTES de o texto entrar:
       // depois de preenchida, a marca já não está lá para ser achada. Todas as
       // cópias saíram do mesmo slide, então o retângulo é um só.
+      // A LINHA DO SUBTÍTULO, para o desenho subir até ela e a pílula do
+      // período ir junto. Só faz sentido quando o texto foi para os campos do
+      // modelo: senão o subtítulo mora dentro da própria caixa da marca, e
+      // subir seria escrever por cima dele.
+      const linhaSubtitulo = temTitulo
+        ? retanguloDoCampo(dentro, alvos[0], 'subtitulo') : null;
+
       const area = areaDoVisual(retanguloDoSlideMarcado(texto(dentro.get(alvos[0]))),
                                 tamanhoDoSlide(dentro),
-                                { reservaTitulo: !temTitulo });
+                                { reservaTitulo: !temTitulo,
+                                  abaixoDe: linhaSubtitulo });
 
       alvos.forEach((nome, i) => {
         const { grupo, visual, secoes } = slides[i];
@@ -294,8 +302,9 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
           ? [] : linhasDasSecoes(secoes)).xml;
 
         dentro.set(nome, new TextEncoder().encode(
-          visual ? insereFormas(xml, formasDoVisual({ area, visual, fmt: fmtNum }))
-            : xml));
+          visual ? insereFormas(xml, formasDoVisual({
+            area, visual, fmt: fmtNum, pilulaAcima: linhaSubtitulo,
+          })) : xml));
       });
 
       const saida = await escreveZip(dentro);

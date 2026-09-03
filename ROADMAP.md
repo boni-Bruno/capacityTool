@@ -1114,6 +1114,36 @@ de hoje, e o slide não teria como avisar.
 apareceria o ano inteiro numa contagem única, e a linha embaixo do gráfico diria
 que a fábrica tinha três turnos em janeiro.
 
+### O leiaute depois de projetado
+
+O slide foi impresso, olhado e anotado à mão. Quatro ajustes saíram daí, e os
+quatro são sobre a mesma coisa: espaço.
+
+**A pílula do período subiu para a linha do subtítulo.** Ela ocupava uma faixa
+inteira só para si, no alto da área do desenho, e empurrava o gráfico para
+baixo por um dado de três palavras. Agora ela sai da área e vai para a linha do
+subtítulo, alinhada pela direita — a mesma borda do cartão do gráfico e da
+coluna do ano, que é o que a faz parecer parte do bloco em vez de um adesivo.
+
+**O desenho sobe até o subtítulo.** A caixa marcada foi posicionada por quem
+contava escrever dentro dela; com o título e o subtítulo nos campos do modelo,
+a faixa entre eles e ela fica vazia por construção, e era a maior mancha de
+branco do slide. A posição do subtítulo vem do modelo (`retanguloDoCampo`), e
+a busca vai ao **leiaute** quando o slide não declara geometria — que é o caso
+quase sempre, porque espaço reservado herda a posição em vez de repeti-la.
+Só sobe, nunca desce: num modelo em que o subtítulo estivesse mais baixo que a
+caixa, subir viraria escrever por cima do texto.
+
+**Os rótulos dos blocos saem centrados.** Cartão estreito e alto com o texto
+encostado na esquerda deixa o rótulo pendurado num canto, e os dois cartões
+param de parecer um par — que é o que eles são.
+
+**Os dois blocos ganharam respiro entre si.** Cálculo e cadastro são duas
+tabelas, e coladas leem como uma só de onze linhas. A tinta e a chave já diziam
+que eram duas; espaço é o que o olho entende antes de ler qualquer rótulo. A
+folga sai do total **antes** de dividir a altura (`faixasDaGrade`) — somada
+depois, a última linha cairia por cima do rodapé com o logotipo.
+
 ### As cores da ocupação
 
 Um botão **Cores da ocupação** abre um pop-up onde se cadastra faixa por faixa:
