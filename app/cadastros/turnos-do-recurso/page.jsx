@@ -3,7 +3,7 @@ import { areas, anosComRodada } from '../../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import {
   recursos, matrizTurnosDoAno, calendariosDoRecurso, turnosSobrepostos,
-  turnos as turnosAtivos,
+  turnosOferecidos,
 } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
@@ -119,7 +119,8 @@ export default async function Page({ searchParams }) {
   // lote as colunas são os turnos ATIVOS, que é a lista certa: o molde precisa
   // oferecer todos os turnos possíveis, e não os que uma máquina já usa.
   const [celulas, regimes, sobrepostos, ativos] = emLote
-    ? [[], await calendariosDoRecurso(recurso.id), [], await turnosAtivos()]
+    ? [[], await calendariosDoRecurso(recurso.id), [],
+       await turnosOferecidos(listaRecursos.map((r) => r.id))]
     : [...await Promise.all([
       matrizTurnosDoAno(recurso.id, ano),
       calendariosDoRecurso(recurso.id),
@@ -137,14 +138,12 @@ export default async function Page({ searchParams }) {
   // quantas máquinas rodam ali. Vigência com qt_recursos nulo quer dizer
   // "todas", e aparece como o número cheio — a tela mostra quantas rodam, não
   // um conceito.
-  // Só os turnos DA PLANTA da área escolhida. `turnos()` traz os de todas, e
-  // oferecer o turno de outra planta seria oferecer um cadastro que não faz
-  // sentido — o banco aceitaria, e o erro só apareceria no cálculo.
-  const plantaDaArea = listaAreas.find((a) => a.id === areaId)?.planta;
+  // As colunas do lote saem da MESMA regra da tela de um recurso só
+  // (`turnosOferecidos`), e é por isso que ela existe: quando as duas listas
+  // divergiam, a coluna que a pessoa clicava não era a que ela lia. Faltando o
+  // "2º Turno" no lote, clicar no segundo campo gravava o 3º.
   const turnos = emLote
-    ? ativos
-      .filter((t) => !plantaDaArea || t.planta === plantaDaArea)
-      .map((t) => ({ turno_id: Number(t.id), codigo: t.codigo, nome: t.nome }))
+    ? ativos.map((t) => ({ turno_id: Number(t.id), codigo: t.codigo, nome: t.nome }))
     : [];
   const inicial = {};
   const parciais = {};
