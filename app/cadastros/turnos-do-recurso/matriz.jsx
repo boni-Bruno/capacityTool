@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { MESES } from '../../../lib/dias';
+import Alvos from '../alvos';
 
 // Matriz de turnos: uma linha por mês, uma coluna por turno.
 //
@@ -30,6 +31,7 @@ export default function Matriz({
   const [erro, setErro] = useState(null);
   const [ok, setOk] = useState(null);
   const [andamento, setAndamento] = useState(null);
+  const [fora, setFora] = useState(() => new Set());
 
   // EM LOTE a matriz não é de ninguém: ela é o molde que vai para todos os
   // recursos do filtro. E a célula vira marca, sem número — os recursos do
@@ -37,6 +39,10 @@ export default function Matriz({
   // duas e de menos para um de seis. Marcado grava "todas", que cada recurso
   // resolve com a quantidade dele.
   const lote = Array.isArray(alvos);
+  // Tirar um do lote: o alcance vem do filtro, mas quase sempre tem uma máquina
+  // que é exceção, e mandar a pessoa refazer o filtro por causa de uma só é
+  // pedir que ela desista e faça tudo a mão.
+  const dentro = lote ? alvos.filter((a) => !fora.has(a.id)) : [];
 
   // Uma máquina só: a quantidade não tem o que dizer, e a caixa de marcar é
   // mais rápida e menos sujeita a erro de digitação.
@@ -149,13 +155,13 @@ export default function Matriz({
         // requisição só estouram o tempo da função no meio, deixando metade
         // gravada e nenhum aviso.
         let mexidos = 0;
-        for (const [i, alvo] of alvos.entries()) {
-          setAndamento({ feitos: i, total: alvos.length, nome: alvo.nome });
+        for (const [i, alvo] of dentro.entries()) {
+          setAndamento({ feitos: i, total: dentro.length, nome: alvo.nome });
           // eslint-disable-next-line no-await-in-loop
           if (await grava(alvo.id) > 0) mexidos++;
         }
         setAndamento(null);
-        setOk(`${alvos.length} recurso(s) percorrido(s), `
+        setOk(`${dentro.length} recurso(s) percorrido(s), `
           + `${mexidos} com mudança de turno.`);
       }
       router.refresh();
@@ -259,13 +265,28 @@ export default function Matriz({
         </table>
       </div>
 
+      {lote && (
+        <Alvos alvos={alvos} fora={fora}
+               onAlterna={(id) => {
+                 setFora((f) => {
+                   const novo = new Set(f);
+                   if (novo.has(id)) novo.delete(id); else novo.add(id);
+                   return novo;
+                 });
+                 setOk(null);
+               }} />
+      )}
+
       <div className="acoes" style={{ marginTop: 16 }}>
         <button className="btn btn-primario" onClick={salvar}
-                disabled={!sujo || salvando}>
+                disabled={!sujo || salvando || (lote && dentro.length === 0)}>
           {salvando
             ? (lote ? 'Aplicando…' : 'Salvando…')
-            : (lote ? `Aplicar nos ${alvos.length} recursos` : 'Salvar')}
+            : (lote ? `Aplicar em ${dentro.length} recurso(s)` : 'Salvar')}
         </button>
+        {lote && dentro.length === 0 && (
+          <span className="muted">nenhum recurso no lote</span>
+        )}
         {sujo && !salvando && <span className="muted">alterações não salvas</span>}
         {/* O nome de quem está sendo gravado, e não só a barra: quarenta
             recursos levam quarenta requisições, e "Aplicando…" parado por meio

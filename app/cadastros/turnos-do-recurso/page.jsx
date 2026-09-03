@@ -9,7 +9,7 @@ import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Matriz from './matriz';
 import Calendario from './calendario';
-import Ciente from './ciente';
+import Ciente from '../ciente';
 import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
 
 export const dynamic = 'force-dynamic';
@@ -312,18 +312,10 @@ export default async function Page({ searchParams }) {
           inicial={inicial}
           parciais={parciais}
           alvos={emLote
-            ? listaRecursos.map((r) => ({ id: r.id, nome: r.nome }))
+            ? listaRecursos.map((r) => (
+              { id: r.id, codigo: r.codigo, nome: r.nome }))
             : null}
         />
-
-        {/* Quem entra no lote fica à vista: é a prova de que o filtro é o
-            alcance, e a chance de perceber que sobrou um recurso de fora. */}
-        {emLote && (
-          <p className="rodape">
-            <strong>No lote:</strong>{' '}
-            {listaRecursos.map((r) => r.codigo).join(' · ')}
-          </p>
-        )}
 
         {!emLote && sobrepostos.length > 0 && (
           <div className="aviso" style={{ marginTop: 14 }}>

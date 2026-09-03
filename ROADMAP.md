@@ -454,7 +454,10 @@ digitar a mesma coisa, e é assim que um recurso fica de fora sem ninguém notar
 
 **O alcance é o filtro de cima**, e não uma segunda lista para manter em dia com
 a primeira. Estreitar por CC já é escolher o lote, e quem entra fica listado
-abaixo do formulário — é a chance de perceber que sobrou um de fora.
+abaixo do formulário — é a chance de perceber que sobrou um de fora. A lista é
+de chips **desmarcáveis** (`app/cadastros/alvos.jsx`), nas duas telas: quase
+sempre tem uma máquina que é exceção, e mandar refazer o filtro por causa de uma
+só é pedir que a pessoa desista e faça tudo à mão.
 
 **As colunas são os turnos ativos DA PLANTA do recurso** (`turnosOferecidos`), e
 a regra é a mesma no lote e na tela de um recurso só — quando as duas listas
@@ -536,11 +539,20 @@ igual. Área sem recurso nenhum agora diz **qual** área está vazia e some com 
 formulário morto — a tela abre na primeira área da lista, que pode não ser a que
 a pessoa queria, e sem o nome ela procura o defeito no lugar errado.
 
-Em **OEE**, os mesmos filtros de CC e CT — e eles também definem o alcance do
-**Aplicar em vários**: filtrar o CC 278 é dizer "os nove CTs dele", e o painel
-de lote lista quais são, um por um, desmarcáveis. Ali **mês em branco não apaga
-nada** (mescla com o que o recurso já tem), ao contrário do editor de um
-recurso, que reescreve o ano.
+Em **OEE**, os mesmos filtros de CC e CT, e o mesmo `todos os filtrados` no
+Código e no Recurso: a tela inteira entra em modo lote, com a mesma porta de
+ciência. O painel **Aplicar em vários** que ficava embaixo saiu — ele fazia a
+mesma coisa por outro caminho, e duas portas para o mesmo quarto é uma a mais
+para manter em dia.
+
+**E o lote passou a reescrever o ano, como o de Turnos.** Antes ele mesclava:
+mês em branco era silêncio, e o cadastro de cada recurso sobrevivia. Era uma
+segunda leitura do mesmo campo em branco — o editor de um recurso sempre
+reescreveu o ano, e o lote de Turnos também —, e três telas com duas regras para
+o mesmo branco é uma a mais do que dá para lembrar na hora de clicar. Em troca,
+o lote passou a poder **limpar** um mês em massa, coisa que antes só dava recurso
+a recurso. A porta avisa disso em letra grande, porque quem aprendeu a tela
+antiga precisa saber da troca.
 
 **Calendários: a grade é sempre de uma área.** A opção "todas as áreas" saiu —
 ela pintava a união dos feriados de todas, um calendário que nenhuma área tem

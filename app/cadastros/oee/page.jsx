@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Fragment, Suspense } from 'react';
 import { areas, anosComRodada } from '../../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { recursos } from '../../../lib/cadastro';
@@ -9,7 +9,7 @@ import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorOee from './editor';
-import LoteOee from './lote';
+import Ciente from '../ciente';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,13 +91,20 @@ export default async function Page({ searchParams }) {
     );
   }
 
+  // "todos" cadastra o mesmo OEE em toda a lista filtrada — o caso é "78% em
+  // janeiro para os nove CTs do 278". A tabela então não é de ninguém: é o
+  // molde, e nasce em branco.
+  const emLote = searchParams?.recurso === 'todos' && listaRecursos.length > 1;
+
   const pedido = Number(searchParams?.recurso);
   const recurso = listaRecursos.find((r) => r.id === pedido) ?? listaRecursos[0];
 
-  const [faixas, origens] = await Promise.all([
-    faixasOee(recurso.id, origem),
-    origensDoAno(recurso.id, ano),
-  ]);
+  const [faixas, origens] = emLote
+    ? [[], []]
+    : await Promise.all([
+      faixasOee(recurso.id, origem),
+      origensDoAno(recurso.id, ano),
+    ]);
 
   // Faixa -> mês. A tela grava mês inteiro, então basta ver quem cobre o
   // primeiro dia de cada um.
@@ -110,20 +117,29 @@ export default async function Page({ searchParams }) {
 
   const conflito = origens.filter((o) => o.origem !== origem);
 
+  // O "todos" vale como VALOR, e não como ausência: sem recurso na URL a tela
+  // cai no primeiro da lista, que é o contrário do que "todos" quer dizer.
+  const opcaoLote = { valor: 'todos', rotulo: 'todos os filtrados' };
+
   campos.push(
     // Código primeiro: é a identidade da máquina na controladoria, e o nome
     // vem em seguida para confirmar que é ela mesma. Os dois seletores fazem a
     // mesma escolha — a lista do código sai ordenada por código.
     {
       nome: 'codigo', param: 'recurso', rotulo: 'Código', tipo: 'select',
-      valor: String(recurso.id),
-      opcoes: porCodigo(listaRecursos).map((r) => ({
-        valor: String(r.id), rotulo: r.codigo,
-      })),
+      valor: emLote ? 'todos' : String(recurso.id),
+      opcoes: [...(listaRecursos.length > 1 ? [opcaoLote] : []),
+               ...porCodigo(listaRecursos).map((r) => ({
+                 valor: String(r.id), rotulo: r.codigo,
+               }))],
     },
     {
-      nome: 'recurso', rotulo: 'Recurso', tipo: 'select', valor: String(recurso.id),
-      opcoes: listaRecursos.map((r) => ({ valor: String(r.id), rotulo: r.nome })),
+      nome: 'recurso', rotulo: 'Recurso', tipo: 'select',
+      valor: emLote ? 'todos' : String(recurso.id),
+      opcoes: [...(listaRecursos.length > 1 ? [opcaoLote] : []),
+               ...listaRecursos.map((r) => ({
+                 valor: String(r.id), rotulo: r.nome,
+               }))],
     },
     {
       nome: 'origem', rotulo: 'Origem', tipo: 'select', valor: origem,
@@ -140,6 +156,36 @@ export default async function Page({ searchParams }) {
     : cc ? `CC ${cc}`
       : (rotuloArea(listaAreas.find((a) => a.id === areaId) ?? {}) ?? 'esta área');
 
+  // A PORTA DO LOTE, a mesma de Turnos do recurso. Aqui ela é ainda mais
+  // necessária: o lote passou a REESCREVER o ano, e mês em branco deixou de ser
+  // silêncio. Quem aprendeu a tela antiga precisa ser avisado da troca.
+  const Porta = emLote ? Ciente : Fragment;
+  const porta = emLote ? {
+    titulo: `O que você preencher aqui vale para os ${listaRecursos.length} `
+      + `recursos filtrados, e REESCREVE o ano de ${ano} de cada um.`,
+    botao: 'OK, ciente — quero aplicar em lote',
+    resumo: `Lote de ${listaRecursos.length} recursos · ${escopo} · o ano de `
+      + `${ano} de cada um é reescrito por inteiro.`,
+    aviso: (
+      <>
+        <p style={{ margin: '8px 0 0' }}>
+          <strong>Mês em branco apaga</strong> o OEE daquele mês nos recursos do
+          lote, e sem OEE cadastrado o motor usa 100% ali. Se você quer mexer só
+          em janeiro, preencha janeiro <em>e</em> os outros onze com o que eles
+          devem ter — ou aplique recurso a recurso.
+        </p>
+        <p style={{ margin: '6px 0 0' }}>
+          A tabela começa em branco de propósito: herdar a de um recurso faria a
+          tela propor, sem avisar, o OEE de uma máquina para as outras.
+        </p>
+        <p style={{ margin: '6px 0 0' }}>
+          O alcance é o filtro de cima — estreite por CC ou CT antes. Quem entra
+          fica listado abaixo da tabela, e dá para tirar um clicando nele.
+        </p>
+      </>
+    ),
+  } : {};
+
   return (
     <>
       <div className="topo">
@@ -147,24 +193,42 @@ export default async function Page({ searchParams }) {
         <Suspense><Seletor campos={campos} /></Suspense>
       </div>
 
+      <Porta key={`${emLote ? 'lote' : recurso.id}:${listaRecursos.length}:${ano}`}
+             {...porta}>
+
       <div className="painel">
         <h2>
-          {recurso.codigo}
-          <span className="muted" style={{ fontWeight: 400 }}>
-            {' '}{recurso.nome}
-          </span>
+          {emLote ? (
+            <>
+              {listaRecursos.length} recursos
+              <span className="muted" style={{ fontWeight: 400 }}>
+                {' '}· {escopo}
+              </span>
+            </>
+          ) : (
+            <>
+              {recurso.codigo}
+              <span className="muted" style={{ fontWeight: 400 }}>
+                {' '}{recurso.nome}
+              </span>
+            </>
+          )}
           {' '}· OEE {rotuloOrigem(origem)} · {ano}
         </h2>
 
         <EditorOee
-          key={`${recurso.id}:${origem}:${ano}`}
+          key={`${emLote ? 'lote' : recurso.id}:${origem}:${ano}:${listaRecursos.length}`}
           recursoId={recurso.id}
           ano={ano}
           origem={origem}
-          inicial={inicial}
+          inicial={emLote ? {} : inicial}
+          alvos={emLote
+            ? listaRecursos.map((r) => (
+              { id: r.id, codigo: r.codigo, nome: r.nome }))
+            : null}
         />
 
-        {conflito.length > 0 && (
+        {!emLote && conflito.length > 0 && (
           <div className="aviso" style={{ marginTop: 14 }}>
             <strong>
               Este recurso também tem OEE {conflito.map((o) => rotuloOrigem(o.origem)).join(' e ')}
@@ -188,16 +252,7 @@ export default async function Page({ searchParams }) {
         </p>
       </div>
 
-      {listaRecursos.length > 1 && (
-        <LoteOee
-          key={`${areaId}:${cc}:${ct}:${origem}:${ano}`}
-          recursos={listaRecursos.map((r) => (
-            { id: r.id, codigo: r.codigo, nome: r.nome }))}
-          ano={ano}
-          origem={origem}
-          escopo={escopo}
-        />
-      )}
+      </Porta>
     </>
   );
 }
