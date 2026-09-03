@@ -9,6 +9,13 @@ import { formataUnidade, sufixoUnidade, horasEMinutos } from '../../lib/formato'
 // Só as etapas que mudaram algo estão gravadas: etapa que não mexeu no número
 // não explica nada. Por isso um dia normal tem duas ou três linhas, e um dia
 // de feriado tem outras.
+//
+// DESLIGADO DESDE A MIGRAÇÃO 33, e esta tela é a única que sente. O motor
+// parou de gravar o memorial porque ele custava 229 MB projetados — 44% do
+// limite do banco — para explicar um recurso num dia. Nenhum número do painel
+// vem daqui; a `capacidade_fato` é que responde "quanto", e ela continua
+// inteira. O componente fica de pé porque a decisão é reversível: devolver o
+// insert ao motor e recalcular traz o memorial de volta completo.
 const ROTULO = {
   TURNO:      'Duração do turno',
   INTERVALO:  'Intervalo de refeição',
@@ -23,8 +30,11 @@ export default function Memoria({ linhas, unidade }) {
   if (!linhas.length) {
     return (
       <p className="muted">
-        Sem memorial para este dia. Rodadas calculadas antes desta versão não
-        têm o passo a passo — recalcule para gerá-lo.
+        O passo a passo não está sendo gravado. Ele custava 44% do espaço do
+        banco para explicar um recurso num dia, e saiu para a fábrica inteira
+        caber no cálculo — os números do painel não dependem dele. A cadeia é a
+        de sempre: turno, intervalo, quantidade e equivalência, calendário,
+        parada e OEE, nessa ordem.
       </p>
     );
   }

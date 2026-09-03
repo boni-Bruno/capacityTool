@@ -179,6 +179,14 @@ NN_*.sql           migrações, na ordem em que devem rodar
   laço roda no navegador — uma requisição por rodada, porque função serverless
   tem minuto contado.
 - Não guarda histórico de rodada.
+- **Não guarda o memorial do cálculo** (migração 33). O motor grava só a
+  `capacidade_fato` — o resultado. A explicação passo a passo custava 44% do
+  limite do banco para responder por um recurso num dia, e saiu quando a
+  Tecelagem entrou no cálculo e a fábrica inteira deixou de caber. Calcular no
+  MOTOR continua necessário, e nunca foi o memorial que justificava isso:
+  são o volume (800 mil linhas de recurso × dia × turno), o lugar único
+  decidindo (painel, ocupação e extração leem a mesma tabela) e a estabilidade
+  (recalcular é um botão, para o número não mudar debaixo de quem lê).
 - Não espalha demanda mensal por dia: a base é mensal, e reparti-la inventaria
   uma distribuição que o plano não deu.
 

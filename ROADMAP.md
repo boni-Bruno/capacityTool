@@ -1165,6 +1165,62 @@ antigo continuar valendo.
 
 ---
 
+## O espaço do banco, e o dia em que a fábrica não coube
+
+Em 03/09/2026 o Neon recusou escrita no meio de um *Recalcular tudo*: `could
+not extend file because project size limit (512 MB) has been exceeded`. Rodadas
+falharam e ficaram com o motor antigo enquanto outras já tinham o novo — painel
+meio recalculado, que é pior que painel não recalculado, porque as duas metades
+parecem igualmente confiáveis.
+
+**A causa não era desperdício.** Era a Tecelagem. Os 173 recursos dela não
+tinham turno cadastrado, então não geravam cálculo nenhum; no dia em que o
+cadastro em lote encheu a área, uma rodada que ocupava 4.695 linhas passou a
+ocupar **125.499**. A fábrica entrou no banco de uma vez, e o banco não
+comportava: 480 MB com mais 172 MB por inserir.
+
+Três coisas foram feitas, nesta ordem, e cada uma ensina algo diferente:
+
+**1. A chave primária do memorial (migração 32), 30 MB.** Um `id` sequencial
+sem nenhuma FK apontando para ele, que nenhuma consulta usava e que o
+`pg_stat_user_indexes` contou **um** scan na vida do banco. Em tabela
+append-only lida por chave natural, a surrogate não paga o aluguel.
+
+**2. `TRUNCATE` no memorial e `VACUUM FULL` nas duas tabelas grandes.** Aqui
+está a armadilha que vale lembrar: **o arquivo nunca encolhe sozinho.** Apagar
+devolve espaço para dentro dele, e o próximo insert reaproveita — mas o
+tamanho no disco só cai com `VACUUM FULL` (que reescreve) ou `TRUNCATE` (que
+zera). Como cada rodada é montada ANTES de a anterior ser apagada, todo
+*Recalcular tudo* infla um pouco e nunca desinfla: catraca. Quando se percebeu,
+a `capacidade_fato` tinha **56% de ar** — 49 MB de páginas vazias para o mesmo
+dado.
+
+E a armadilha da armadilha: `VACUUM FULL` precisa de espaço livre do tamanho da
+tabela. Com 35 MB livres e a menor tabela em 87 MB, não cabia nenhuma. Só o
+`TRUNCATE` funciona de dentro do buraco — e por isso a ordem importou.
+
+**3. O memorial saiu do motor (migração 33).** Projetado em 229 MB, 44% do
+limite inteiro, para explicar um recurso num dia. Nenhum número do painel vem
+dele. É reversível: a tabela ficou, vazia, e devolver o `insert` ao motor mais
+um Recalcular tudo o traz completo, porque ele sempre foi derivado.
+
+**A pergunta que apareceu na hora de decidir, e a resposta certa.** "Se o
+memorial sai, calcular no motor ainda é necessário?" Sim — e o memorial nunca
+foi a razão. São três, e nenhuma depende dele: **volume** (800 mil linhas de
+recurso × dia × turno não são conta de tela, e função serverless tem minuto
+contado), **um lugar só decidindo** (painel, ocupação e extração leem a mesma
+`capacidade_fato`; três implementações da mesma regra ficariam livres para
+divergir) e **estabilidade** (recalcular é um botão de propósito, para o número
+não mudar debaixo de quem está lendo).
+
+**O que ficou de dívida**: a `capacidade_instalada_dia` continua em grão dia,
+guardando uma linha por recurso por dia para um número que é
+`1440 × qt × equivalência` e só muda quando o parâmetro muda. São ~128 MB. É o
+próximo corte quando o espaço apertar de novo — e ele vai apertar, porque a
+catraca do `VACUUM FULL` é estrutural.
+
+---
+
 ## O QUE FALTA
 
 Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
@@ -1186,9 +1242,10 @@ por quê — útil para não redecidir, mas já construído.
   e a planejada é zero. Grão mês, ou derivar na leitura, devolveria quase 100 MB.
   É o maior desperdício conhecido do banco, e foi ele que estourou o limite do
   Neon em 03/09/2026.
-- **O memorial pesa 191 MB, 40% do banco**, para um drill-down consultado um
-  recurso e um dia por vez. A `descricao` de cada etapa é texto gravado que
-  poderia ser remontado na leitura a partir de `etapa` e `origem_tabela`.
+- **O memorial saiu** (migração 33) — ver abaixo. Se um dia voltar, a
+  `descricao` de cada etapa não precisa ser gravada: dá para remontá-la na
+  leitura a partir de `etapa` e `origem_tabela`, e isso sozinho cortava quase
+  metade do peso dela.
 - **Apagar `produto`, `recurso_taxa` e `recurso_taxa.min_setup`.** A base de
   demanda tornou o cadastro de taxa desnecessário, e as três estão no banco
   prometendo uma coisa que não acontece. Vale uma migração.
