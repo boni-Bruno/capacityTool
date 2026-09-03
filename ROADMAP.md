@@ -456,20 +456,22 @@ digitar a mesma coisa, e é assim que um recurso fica de fora sem ninguém notar
 a primeira. Estreitar por CC já é escolher o lote, e quem entra fica listado
 abaixo do formulário — é a chance de perceber que sobrou um de fora.
 
-**As colunas são os turnos OFERECÍVEIS ao recurso** (`turnosOferecidos`): os
-ativos da planta dele, mais qualquer um que ele já use. E a regra é a mesma no
-lote e na tela de um recurso só — quando as duas listas divergiam, a coluna que
-a pessoa clicava não era a que ela lia: faltando o "2º Turno" no lote, clicar no
-segundo campo gravava o 3º.
+**As colunas são os turnos ativos DA PLANTA do recurso** (`turnosOferecidos`), e
+a regra é a mesma no lote e na tela de um recurso só — quando as duas listas
+divergiam, a coluna que a pessoa clicava não era a que ela lia: faltando o "2º
+Turno" no lote, clicar no segundo campo gravava o 3º.
 
-A metade "da planta" existe porque a tela oferecia turno de outra: a Matriz
+O filtro por planta existe porque a tela oferecia turno de outra: a Matriz
 mostrava o "2º Turno" de **Ibirama**, e 65 recursos da Matriz acabaram
-cadastrados nele. Nenhum número saiu errado — os horários dos dois turnos são
+cadastrados nele. Nenhum número saiu errado — os horários dos dois eram
 idênticos —, mas era coincidência, e coincidência não é cadastro.
 
-A metade "já usa" existe porque salvar REESCREVE o ano: turno que some da tela
-sai do `marcados`, e o save o apagaria por omissão. Uma correção de coluna não
-pode apagar o cadastro de 65 recursos de lambuja.
+**E o save só reescreve o que a tela ofereceu** (`escopo` em
+`definirTurnosDoAno`). Salvar reescreve o ano, e turno ausente do `marcados` é
+lido como desmarcado: isso é certo para o que estava na tela — desmarcar É
+apagar — e errado para o que ela nem mostrou. Sem essa trava, passar a filtrar
+as colunas por planta apagaria, no primeiro save e em silêncio, todo vínculo com
+turno de outra planta.
 
 Em Turnos, as **colunas do lote são os turnos oferecíveis** — a matriz de
 um recurso é que sabe os turnos dele, e em lote não há recurso: sem isso a tela

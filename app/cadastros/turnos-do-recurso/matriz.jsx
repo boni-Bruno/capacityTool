@@ -126,7 +126,12 @@ export default function Matriz({
         const r = await fetch('/api/cadastro/recurso-turno', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recurso_id: id, ano, marcados }),
+          body: JSON.stringify({
+            recurso_id: id, ano, marcados,
+            // As colunas que esta tela mostrou. O servidor só reescreve estas:
+            // turno que a tela não ofereceu não é apagado por omissão.
+            escopo: turnos.map((t) => t.turno_id),
+          }),
         });
         const j = await r.json();
         if (!j.ok) throw new Error(j.erro);

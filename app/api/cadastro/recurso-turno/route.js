@@ -29,7 +29,9 @@ export async function POST(req) {
       throw new Error('Ano inválido.');
     }
 
-    const r = await definirTurnosDoAno(recursoId, ano, b.marcados ?? {});
+    // `escopo`: os turnos que a TELA ofereceu. Só eles são reescritos — o que
+    // ela não mostrou não pode ser apagado por omissão. Ver definirTurnosDoAno.
+    const r = await definirTurnosDoAno(recursoId, ano, b.marcados ?? {}, b.escopo);
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {
