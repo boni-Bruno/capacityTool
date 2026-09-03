@@ -50,13 +50,16 @@ export async function PUT(req) {
   }
 }
 
-// Turno já usado em outro lugar é desativado em vez de apagado — a resposta
-// diz o que aconteceu para a tela poder explicar.
+// Apagar de vez, migrando o cadastro para outro turno quando houver.
+//
+// A resposta diz o que aconteceu — apagou, migrou, ou parou pedindo destino —
+// porque as três levam a telas diferentes, e uma resposta só de "ok" faria a
+// tela adivinhar qual delas mostrar.
 export async function DELETE(req) {
   try {
     await exigeSessao();
-    const { id } = await req.json();
-    const r = await excluirTurno(id);
+    const { id, migrar_para: migrarPara } = await req.json();
+    const r = await excluirTurno(id, { migrarPara });
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {

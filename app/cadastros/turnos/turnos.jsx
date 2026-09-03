@@ -17,6 +17,10 @@ export default function Turnos({ lista, plantas, selecionado }) {
   const [editando, setEditando] = useState(null);
   const [rascunho, setRascunho] = useState({ codigo: '', nome: '' });
   const [confirmando, setConfirmando] = useState(null);
+  // Quando o turno tem cadastro pendurado, a exclusão para e pergunta para onde
+  // mandar. `destino` guarda a resposta enquanto a pergunta está na tela.
+  const [migrando, setMigrando] = useState(null);
+  const [destino, setDestino] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState(null);
   const [aviso, setAviso] = useState(null);
@@ -76,14 +80,40 @@ export default function Turnos({ lista, plantas, selecionado }) {
 
   const reativar = (id) => chamar('PUT', { id });
 
+  // Para onde dá para migrar: qualquer outro turno. Inclusive desativado — um
+  // turno que vai ser apagado pode ter o cadastro dele encostado num que só
+  // será reativado depois, e recusar isso obrigaria a reativar antes só para
+  // poder apagar o outro.
+  const outros = (id) => lista.filter((t) => t.id !== id);
+
   const excluir = (id) =>
-    chamar('DELETE', { id }, (j) => {
+    chamar('DELETE', { id, migrar_para: destino || null }, (j) => {
+      // A resposta manda para três lugares diferentes, e é por isso que ela
+      // não é só "ok": apagou, parou pedindo destino, ou desativou porque há
+      // número calculado no caminho.
+      if (j.precisaDestino) {
+        setConfirmando(null);
+        setMigrando({ id, usos: j.usos });
+        setDestino('');
+        return;
+      }
+
       setConfirmando(null);
+      setMigrando(null);
+      setDestino('');
+
       if (j.desativado) {
         setAviso(
-          `Turno desativado em vez de apagado: já é usado em ${j.onde.join(', ')}. ` +
-          `Apagar arrancaria a referência de números que já foram calculados. ` +
-          `Ele continua na lista, em cinza, e dá para reativar quando quiser.`
+          'Turno desativado em vez de apagado: ele aparece em cálculos já '
+          + 'rodados, e apagar tiraria a referência de números que estão no ar. '
+          + 'Migre o cadastro para outro turno, clique em Recalcular tudo no '
+          + 'painel — a rodada nova substitui a velha — e então apague.'
+        );
+      } else if (j.migrou) {
+        setAviso(
+          `Turno apagado e o cadastro migrado.${j.colisoes
+            ? ` ${j.colisoes} cadastro(s) foram descartados porque o recurso já `
+              + 'estava no turno de destino no mesmo período.' : ''}`
         );
       }
     });
@@ -163,13 +193,20 @@ export default function Turnos({ lista, plantas, selecionado }) {
                           </button>
                         </>
                       ) : t.ativo === false ? (
-                        // Desativado só volta pela reativação: apagar de vez
-                        // não é opção, é justamente por estar em uso que ele
-                        // foi desativado em vez de apagado.
-                        <button className="btn btn-mini btn-primario" disabled={ocupado}
-                                onClick={() => reativar(t.id)}>
-                          {ocupado ? '…' : 'Reativar'}
-                        </button>
+                        // Desativado também se apaga: "em uso" e "desativado"
+                        // são coisas diferentes, e um turno que nasceu errado e
+                        // nunca foi usado só ocupava linha na tela sem ter como
+                        // sair dela.
+                        <>
+                          <button className="btn btn-mini btn-primario" disabled={ocupado}
+                                  onClick={() => reativar(t.id)}>
+                            {ocupado ? '…' : 'Reativar'}
+                          </button>
+                          <button className="btn btn-mini"
+                                  onClick={() => { setConfirmando(t.id); setErro(null); }}>
+                            Excluir
+                          </button>
+                        </>
                       ) : (
                         <>
                           <button
@@ -229,6 +266,49 @@ export default function Turnos({ lista, plantas, selecionado }) {
           </button>
         </div>
       </div>
+
+      {/* A PERGUNTA DO DESTINO. Ela só aparece quando a exclusão parou por ter
+          cadastro pendurado, e diz o que está pendurado: "3 recursos" explica
+          por que o sistema não apagou sozinho melhor do que qualquer frase
+          genérica sobre integridade. */}
+      {migrando && (
+        <div className="aviso" style={{ marginTop: 12 }}>
+          <strong>
+            Este turno ainda tem cadastro: {[
+              migrando.usos.recursos && `${migrando.usos.recursos} recurso(s)`,
+              migrando.usos.oees && `${migrando.usos.oees} faixa(s) de OEE`,
+              migrando.usos.paradas && `${migrando.usos.paradas} parada(s)`,
+              migrando.usos.paradas_rec
+                && `${migrando.usos.paradas_rec} parada(s) recorrente(s)`,
+              migrando.usos.excecoes && `${migrando.usos.excecoes} exceção(ões)`,
+            ].filter(Boolean).join(', ')}.
+          </strong>
+          <p style={{ margin: '6px 0 0' }}>
+            Escolha para qual turno esse cadastro vai. Apagar sem migrar levaria
+            junto o trabalho de quem cadastrou.
+          </p>
+          <div className="acoes" style={{ marginTop: 10 }}>
+            <select value={destino} disabled={ocupado}
+                    onChange={(e) => setDestino(e.target.value)}>
+              <option value="">escolha o turno de destino…</option>
+              {outros(migrando.id).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.codigo} · {t.nome}{t.ativo === false ? ' (desativado)' : ''}
+                </option>
+              ))}
+            </select>
+            <button className="btn btn-mini btn-perigo"
+                    disabled={ocupado || !destino}
+                    onClick={() => excluir(migrando.id)}>
+              {ocupado ? '…' : 'Migrar e apagar'}
+            </button>
+            <button className="btn btn-mini" disabled={ocupado}
+                    onClick={() => { setMigrando(null); setDestino(''); }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {erro && <p className="erro">{erro}</p>}
       {aviso && <div className="aviso" style={{ marginTop: 12 }}>{aviso}</div>}

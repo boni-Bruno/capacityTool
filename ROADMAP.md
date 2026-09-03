@@ -405,6 +405,30 @@ mix mostra o nome do recurso ao lado do CT.
 Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
 seletores separados, que estreitam a lista de Código/Recurso em cascata.
 
+### Apagar um turno de vez
+
+O botão "Excluir" existia só para turno ativo, e turno desativado ficava para
+sempre na lista — "em uso" e "desativado" são coisas diferentes, e um turno que
+nasceu errado e nunca foi usado só ocupava linha sem ter como sair dela. Agora
+os dois se apagam.
+
+E a contagem de usos **não olhava `calendario_regra`**: o turno desativado da
+Matriz tinha zero recursos, zero cálculos e treze regras de calendário, então a
+tela dizia "excluir" e o banco recusava com um erro de chave estrangeira.
+
+Três famílias de vínculo, cada uma mandando uma coisa:
+
+| vínculo | o que acontece |
+|---|---|
+| `calendario_regra`, `turno_horario`, `turno_intervalo` | são **partes** do turno — saem junto |
+| `recurso_turno`, `recurso_oee`, `parada`, `parada_recorrencia`, `excecao` | é **cadastro de outra coisa** — migra para outro turno, ou não apaga |
+| `capacidade_fato` | é **história** — o turno é desativado, e a saída é migrar, Recalcular tudo e então apagar |
+
+Na migração, o que colidir é **descartado em vez de movido**: `recurso_turno`
+proíbe duas vigências do mesmo recurso e turno se sobrepondo, e se o recurso já
+roda no destino naquele período, a linha que sobraria diria o que a de lá já diz.
+A tela conta quantos casos assim houve.
+
 ### Cadastrar para vários de uma vez
 
 Em **Turnos do recurso** e em **Paradas**, o seletor de recurso ganhou
