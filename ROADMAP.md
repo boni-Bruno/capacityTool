@@ -1181,6 +1181,14 @@ por quê — útil para não redecidir, mas já construído.
 - **Apagar `produto`, `recurso_taxa` e `recurso_taxa.min_setup`.** A base de
   demanda tornou o cadastro de taxa desnecessário, e as três estão no banco
   prometendo uma coisa que não acontece. Vale uma migração.
+- **Apagar a sobrecarga de 4 argumentos de `fn_calcular_capacidade`.** A
+  migração 10 acrescentou `p_origem`, e `create or replace` com assinatura nova
+  **cria uma segunda função** em vez de substituir a primeira — a de 4
+  argumentos ficou no banco, congelada na versão de antes da 10: sem origem, sem
+  memorial, sem fração de minuto, sem teto de pessoa, e com o `coalesce(oee, 1.0)`
+  que a 31 veio tirar. O app sempre chama com 5 argumentos, então ela é código
+  morto; o risco é o dia em que alguém chamar com 4 e receber, sem erro nenhum,
+  um cálculo de duas dúzias de migrações atrás.
 
 ### Dívidas conhecidas do motor
 

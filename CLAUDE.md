@@ -64,9 +64,24 @@ regra de trabalho nova vem para os dois.
 ## O fluxo de trabalho
 
 1. **Migrações de banco**: numeradas (`28_...sql`), com um cabeçalho longo
-   explicando o modelo e o porquê. **Quem roda é o Bruno**, no SQL Editor do
-   Neon, e sempre **antes** do deploy do código que depende delas. Ao entregar,
-   dizer o nome do arquivo em bloco de código para ele copiar.
+   explicando o modelo e o porquê, e sempre aplicadas **antes** do deploy do
+   código que depende delas.
+
+   **O arquivo nasce sempre**, mesmo quando eu mesmo aplico. Ele é o rastro: o
+   Bruno lê antes, o commit registra depois, e o próximo a chegar entende o
+   porquê. Migração aplicada direto no banco sem arquivo é mudança que ninguém
+   consegue reconstruir.
+
+   **Quem aplica**: eu, pela conexão com o Neon, quando a permissão permitir
+   (`mcp__…__run_sql` está liberado em `.claude/settings.local.json`). Isso
+   existe porque a ORDEM importa e ela não pode ficar partida entre nós dois:
+   preencher dado e depois trocar o motor é uma sequência só, e o meio dela não
+   é lugar para uma ida ao SQL Editor. Se a permissão recusar, entregar o nome
+   do arquivo em bloco de código para ele rodar — e dizer que foi recusa de
+   permissão, não escolha minha.
+
+   **Depois de aplicar, conferir no banco** que o efeito é o esperado, e dizer o
+   que ficou faltando do lado dele: **Recalcular tudo**, reimportar, o que for.
 2. **Commit e push imediatos**, sem esperar confirmação. Mensagem em português,
    explicando o *porquê* e não o *o quê* — o diff já diz o quê.
 3. Se o erro que ele reportar for uma **migração esquecida**, apenas dizer qual
@@ -141,7 +156,9 @@ NN_*.sql           migrações, na ordem em que devem rodar
 - **instalada** = teto físico, 24 h por dia, todo dia. Para recurso do tipo
   PESSOA ela é a própria planejada: não existe teto de 24 h para gente.
 - **planejada** = turnos, menos intervalos e paradas.
-- **disponível** = planejada × OEE. Setup já está embutido no OEE.
+- **disponível** = planejada × OEE. Setup já está embutido no OEE. **OEE não
+  cadastrado vale 0%**, e por isso **recurso novo nasce com OEE 100%** nas duas
+  origens: a ausência tem que ser anomalia, não o estado normal.
 - **CC-CT** é a identidade do centro na controladoria, e o vínculo com a demanda
   é **derivado** de `maquina_fisica.cc || '-' || ct`. Nunca houve tabela de-para,
   e é isso que faz um CT passar a valer no instante em que o recurso é
