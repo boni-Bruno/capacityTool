@@ -554,6 +554,33 @@ o lote passou a poder **limpar** um mês em massa, coisa que antes só dava recu
 a recurso. A porta avisa disso em letra grande, porque quem aprendeu a tela
 antiga precisa saber da troca.
 
+### OEE não cadastrado vale zero, e recurso novo nasce com 100%
+
+O motor usava `coalesce(oee.oee_pct, 1.0)`: recurso sem OEE rendia 100%, e a
+disponível saía igual à planejada. O número era plausível, e é exatamente por
+isso que era perigoso — a **Tecelagem inteira**, 173 recursos, estava calculada
+com OEE efetivo de **100,0%** enquanto Beneficiamento marcava 72,3% e Confecção
+80,0%. Ninguém perguntou nada, porque nada tinha cara de errado.
+
+A ausência agora vale **0%** (migração `31_oee_ausente_e_zero.sql`). Não porque
+zero seja a verdade — a máquina roda, só não se sabe com que rendimento —, mas
+porque **zero grita e cem sussurra**.
+
+Sozinha, essa metade só trocaria um erro por outro. A que fecha a regra é a
+outra: **recurso novo já nasce com OEE 100% cadastrado**, nas duas origens, com
+vigência aberta dos dois lados (`criarRecurso`). Assim "sem OEE" deixa de ser o
+estado comum e vira o que sempre devia ter sido: uma anomalia, que aparece como
+zero e manda alguém olhar. O 100% de nascença não é um chute disfarçado de dado
+— é o "ainda não medi" dito em voz alta, e ele aparece na tela de OEE para
+alguém corrigir.
+
+Os 251 recursos que já existiam foram preenchidos com 100% nas faixas que lhes
+faltavam — **634 faixas**, porque nenhum recurso tinha OEE em 2025 nem em 2028 —
+antes de a migração entrar. A ordem importa: trocar o motor primeiro zeraria a
+Tecelagem no próximo Recalcular. E **Recalcular tudo** é necessário para o
+número mudar, porque a rodada guardada conserva o `oee_pct` que valia quando ela
+rodou.
+
 **Calendários: a grade é sempre de uma área.** A opção "todas as áreas" saiu —
 ela pintava a união dos feriados de todas, um calendário que nenhuma área tem
 de verdade, e a contagem de dias úteis saía de um mix que não é de ninguém. O

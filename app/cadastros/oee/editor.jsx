@@ -149,8 +149,9 @@ export default function EditorOee({
       <p className="rodape">
         Aceita <code>85</code>, <code>85,5</code> ou <code>0,855</code> — acima
         de 1 é lido como porcentagem. Mês em branco fica sem OEE cadastrado, e
-        aí o motor usa 100% naquele período. Salvar aplica o ano de {ano}; o que
-        estiver configurado em outros anos não é afetado.
+        aí o motor usa <strong>0%</strong> naquele período — a disponível zera.
+        Salvar aplica o ano de {ano}; o que estiver configurado em outros anos
+        não é afetado.
       </p>
     </>
   );

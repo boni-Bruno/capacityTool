@@ -170,7 +170,8 @@ export default async function Page({ searchParams }) {
       <>
         <p style={{ margin: '8px 0 0' }}>
           <strong>Mês em branco apaga</strong> o OEE daquele mês nos recursos do
-          lote, e sem OEE cadastrado o motor usa 100% ali. Se você quer mexer só
+          lote, e sem OEE cadastrado o motor usa 0% ali — a disponível daquele
+          mês zera. Se você quer mexer só
           em janeiro, preencha janeiro <em>e</em> os outros onze com o que eles
           devem ter — ou aplique recurso a recurso.
         </p>
@@ -245,10 +246,11 @@ export default async function Page({ searchParams }) {
         <p className="rodape">
           O OEE multiplica a planejada para virar disponível — instalada e
           planejada são iguais nas duas origens, só a disponível muda. Mês em
-          branco faz o motor usar 100%, e a disponível sai igual à planejada:
-          rodar o cálculo de uma origem sem OEE cadastrado dá um número crível
-          e falso. Setup não entra como parada em lugar nenhum porque já está
-          embutido aqui.
+          branco faz o motor usar <strong>0%</strong>, e a disponível daquele
+          mês zera: o buraco aparece na tela em vez de virar um número crível e
+          falso — recurso novo já nasce com 100% cadastrado justamente para que
+          zero signifique sempre a mesma coisa. Setup não entra como parada em
+          lugar nenhum porque já está embutido aqui.
         </p>
       </div>
 
