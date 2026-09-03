@@ -932,6 +932,17 @@ do feriado, não da parada) e dia inteiro dá o dia todo. E a multiplicação po
 `qt_recursos` e `equivalencia` tem que estar lá: `min_turno_liquido` é o turno
 de UMA máquina, e sem ela um recurso de seis declararia um sexto da parada.
 
+**A linha do turno conta PATRIMÔNIO, e não linha de cadastro.** Num CT com
+quatro patrimônios — dois no 1º e 2º turno, um nos três turnos e um só no
+rodízio 24/7 — saem 3 · 3 · 1 · 1. Cada patrimônio é um recurso com a máquina
+física dele, e um recurso pode ainda representar várias máquinas iguais
+(`recurso_parametro.qt_recursos`): a soma cobre os dois casos.
+
+A soma é feita **depois de colapsar por recurso**. Um recurso que trocou de
+configuração no meio do mês tem duas vigências tocando aquele mês, e a
+sobreposição casa com as duas — somar direto contaria o mesmo patrimônio duas
+vezes, e o slide diria que o turno tem seis máquinas onde há três.
+
 **Todos os turnos cadastrados aparecem, com "N/A" onde nada roda** — e não só os
 que o recorte usa. Turno ausente da lista é indistinguível de turno zerado, e a
 pergunta que o slide responde é como a fábrica está montada: "o terceiro turno
