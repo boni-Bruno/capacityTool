@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Fragment, Suspense } from 'react';
 import { areas, anosComRodada } from '../../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import {
@@ -9,6 +9,7 @@ import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Matriz from './matriz';
 import Calendario from './calendario';
+import Ciente from './ciente';
 import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
 
 export const dynamic = 'force-dynamic';
@@ -118,7 +119,7 @@ export default async function Page({ searchParams }) {
   // lote as colunas são os turnos ATIVOS, que é a lista certa: o molde precisa
   // oferecer todos os turnos possíveis, e não os que uma máquina já usa.
   const [celulas, regimes, sobrepostos, ativos] = emLote
-    ? [[], [], [], await turnosAtivos()]
+    ? [[], await calendariosDoRecurso(recurso.id), [], await turnosAtivos()]
     : [...await Promise.all([
       matrizTurnosDoAno(recurso.id, ano),
       calendariosDoRecurso(recurso.id),
@@ -187,6 +188,41 @@ export default async function Page({ searchParams }) {
     },
   );
 
+  // A PORTA DO LOTE. Em lote, o formulário só existe depois de a explicação ter
+  // sido lida e fechada; fora dele, o `Fragment` não põe nada no caminho.
+  //
+  // Envolver em vez de duplicar a árvore: dois ramos com a mesma matriz dentro
+  // seriam dois lugares para mexer na próxima mudança, e o segundo é o que
+  // ninguém lembra de atualizar.
+  const Porta = emLote ? Ciente : Fragment;
+  const porta = emLote ? {
+    titulo: `O que você fizer aqui vale para os ${listaRecursos.length} recursos `
+      + `filtrados, e REESCREVE o ano de ${ano} de cada um.`,
+    botao: 'OK, ciente — quero cadastrar em lote',
+    resumo: `Lote de ${listaRecursos.length} recursos · o ano de ${ano} de cada `
+      + 'um é reescrito por inteiro.',
+    aviso: (
+      <>
+        <p style={{ margin: '8px 0 0' }}>
+          A matriz começa em branco de propósito: herdar a de um recurso faria a
+          tela propor, sem avisar, a configuração de uma máquina para as outras.
+          Turno marcado grava <strong>todas as máquinas</strong> do recurso — os
+          recursos do lote têm quantidades diferentes, e um número fixo seria
+          demais para um e de menos para outro. Para pôr um número, escolha o
+          recurso um a um.
+        </p>
+        <p style={{ margin: '6px 0 0' }}>
+          O <strong>regime de dias</strong> também é aplicado em lote, e ali
+          basta clicar: não há segunda confirmação.
+        </p>
+        <p style={{ margin: '6px 0 0' }}>
+          Estreite antes por CC, CT ou patrimônio: o alcance é o filtro de cima,
+          e ele está listado no fim da página.
+        </p>
+      </>
+    ),
+  } : {};
+
   return (
     <>
       <div className="topo">
@@ -194,8 +230,13 @@ export default async function Page({ searchParams }) {
         <Suspense><Seletor campos={campos} /></Suspense>
       </div>
 
-      {/* Em lote não há um recurso: o calendário é escolha de cada máquina, e
-          uma tela que mostrasse o de uma delas estaria falando da errada. */}
+      {/* A key reabre a porta quando o alcance muda: passar de 48 recursos
+          para 12 é outra decisão, e a ciência do lote anterior não vale para
+          ela. */}
+      <Porta key={`${emLote ? 'lote' : 'um'}:${listaRecursos.length}:${ano}`}
+             {...porta}>
+
+      {/* Fora do lote, o regime é do recurso escolhido. */}
       {!emLote && (
         <div className="painel">
           <h2>
@@ -208,6 +249,19 @@ export default async function Page({ searchParams }) {
             </span>
           </h2>
           <Calendario key={recurso.id} recursoId={recurso.id} opcoes={regimes} />
+        </div>
+      )}
+
+      {/* Em lote o regime vale para todos os filtrados, e clicar já aplica. */}
+      {emLote && (
+        <div className="painel">
+          <h2>Regime de dias · nos {listaRecursos.length} recursos</h2>
+          <Calendario
+            key={`lote:${listaRecursos.length}`}
+            recursoId={null}
+            opcoes={regimes}
+            alvos={listaRecursos.map((r) => ({ id: r.id, nome: r.nome }))}
+          />
         </div>
       )}
 
@@ -307,6 +361,8 @@ export default async function Page({ searchParams }) {
           ver qual dos dois fechou.
         </p>
       </div>
+
+      </Porta>
     </>
   );
 }

@@ -423,10 +423,17 @@ manda procurar o defeito no cadastro de turnos. Filtradas pela planta da área,
 porque oferecer o turno de outra planta é oferecer um cadastro que o banco
 aceita e o cálculo não entende.
 
-O aviso do lote **tem um botão de ciência que destrava o aplicar**: ele reescreve
-o ano de dezenas de recursos, e cartaz que dá para ignorar sem clicar em nada não
-é aviso, é decoração. Ele mora dentro do componente que grava, e não na página —
-aviso longe da ação que ele previne é aviso que ninguém lê.
+O aviso do lote é uma **porta**, e não um cartaz (`ciente.jsx`): a explicação
+aparece sozinha, e o formulário só existe depois do clique em *OK, ciente*.
+Cartaz ao lado do formulário não é lido — quem chega vê a matriz, marca e clica,
+e o texto fica no canto do olho. Depois de aberta a porta **a mensagem some** e
+sobra uma linha com o que continua valendo: aviso que fica na tela depois de
+lido vira ruído, e ruído treina a pessoa a não ler o próximo. A porta reabre
+quando o alcance muda — passar de 48 recursos para 12 é outra decisão.
+
+**O regime de dias também é aplicado em lote**, no mesmo bloco. Ali nenhum
+regime aparece marcado, de propósito: os recursos do lote podem estar em regimes
+diferentes, e destacar o de um deles diria que todos estão nele.
 
 A matriz do lote **nasce em branco**: herdar a de um recurso faria a
 tela propor, sem avisar, a configuração de uma máquina para as outras. E a
