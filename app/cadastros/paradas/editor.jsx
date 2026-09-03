@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 
 const hoje = () => new Date().toISOString().slice(0, 10);
 
+// "Todos" é um VALOR do seletor, e não a ausência dele: vazio já quer dizer
+// "ainda não escolhi", e são duas coisas diferentes — uma bloqueia o botão, a
+// outra manda cadastrar em toda a lista.
+const TODOS = 'todos';
+
 const vazio = () => ({
   recurso_id: '', tipo_parada_id: '', turno_id: '',
   data_inicio: hoje(), data_fim: hoje(),
@@ -22,12 +27,20 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
   const [form, setForm] = useState(vazio);
   const [erro, setErro] = useState(null);
   const [salvando, setSalvando] = useState(false);
+  const [progresso, setProgresso] = useState(null);
 
   const set = (c) => (e) =>
     setForm((f) => ({
       ...f,
       [c]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
     }));
+
+  // Quem está no alcance de "todos": os recursos que o filtro deixou na tela.
+  // Não existe uma segunda lista para manter em dia com a primeira — estreitar
+  // por CC já é escolher o lote.
+  const emLote = form.recurso_id === TODOS;
+  const alvos = emLote ? recursos : recursos.filter(
+    (r) => String(r.id) === String(form.recurso_id));
 
   async function chamar(metodo, corpo) {
     setSalvando(true);
@@ -49,9 +62,52 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
     }
   }
 
+  /**
+   * Cadastra a mesma parada em todos os recursos do filtro.
+   *
+   * UM POR REQUISIÇÃO, com o laço aqui: é o caminho do Recalcular tudo e da
+   * importação, pela mesma razão — quarenta inserções numa requisição só
+   * estouram o tempo da função no meio, deixando metade gravada.
+   *
+   * Erro num recurso NÃO para o laço: a parada dos outros trinta e nove é
+   * legítima, e refazer tudo porque um falhou criaria trinta e nove duplicadas.
+   * O que falhou é dito no fim, com nome.
+   */
+  async function cadastrarEmLote(base) {
+    setSalvando(true);
+    setErro(null);
+    const falhas = [];
+    for (const [i, r] of alvos.entries()) {
+      setProgresso({ feitos: i, total: alvos.length, nome: r.nome });
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const resp = await fetch('/api/cadastro/parada', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...base, recurso_id: r.id }),
+        });
+        // eslint-disable-next-line no-await-in-loop
+        const j = await resp.json();
+        if (!j.ok) throw new Error(j.erro);
+      } catch (e) {
+        falhas.push(`${r.nome}: ${e.message ?? 'falhou'}`);
+      }
+    }
+    setProgresso(null);
+    setSalvando(false);
+    if (falhas.length) {
+      setErro(`${falhas.length} de ${alvos.length} não entraram — `
+        + falhas.slice(0, 3).join('; '));
+    } else {
+      setForm(vazio());
+    }
+    router.refresh();
+  }
+
   const podeSalvar =
     form.recurso_id && form.tipo_parada_id &&
-    (form.dia_inteiro || form.minutos !== '');
+    (form.dia_inteiro || form.minutos !== '') &&
+    alvos.length > 0;
 
   return (
     <>
@@ -66,6 +122,9 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
             <span className="campo-rot">Código</span>
             <select value={form.recurso_id} onChange={set('recurso_id')}>
               <option value="">selecione…</option>
+              {recursos.length > 1 && (
+                <option value={TODOS}>todos os {recursos.length} filtrados</option>
+              )}
               {porCodigo(recursos).map((r) => (
                 <option key={r.id} value={r.id}>{r.codigo}</option>
               ))}
@@ -76,6 +135,9 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
             <span className="campo-rot">Recurso</span>
             <select value={form.recurso_id} onChange={set('recurso_id')}>
               <option value="">selecione…</option>
+              {recursos.length > 1 && (
+                <option value={TODOS}>todos os {recursos.length} filtrados</option>
+              )}
               {recursos.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
             </select>
           </label>
@@ -131,17 +193,37 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
           <button
             className="btn btn-primario"
             disabled={!podeSalvar || salvando}
-            onClick={() => chamar('POST', form)}
+            onClick={() => (emLote
+              ? cadastrarEmLote(form) : chamar('POST', form))}
           >
-            {salvando ? 'Salvando…' : 'Cadastrar parada'}
+            {salvando
+              ? (emLote ? 'Cadastrando…' : 'Salvando…')
+              : (emLote ? `Cadastrar em ${alvos.length} recursos`
+                : 'Cadastrar parada')}
           </button>
+          {/* O nome de quem está sendo gravado: quarenta recursos são quarenta
+              requisições, e um botão parado por meio minuto parece travado. */}
+          {progresso && (
+            <span className="muted">
+              {progresso.feitos + 1} de {progresso.total} · {progresso.nome}
+            </span>
+          )}
           {erro && <span className="erro">{erro}</span>}
         </div>
+
+        {emLote && (
+          <p className="rodape">
+            <strong>No lote:</strong> {recursos.map((r) => r.codigo).join(' · ')}
+          </p>
+        )}
 
         <p className="rodape">
           Minutos é sempre <strong>por turno</strong>. Parada que atinge a planta
           inteira não vai aqui — vai em <code>excecao</code>. E setup não entra:
           já está embutido no OEE.
+          {' '}Escolhendo <strong>todos os filtrados</strong> no Código ou no
+          Recurso, a mesma parada entra em cada um deles — estreite antes por CC
+          ou CT, porque o alcance é o filtro de cima.
         </p>
       </div>
 

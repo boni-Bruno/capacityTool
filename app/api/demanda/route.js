@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  criarCarga, gravarLote, concluirCarga, definirCorrente, excluirCarga,
+  anotarCarga, concluirCarga, criarCarga, definirCorrente, excluirCarga, gravarLote,
 } from '../../../lib/demanda';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeSessao } from '../../../lib/sessao';
@@ -47,13 +47,23 @@ export async function POST(req) {
   } catch (e) { return falha(e, 'POST'); }
 }
 
-// Troca qual carga está no ar. Separado do POST porque não é importação: é
-// decisão de qual versão do plano todo mundo está vendo.
+// Troca qual carga está no ar, ou anota o cenário. Separado do POST porque não
+// é importação: é decisão de qual versão do plano todo mundo está vendo.
+//
+// A anotação entra aqui e não numa rota própria porque é a mesma linha e o
+// mesmo dono; e ela NÃO revalida cadastro nenhum: é texto ao lado do número, e
+// invalidar o cache do painel por causa de uma frase seria pagar caro por nada.
 export async function PUT(req) {
   try {
     await exigeSessao();
-    const { id } = await req.json();
-    await definirCorrente(id);
+    const b = await req.json();
+
+    if (b.acao === 'observacao') {
+      const r = await anotarCarga(b.id, b.observacao);
+      return NextResponse.json({ ok: true, ...r });
+    }
+
+    await definirCorrente(b.id);
     revalidarCadastros();
     return NextResponse.json({ ok: true });
   } catch (e) { return falha(e, 'PUT'); }

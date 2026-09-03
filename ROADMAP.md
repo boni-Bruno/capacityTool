@@ -405,6 +405,50 @@ mix mostra o nome do recurso ao lado do CT.
 Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
 seletores separados, que estreitam a lista de Código/Recurso em cascata.
 
+### Cadastrar para vários de uma vez
+
+Em **Turnos do recurso** e em **Paradas**, o seletor de recurso ganhou
+**"todos os filtrados"** — em OEE isso já existia como *Aplicar em vários*. O
+caso é montar uma área inteira: um a um são quarenta idas à mesma tela para
+digitar a mesma coisa, e é assim que um recurso fica de fora sem ninguém notar.
+
+**O alcance é o filtro de cima**, e não uma segunda lista para manter em dia com
+a primeira. Estreitar por CC já é escolher o lote, e quem entra fica listado
+abaixo do formulário — é a chance de perceber que sobrou um de fora.
+
+Em Turnos, a matriz do lote **nasce em branco**: herdar a de um recurso faria a
+tela propor, sem avisar, a configuração de uma máquina para as outras. E a
+célula vira marca, sem número — os recursos do lote têm quantidades de máquina
+diferentes, e "3" seria demais para um de duas e de menos para um de seis.
+Marcado grava **todas**, que cada recurso resolve com a quantidade dele. Para pôr
+um número, escolhe-se o recurso um a um.
+
+**O laço mora no navegador**, uma requisição por recurso — o mesmo caminho do
+Recalcular tudo e da importação, pela mesma razão: cada recurso são duas
+consultas e uma transação, e quarenta numa requisição só estouram o tempo da
+função no meio, deixando metade gravada e nenhum aviso. O nome de quem está
+sendo gravado aparece ao lado do botão.
+
+Em Paradas, **erro num recurso não para o laço**: a parada dos outros trinta e
+nove é legítima, e refazer tudo porque um falhou criaria trinta e nove
+duplicadas. O que falhou é dito no fim, com nome.
+
+Calendários ficou de fora porque lá não há o que aplicar em lote: o calendário é
+da ÁREA, e já vale para todos os recursos dela.
+
+### As observações do cenário
+
+Cada carga de demanda tem um campo de **observação** livre (migração
+`30_carga_observacao.sql`). O nome e a data respondem "qual é"; não respondem
+"por que este". Três cargas chamadas "S&OP Ciclo 06-2027" com dois dias de
+diferença são indistinguíveis daqui a um mês, e a diferença costuma ser uma
+frase — "sem o pedido da Renner", "reprocesso do ciclo anterior" — que hoje mora
+no e-mail de quem importou e some quando ele sai de férias.
+
+Grava ao sair do campo, e não a cada tecla: uma frase viraria vinte requisições,
+e a última chegaria fora de ordem tão fácil quanto na ordem. Não revalida cache
+nenhum — é texto ao lado do número, e não entra em conta alguma.
+
 Em **Paradas planejadas**, os mesmos CC e CT mais o **recurso**, também em
 cascata. Eles estreitam o formulário e **a tabela do período junto**: mostrar o
 cadastro estreitado e a lista inteira faria a tela dizer duas coisas ao mesmo

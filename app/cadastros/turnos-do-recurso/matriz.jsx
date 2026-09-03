@@ -22,17 +22,25 @@ const chave = (turnoId, mes) => `${turnoId}:${mes}`;
 const TODAS = 'todas';
 
 export default function Matriz({
-  recursoId, ano, turnos, inicial, parciais, qtRecurso = 1,
+  recursoId, ano, turnos, inicial, parciais, qtRecurso = 1, alvos = null,
 }) {
   const router = useRouter();
   const [celulas, setCelulas] = useState(inicial);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
   const [ok, setOk] = useState(null);
+  const [andamento, setAndamento] = useState(null);
+
+  // EM LOTE a matriz não é de ninguém: ela é o molde que vai para todos os
+  // recursos do filtro. E a célula vira marca, sem número — os recursos do
+  // lote têm quantidades de máquina diferentes, e "3" seria demais para um de
+  // duas e de menos para um de seis. Marcado grava "todas", que cada recurso
+  // resolve com a quantidade dele.
+  const lote = Array.isArray(alvos);
 
   // Uma máquina só: a quantidade não tem o que dizer, e a caixa de marcar é
   // mais rápida e menos sujeita a erro de digitação.
-  const simples = qtRecurso === 1;
+  const simples = lote || qtRecurso === 1;
 
   // Comparar com o estado inicial evita habilitar Salvar à toa e deixa claro
   // quando há alteração pendente — a tela salva em lote, não a cada clique.
@@ -49,7 +57,8 @@ export default function Matriz({
   }
 
   function alterna(turnoId, mes) {
-    poe(turnoId, mes, ligada(chave(turnoId, mes)) ? '' : String(qtRecurso));
+    poe(turnoId, mes,
+      ligada(chave(turnoId, mes)) ? '' : String(lote ? 1 : qtRecurso));
   }
 
   // Preencher em lote usa o total: é o que quase sempre se quer, e ajustar uma
@@ -79,7 +88,7 @@ export default function Matriz({
     setCelulas((c) => {
       const novo = { ...c };
       for (let mes = 1; mes <= 12; mes++) {
-        novo[chave(turnoId, mes)] = todos ? '' : String(qtRecurso);
+        novo[chave(turnoId, mes)] = todos ? '' : String(lote ? 1 : qtRecurso);
       }
       return novo;
     });
@@ -97,6 +106,11 @@ export default function Matriz({
         for (let mes = 1; mes <= 12; mes++) {
           const v = celulas[chave(t.turno_id, mes)] ?? '';
           if (v === '') continue;
+          // Em lote sempre TODAS: os recursos do lote têm quantidades de
+          // máquina diferentes, e um número fixo seria demais para um e de
+          // menos para outro. "Todas" cada um resolve com a quantidade dele.
+          if (lote) { porMes[mes] = TODAS; continue; }
+
           const n = Number(v);
           if (!Number.isInteger(n) || n < 1 || n > qtRecurso) {
             throw new Error(
@@ -108,21 +122,42 @@ export default function Matriz({
         marcados[t.turno_id] = porMes;
       }
 
-      const r = await fetch('/api/cadastro/recurso-turno', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recurso_id: recursoId, ano, marcados }),
-      });
-      const j = await r.json();
-      if (!j.ok) throw new Error(j.erro);
+      const grava = async (id) => {
+        const r = await fetch('/api/cadastro/recurso-turno', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recurso_id: id, ano, marcados }),
+        });
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.erro);
+        return j.turnosAlterados ?? 0;
+      };
 
-      setOk(j.turnosAlterados === 0
-        ? 'Nada mudou.'
-        : `${j.turnosAlterados} turno${j.turnosAlterados > 1 ? 's' : ''} atualizado${j.turnosAlterados > 1 ? 's' : ''}.`);
+      if (!lote) {
+        const n = await grava(recursoId);
+        setOk(n === 0 ? 'Nada mudou.'
+          : `${n} turno${n > 1 ? 's' : ''} atualizado${n > 1 ? 's' : ''}.`);
+      } else {
+        // UM RECURSO POR REQUISIÇÃO, com o laço aqui no navegador — é o mesmo
+        // caminho do Recalcular tudo e da importação, pela mesma razão: cada
+        // recurso são duas consultas e uma transação, e quarenta deles numa
+        // requisição só estouram o tempo da função no meio, deixando metade
+        // gravada e nenhum aviso.
+        let mexidos = 0;
+        for (const [i, alvo] of alvos.entries()) {
+          setAndamento({ feitos: i, total: alvos.length, nome: alvo.nome });
+          // eslint-disable-next-line no-await-in-loop
+          if (await grava(alvo.id) > 0) mexidos++;
+        }
+        setAndamento(null);
+        setOk(`${alvos.length} recurso(s) percorrido(s), `
+          + `${mexidos} com mudança de turno.`);
+      }
       router.refresh();
     } catch (e) {
       setErro(e.message ?? 'Falhou');
     } finally {
+      setAndamento(null);
       setSalvando(false);
     }
   }
@@ -221,9 +256,19 @@ export default function Matriz({
 
       <div className="acoes" style={{ marginTop: 16 }}>
         <button className="btn btn-primario" onClick={salvar} disabled={!sujo || salvando}>
-          {salvando ? 'Salvando…' : 'Salvar'}
+          {salvando
+            ? (lote ? 'Aplicando…' : 'Salvando…')
+            : (lote ? `Aplicar nos ${alvos.length} recursos` : 'Salvar')}
         </button>
         {sujo && !salvando && <span className="muted">alterações não salvas</span>}
+        {/* O nome de quem está sendo gravado, e não só a barra: quarenta
+            recursos levam quarenta requisições, e "Aplicando…" parado por meio
+            minuto parece travado. */}
+        {andamento && (
+          <span className="muted">
+            {andamento.feitos + 1} de {andamento.total} · {andamento.nome}
+          </span>
+        )}
         {ok && <span className="muted">{ok}</span>}
         {erro && <span className="erro" style={{ margin: 0 }}>{erro}</span>}
       </div>

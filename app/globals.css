@@ -660,6 +660,11 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 }
 .tabela-faixas td { vertical-align: middle; }
 
+/* A observacao do cenario: larga o suficiente para uma frase caber sem rolar,
+   e nao tao larga que empurre as colunas de numero para fora da tela. */
+.col-obs { min-width: 220px; }
+.col-obs input { width: 100%; }
+
 /* ---- DE/PARA da demanda ---- */
 
 /* Os atributos derivados, um por chip. Lista curta e horizontal porque a

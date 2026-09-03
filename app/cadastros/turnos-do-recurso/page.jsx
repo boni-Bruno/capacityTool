@@ -57,6 +57,10 @@ export default async function Page({ searchParams }) {
     ? aposCt.filter((r) => r.patrimonio === pat) : aposCt;
 
   const opcaoTodos = (rotulo) => ({ valor: '', rotulo });
+  // O "todos" do recurso vale como VALOR, e não como ausência: sem recurso na
+  // URL a tela cai no primeiro da lista, que é o comportamento de sempre e o
+  // contrário do que "todos" quer dizer.
+  const opcaoLote = { valor: 'todos', rotulo: 'todos os filtrados' };
   const campos = [
     {
       nome: 'area', rotulo: 'Área', tipo: 'select', valor: String(areaId),
@@ -91,16 +95,27 @@ export default async function Page({ searchParams }) {
     );
   }
 
+  // "todos" cadastra o mesmo desenho de turnos em toda a lista filtrada — é o
+  // caso de montar uma área inteira, em que ir de recurso em recurso garante
+  // que um fique de fora sem ninguém notar. A matriz então não é de ninguém:
+  // ela é o molde.
+  const emLote = searchParams?.recurso === 'todos' && listaRecursos.length > 1;
+
   // O recurso da URL pode não ser da área selecionada — acontece ao trocar de
   // área com um recurso já escolhido. Cai no primeiro da lista.
   const pedido = Number(searchParams?.recurso);
   const recurso = listaRecursos.find((r) => r.id === pedido) ?? listaRecursos[0];
 
-  const [celulas, regimes, sobrepostos] = await Promise.all([
-    matrizTurnosDoAno(recurso.id, ano),
-    calendariosDoRecurso(recurso.id),
-    turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso),
-  ]);
+  // Em lote não se lê a matriz de ninguém: o molde nasce em branco, e o que
+  // for marcado passa a valer para todos. Herdar do primeiro da lista faria a
+  // tela propor, sem avisar, a configuração de uma máquina para as outras.
+  const [celulas, regimes, sobrepostos] = emLote
+    ? [[], [], []]
+    : await Promise.all([
+      matrizTurnosDoAno(recurso.id, ano),
+      calendariosDoRecurso(recurso.id),
+      turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso),
+    ]);
 
   // Quantas máquinas o recurso tem. É o teto de cada célula da matriz e o
   // valor que "todas" resolve.
@@ -136,14 +151,19 @@ export default async function Page({ searchParams }) {
     // mesma escolha — a lista do código sai ordenada por código.
     {
       nome: 'codigo', param: 'recurso', rotulo: 'Código', tipo: 'select',
-      valor: String(recurso.id),
-      opcoes: porCodigo(listaRecursos).map((r) => ({
-        valor: String(r.id), rotulo: r.codigo,
-      })),
+      valor: emLote ? 'todos' : String(recurso.id),
+      opcoes: [...(listaRecursos.length > 1 ? [opcaoLote] : []),
+               ...porCodigo(listaRecursos).map((r) => ({
+                 valor: String(r.id), rotulo: r.codigo,
+               }))],
     },
     {
-      nome: 'recurso', rotulo: 'Recurso', tipo: 'select', valor: String(recurso.id),
-      opcoes: listaRecursos.map((r) => ({ valor: String(r.id), rotulo: r.nome })),
+      nome: 'recurso', rotulo: 'Recurso', tipo: 'select',
+      valor: emLote ? 'todos' : String(recurso.id),
+      opcoes: [...(listaRecursos.length > 1 ? [opcaoLote] : []),
+               ...listaRecursos.map((r) => ({
+                 valor: String(r.id), rotulo: r.nome,
+               }))],
     },
     {
       nome: 'ano', rotulo: 'Ano', tipo: 'select', valor: String(ano),
@@ -158,23 +178,55 @@ export default async function Page({ searchParams }) {
         <Suspense><Seletor campos={campos} /></Suspense>
       </div>
 
+      {/* Em lote não há um recurso: o calendário é escolha de cada máquina, e
+          uma tela que mostrasse o de uma delas estaria falando da errada. */}
+      {!emLote && (
+        <div className="painel">
+          <h2>
+            {recurso.codigo}
+            <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
+              {recurso.nome}
+            </span>
+            <span className="selo padrao" style={{ marginLeft: 8 }}>
+              {recurso.tipo_recurso.toLowerCase()}
+            </span>
+          </h2>
+          <Calendario key={recurso.id} recursoId={recurso.id} opcoes={regimes} />
+        </div>
+      )}
+
       <div className="painel">
         <h2>
-          {recurso.codigo}
-          <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
-            {recurso.nome}
-          </span>
-          <span className="selo padrao" style={{ marginLeft: 8 }}>
-            {recurso.tipo_recurso.toLowerCase()}
-          </span>
+          Turnos em {ano}
+          {emLote && (
+            <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
+              · {listaRecursos.length} recursos do filtro
+            </span>
+          )}
         </h2>
-        <Calendario key={recurso.id} recursoId={recurso.id} opcoes={regimes} />
-      </div>
 
-      <div className="painel">
-        <h2>Turnos em {ano}</h2>
+        {emLote && (
+          <div className="aviso" style={{ marginBottom: 14 }}>
+            <strong>
+              O que você marcar aqui vale para os {listaRecursos.length} recursos
+              filtrados, e REESCREVE o ano de {ano} de cada um.
+            </strong>
+            <p style={{ margin: '6px 0 0' }}>
+              A matriz começa em branco de propósito: herdar a de um recurso
+              faria a tela propor, sem avisar, a configuração de uma máquina
+              para as outras. Turno marcado grava{' '}
+              <strong>todas as máquinas</strong> do recurso — os recursos do lote
+              têm quantidades diferentes, e um número fixo seria demais para um e
+              de menos para outro. Para pôr um número, escolha o recurso um a um.
+            </p>
+            <p style={{ margin: '6px 0 0' }}>
+              Estreite antes por CC, CT ou patrimônio: o alcance do lote é o
+              filtro de cima, e ele está listado abaixo da matriz.
+            </p>
+          </div>
+        )}
 
-        {qtRecurso > 1 && (
+        {!emLote && qtRecurso > 1 && (
           <div className="aviso" style={{ marginBottom: 14 }}>
             <strong>
               Este recurso tem {qtRecurso} máquinas, então a célula pede um
@@ -204,16 +256,28 @@ export default async function Page({ searchParams }) {
             anterior — a tela mostrava a configuração da máquina errada e ainda
             oferecia Salvar, o que gravaria a config de um recurso no outro. */}
         <Matriz
-          key={`${recurso.id}:${ano}`}
+          key={`${emLote ? 'lote' : recurso.id}:${ano}:${listaRecursos.length}`}
           recursoId={recurso.id}
           ano={ano}
           qtRecurso={qtRecurso}
           turnos={turnos}
           inicial={inicial}
           parciais={parciais}
+          alvos={emLote
+            ? listaRecursos.map((r) => ({ id: r.id, nome: r.nome }))
+            : null}
         />
 
-        {sobrepostos.length > 0 && (
+        {/* Quem entra no lote fica à vista: é a prova de que o filtro é o
+            alcance, e a chance de perceber que sobrou um recurso de fora. */}
+        {emLote && (
+          <p className="rodape">
+            <strong>No lote:</strong>{' '}
+            {listaRecursos.map((r) => r.codigo).join(' · ')}
+          </p>
+        )}
+
+        {!emLote && sobrepostos.length > 0 && (
           <div className="aviso" style={{ marginTop: 14 }}>
             <strong>
               Turnos sobrepostos: em {sobrepostos.length} combinação(ões) de mês
