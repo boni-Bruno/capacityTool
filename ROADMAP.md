@@ -416,7 +416,19 @@ digitar a mesma coisa, e é assim que um recurso fica de fora sem ninguém notar
 a primeira. Estreitar por CC já é escolher o lote, e quem entra fica listado
 abaixo do formulário — é a chance de perceber que sobrou um de fora.
 
-Em Turnos, a matriz do lote **nasce em branco**: herdar a de um recurso faria a
+Em Turnos, as **colunas do lote são os turnos ativos da planta** — a matriz de
+um recurso é que sabe os turnos dele, e em lote não há recurso: sem isso a tela
+ficava sem coluna nenhuma e dizia "nenhum turno ativo na planta", que é falso e
+manda procurar o defeito no cadastro de turnos. Filtradas pela planta da área,
+porque oferecer o turno de outra planta é oferecer um cadastro que o banco
+aceita e o cálculo não entende.
+
+O aviso do lote **tem um botão de ciência que destrava o aplicar**: ele reescreve
+o ano de dezenas de recursos, e cartaz que dá para ignorar sem clicar em nada não
+é aviso, é decoração. Ele mora dentro do componente que grava, e não na página —
+aviso longe da ação que ele previne é aviso que ninguém lê.
+
+A matriz do lote **nasce em branco**: herdar a de um recurso faria a
 tela propor, sem avisar, a configuração de uma máquina para as outras. E a
 célula vira marca, sem número — os recursos do lote têm quantidades de máquina
 diferentes, e "3" seria demais para um de duas e de menos para um de seis.

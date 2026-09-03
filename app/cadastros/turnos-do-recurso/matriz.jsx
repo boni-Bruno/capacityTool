@@ -30,6 +30,10 @@ export default function Matriz({
   const [erro, setErro] = useState(null);
   const [ok, setOk] = useState(null);
   const [andamento, setAndamento] = useState(null);
+  // O aviso do lote é uma porta, e não um cartaz: ele reescreve o ano de
+  // dezenas de recursos, e um cartaz que dá para ignorar sem clicar em nada não
+  // é aviso, é decoração. Marcar aqui destrava o botão.
+  const [ciente, setCiente] = useState(false);
 
   // EM LOTE a matriz não é de ninguém: ela é o molde que vai para todos os
   // recursos do filtro. E a célula vira marca, sem número — os recursos do
@@ -254,8 +258,42 @@ export default function Matriz({
         </table>
       </div>
 
+      {lote && (
+        <div className="aviso" style={{ marginTop: 16 }}>
+          <strong>
+            O que você marcar aqui vale para os {alvos.length} recursos
+            filtrados, e REESCREVE o ano de {ano} de cada um.
+          </strong>
+          <p style={{ margin: '6px 0 0' }}>
+            A matriz começa em branco de propósito: herdar a de um recurso faria
+            a tela propor, sem avisar, a configuração de uma máquina para as
+            outras. Turno marcado grava <strong>todas as máquinas</strong> do
+            recurso — os recursos do lote têm quantidades diferentes, e um número
+            fixo seria demais para um e de menos para outro. Para pôr um número,
+            escolha o recurso um a um.
+          </p>
+          <p style={{ margin: '6px 0 0' }}>
+            Estreite antes por CC, CT ou patrimônio: o alcance do lote é o filtro
+            de cima, e ele está listado abaixo.
+          </p>
+          <div className="acoes" style={{ marginTop: 10 }}>
+            <button type="button" className="btn btn-mini"
+                    disabled={ciente || salvando}
+                    onClick={() => setCiente(true)}>
+              {ciente ? 'Ciente' : 'OK, ciente'}
+            </button>
+            {!ciente && (
+              <span className="muted">
+                o botão de aplicar destrava depois disto
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="acoes" style={{ marginTop: 16 }}>
-        <button className="btn btn-primario" onClick={salvar} disabled={!sujo || salvando}>
+        <button className="btn btn-primario" onClick={salvar}
+                disabled={!sujo || salvando || (lote && !ciente)}>
           {salvando
             ? (lote ? 'Aplicando…' : 'Salvando…')
             : (lote ? `Aplicar nos ${alvos.length} recursos` : 'Salvar')}

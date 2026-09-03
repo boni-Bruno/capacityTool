@@ -3,6 +3,7 @@ import { areas, anosComRodada } from '../../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import {
   recursos, matrizTurnosDoAno, calendariosDoRecurso, turnosSobrepostos,
+  turnos as turnosAtivos,
 } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
@@ -109,13 +110,20 @@ export default async function Page({ searchParams }) {
   // Em lote não se lê a matriz de ninguém: o molde nasce em branco, e o que
   // for marcado passa a valer para todos. Herdar do primeiro da lista faria a
   // tela propor, sem avisar, a configuração de uma máquina para as outras.
-  const [celulas, regimes, sobrepostos] = emLote
-    ? [[], [], []]
-    : await Promise.all([
+  //
+  // AS COLUNAS, PORÉM, PRECISAM VIR DE ALGUM LUGAR. Elas saem da matriz do
+  // recurso — é a consulta que sabe quais turnos ele tem —, e com a matriz
+  // vazia a tela ficava sem coluna nenhuma e dizia "nenhum turno ativo na
+  // planta", que é falso e manda procurar o defeito no cadastro de turnos. Em
+  // lote as colunas são os turnos ATIVOS, que é a lista certa: o molde precisa
+  // oferecer todos os turnos possíveis, e não os que uma máquina já usa.
+  const [celulas, regimes, sobrepostos, ativos] = emLote
+    ? [[], [], [], await turnosAtivos()]
+    : [...await Promise.all([
       matrizTurnosDoAno(recurso.id, ano),
       calendariosDoRecurso(recurso.id),
       turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso),
-    ]);
+    ]), []];
 
   // Quantas máquinas o recurso tem. É o teto de cada célula da matriz e o
   // valor que "todas" resolve.
@@ -128,7 +136,15 @@ export default async function Page({ searchParams }) {
   // quantas máquinas rodam ali. Vigência com qt_recursos nulo quer dizer
   // "todas", e aparece como o número cheio — a tela mostra quantas rodam, não
   // um conceito.
-  const turnos = [];
+  // Só os turnos DA PLANTA da área escolhida. `turnos()` traz os de todas, e
+  // oferecer o turno de outra planta seria oferecer um cadastro que não faz
+  // sentido — o banco aceitaria, e o erro só apareceria no cálculo.
+  const plantaDaArea = listaAreas.find((a) => a.id === areaId)?.planta;
+  const turnos = emLote
+    ? ativos
+      .filter((t) => !plantaDaArea || t.planta === plantaDaArea)
+      .map((t) => ({ turno_id: Number(t.id), codigo: t.codigo, nome: t.nome }))
+    : [];
   const inicial = {};
   const parciais = {};
   for (const c of celulas) {
@@ -204,27 +220,6 @@ export default async function Page({ searchParams }) {
             </span>
           )}
         </h2>
-
-        {emLote && (
-          <div className="aviso" style={{ marginBottom: 14 }}>
-            <strong>
-              O que você marcar aqui vale para os {listaRecursos.length} recursos
-              filtrados, e REESCREVE o ano de {ano} de cada um.
-            </strong>
-            <p style={{ margin: '6px 0 0' }}>
-              A matriz começa em branco de propósito: herdar a de um recurso
-              faria a tela propor, sem avisar, a configuração de uma máquina
-              para as outras. Turno marcado grava{' '}
-              <strong>todas as máquinas</strong> do recurso — os recursos do lote
-              têm quantidades diferentes, e um número fixo seria demais para um e
-              de menos para outro. Para pôr um número, escolha o recurso um a um.
-            </p>
-            <p style={{ margin: '6px 0 0' }}>
-              Estreite antes por CC, CT ou patrimônio: o alcance do lote é o
-              filtro de cima, e ele está listado abaixo da matriz.
-            </p>
-          </div>
-        )}
 
         {!emLote && qtRecurso > 1 && (
           <div className="aviso" style={{ marginBottom: 14 }}>
