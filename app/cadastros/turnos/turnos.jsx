@@ -13,7 +13,17 @@ export default function Turnos({ lista, plantas, selecionado }) {
   const router = useRouter();
   const params = useSearchParams();
 
-  const [novo, setNovo] = useState({ codigo: '', nome: '', planta_id: plantas[0]?.id ?? '' });
+  // O padrão é a planta com MAIS ÁREAS, e não a primeira da lista. A lista sai
+  // ordenada por nome, e "Ibirama" vem antes de "Matriz" — foi assim que nasceu
+  // um "2º Turno" de Ibirama que 65 recursos da Matriz acabaram usando. O
+  // padrão certo é aquele em que a pessoa quase sempre está.
+  const [novo, setNovo] = useState({
+    codigo: '',
+    nome: '',
+    planta_id: [...plantas].sort(
+      (a, b) => Number(b.areas ?? 0) - Number(a.areas ?? 0),
+    )[0]?.id ?? '',
+  });
   const [editando, setEditando] = useState(null);
   const [rascunho, setRascunho] = useState({ codigo: '', nome: '' });
   const [confirmando, setConfirmando] = useState(null);
@@ -125,6 +135,10 @@ export default function Turnos({ lista, plantas, selecionado }) {
           <tr>
             <th style={{ width: 90 }}>Código</th>
             <th>Descrição</th>
+            {/* A PLANTA À VISTA. Sem esta coluna, dois "2º Turno" de plantas
+                diferentes são a mesma linha para quem olha — e o código é único
+                POR PLANTA justamente para que possam coexistir. */}
+            <th style={{ width: 140 }}>Planta</th>
             <th />
           </tr>
         </thead>
@@ -154,6 +168,7 @@ export default function Turnos({ lista, plantas, selecionado }) {
                         onChange={(e) => setRascunho({ ...rascunho, nome: e.target.value })}
                       />
                     </td>
+                    <td className="muted">{t.planta}</td>
                     <td className="acoes">
                       <button className="btn btn-primario btn-mini" disabled={ocupado}
                               onClick={() => salvarNome(t.id)}>
@@ -179,6 +194,7 @@ export default function Turnos({ lista, plantas, selecionado }) {
                         <span className="selo rodizio" style={{ marginLeft: 8 }}>editando</span>
                       )}
                     </td>
+                    <td className="muted">{t.planta}</td>
                     <td className="acoes">
                       {confirmando === t.id ? (
                         <>

@@ -405,6 +405,22 @@ mix mostra o nome do recurso ao lado do CT.
 Em **Turnos do recurso**, a máquina agora se acha por CC, CT e Patrimônio em
 seletores separados, que estreitam a lista de Código/Recurso em cascata.
 
+### O turno é por planta, e a tela escondia isso
+
+`turno` tem `planta_id` e `unique (planta_id, codigo)` — o código é único POR
+PLANTA, e é justamente essa regra que permite dois "2" coexistirem. A tela de
+turnos, porém, **não mostrava a coluna Planta**: dois "2º Turno" eram a mesma
+linha para quem olhava.
+
+E o formulário de criar nascia com a **primeira planta da lista**, que sai
+ordenada por nome — "Ibirama" antes de "Matriz". Ibirama tem 1 área e **zero
+recursos**; a Matriz tem 4 áreas e 251. Foi assim que nasceu um 2º Turno de
+Ibirama, e — porque a tela de Turnos do recurso também não filtrava por planta —
+65 recursos da Matriz acabaram cadastrados nele.
+
+Agora a coluna Planta aparece na lista, e o padrão do formulário é a planta com
+mais áreas: aquela em que a pessoa quase sempre está.
+
 ### Apagar um turno de vez
 
 O botão "Excluir" existia só para turno ativo, e turno desativado ficava para
