@@ -1138,6 +1138,27 @@ caixa, subir viraria escrever por cima do texto.
 encostado na esquerda deixa o rótulo pendurado num canto, e os dois cartões
 param de parecer um par — que é o que eles são.
 
+**O cartão do gráfico ocupa a largura inteira da área.** Ele começava alinhado
+com a calha do grupo, para a borda cair sobre a borda dos blocos — e o
+resultado era um cartão encolhido no meio de um slide vazio. O gráfico é a
+resposta da página e a tabela é a explicação; quem manda no tamanho é ele. O
+alinhamento que importa continua de pé, e nunca foi o da borda: é o das
+COLUNAS, e ele vem da calha compartilhada.
+
+**O casamento por rótulo, que faltava e falhava calado.** `retanguloDoCampo`
+nasceu procurando só por `<p:ph type="subTitle">`, e o modelo em uso é montado
+à mão: não tem espaço reservado nenhum, tem uma caixa onde alguém escreveu
+"Subtítulo". A função devolvia nulo, a pílula não subia, o desenho não crescia
+— e nada acusava o porquê, porque nulo é uma resposta legítima ali. Agora casa
+por tipo E por rótulo, igual a `preencheCampo`, que sempre casou dos dois
+jeitos. Três testes guardam isso.
+
+**As formas levam nome** — `CT area do grafico`, `CT pilula do periodo`,
+`CT bloco 1 cálculo`. O nome aparece no Painel de Seleção do PowerPoint, e é
+por ele que dá para achar a forma certa para arrastar e depois LER de volta
+onde ela parou. Sem nome, o painel lista "Retângulo 47" trinta vezes, e ajustar
+o leiaute vira adivinhação em código.
+
 **Os dois blocos ganharam respiro entre si.** Cálculo e cadastro são duas
 tabelas, e coladas leem como uma só de onze linhas. A tinta e a chave já diziam
 que eram duas; espaço é o que o olho entende antes de ler qualquer rótulo. A
