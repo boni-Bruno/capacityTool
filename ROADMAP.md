@@ -1178,6 +1178,17 @@ por quê — útil para não redecidir, mas já construído.
 
 ### Limpeza de schema
 
+- **`capacidade_instalada_dia` não precisa ser grão dia.** A instalada é
+  `1440 × qt × equivalência`, um número que só muda quando o parâmetro muda — e
+  está guardado uma vez por recurso **por dia**, 731 mil linhas e 106 MB. Dois
+  terços disso (72 MB, 491.792 linhas) são de rodadas que não têm um único
+  registro de cálculo: anos onde nenhum recurso tem turno, em que o teto existe
+  e a planejada é zero. Grão mês, ou derivar na leitura, devolveria quase 100 MB.
+  É o maior desperdício conhecido do banco, e foi ele que estourou o limite do
+  Neon em 03/09/2026.
+- **O memorial pesa 191 MB, 40% do banco**, para um drill-down consultado um
+  recurso e um dia por vez. A `descricao` de cada etapa é texto gravado que
+  poderia ser remontado na leitura a partir de `etapa` e `origem_tabela`.
 - **Apagar `produto`, `recurso_taxa` e `recurso_taxa.min_setup`.** A base de
   demanda tornou o cadastro de taxa desnecessário, e as três estão no banco
   prometendo uma coisa que não acontece. Vale uma migração.
