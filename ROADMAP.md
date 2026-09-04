@@ -1218,6 +1218,36 @@ que eram duas; espaço é o que o olho entende antes de ler qualquer rótulo. A
 folga sai do total **antes** de dividir a altura (`faixasDaGrade`) — somada
 depois, a última linha cairia por cima do rodapé com o logotipo.
 
+### A unidade de saída do documento
+
+A extração passou a escolher em que unidade o slide sai: **minutos** (o padrão),
+**metros** ou **UM do material**. É a mesma pergunta que o painel já respondia,
+agora no documento — e a resposta usa o mesmo índice por CT e mês.
+
+**A unidade vai no rótulo da linha, e não só no eixo do gráfico.** A tabela é
+lida sozinha: fotografada, colada num e-mail, projetada de longe. Um "648.000"
+sem unidade é minuto para quem sempre viu minuto e metro para quem pediu metro.
+Ocupação e OEE não levam, porque são porcentagem.
+
+**Paradas sai sempre como "Paradas (minutos)"**, mesmo com o resto do slide em
+metro. Parada é tempo em que a máquina não rodou, e "300 metros de parada" não
+quer dizer nada. O rótulo fixo é o que impede alguém de somar essa linha com a
+de capacidade quando as duas estão em escalas diferentes.
+
+**O OEE é sempre lido em minuto.** Ele é disponível sobre planejada, e as duas
+convertem pelo mesmo índice — a razão não mudaria. Mas num CT sem demanda no
+mês o índice é zero, e zero sobre zero apagaria um OEE que existe.
+
+**A demanda em metro e em UM sai da coluna**, e não do índice: ela é o número
+que veio no plano, e o índice foi calculado a partir dela. Ir pelo índice seria
+desfazer e refazer a mesma divisão, com o arredondamento de brinde. A capacidade
+é que precisa do índice, porque nasce em minuto.
+
+Duas restrições, as mesmas do painel: **sem cenário não há índice**, então metro
+e UM nem aparecem — melhor não oferecer do que oferecer e mostrar zero; e a
+**instalada não converte**, então escolhê-la derruba a unidade de volta para
+minuto em vez de deixar um botão marcado que não vale mais.
+
 ### As cores da ocupação
 
 Um botão **Cores da ocupação** abre um pop-up onde se cadastra faixa por faixa:

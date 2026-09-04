@@ -154,7 +154,10 @@ NN_*.sql           migrações, na ordem em que devem rodar
 ## Conceitos do domínio
 
 - **instalada** = teto físico, 24 h por dia, todo dia. Para recurso do tipo
-  PESSOA ela é a própria planejada: não existe teto de 24 h para gente.
+  PESSOA ela é a própria planejada: não existe teto de 24 h para gente. **Não
+  converte para metro nem UM**, no painel nem na extração: teto de 24 h vezes o
+  índice do mix daria "quantos metros caberiam se a máquina rodasse o ano no
+  ritmo deste mês", que ninguém pediu e parece capacidade.
 - **planejada** = turnos, menos intervalos e paradas.
 - **disponível** = planejada × OEE. Setup já está embutido no OEE. **OEE não
   cadastrado vale 0%**, e por isso **recurso novo nasce com OEE 100%** nas duas

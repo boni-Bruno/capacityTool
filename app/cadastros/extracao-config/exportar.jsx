@@ -9,7 +9,8 @@ import {
   slidesDo, tamanhoDoSlide,
 } from '../../../lib/pptx';
 import {
-  GRANULARIDADES, MEDIDAS, agrupa, fmt as fmtNum, secoesDoGrupo, secoesDoTitulo,
+  GRANULARIDADES, MEDIDAS, UNIDADES_SAIDA, agrupa, fmt as fmtNum,
+  medidaAceitaUnidade, secoesDoGrupo, secoesDoTitulo,
   subtituloDoSlide, tituloDoSlide, visualDoGrupo,
 } from '../../../lib/documento';
 import { areaDoVisual, formasDoVisual } from '../../../lib/slide-visual';
@@ -126,6 +127,7 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
   const [mesDe, setMesDe] = useState(1);
   const [mesAte, setMesAte] = useState(12);
   const [medida, setMedida] = useState('disponivel');
+  const [unidade, setUnidade] = useState('min');
   const [origem, setOrigem] = useState(origemInicial);
   const [cargaId, setCargaId] = useState(cargaCorrente ?? null);
   const [granularidade, setGranularidade] = useState('RESUMO');
@@ -135,6 +137,19 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
 
   const temEscolha = escolha.areas.length > 0;
   const carga = (cargas ?? []).find((c) => c.id === cargaId) ?? null;
+
+  // MESMA REGRA DO PAINEL: sem cenário não há índice, e sem índice metro e UM
+  // sairiam zerados. Melhor não oferecer do que oferecer e mostrar zero.
+  //
+  // E a instalada não converte — é teto de 24 h, e multiplicá-la pelo índice do
+  // mix daria um número que ninguém pediu. Ver `medidaAceitaUnidade`.
+  const unidadesOferecidas = UNIDADES_SAIDA.filter(
+    (u) => u.valor === 'min' || (carga && medidaAceitaUnidade(medida, u.valor)));
+
+  // Trocar a medida para instalada, ou tirar o cenário, derruba a unidade de
+  // volta para minuto em vez de deixar um botão marcado que não vale mais.
+  const unidadeValida = unidadesOferecidas.some((u) => u.valor === unidade)
+    ? unidade : 'min';
 
   // Invertido vira intervalo válido em vez de intervalo vazio: quem escolheu
   // "de dezembro a março" quis março a dezembro, e uma tabela vazia sem
@@ -227,7 +242,7 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
     };
     const visual = visualDoGrupo({
       grupo, granularidade, serie: j.serie, turnos: j.turnos,
-      medida, cenario: carga?.cenario ?? null,
+      medida, unidade: unidadeValida, cenario: carga?.cenario ?? null,
       de: opcoes.de, ate: opcoes.ate, origem, faixas,
       turnosCadastrados: j.cadastrados,
     });
@@ -443,6 +458,19 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
             { valor: 'META', rotulo: 'OEE meta' },
             { valor: 'SIMULADO', rotulo: 'OEE simulado' },
           ]} />
+        </div>
+
+        <div className="linha-opcao">
+          <span className="rotulo-opcao">Unidade</span>
+          <Grupo valor={unidadeValida} onEscolhe={setUnidade}
+                 opcoes={unidadesOferecidas.map(
+                   (u) => ({ valor: u.valor, rotulo: u.botao, dica: u.dica }))} />
+          <span className="muted">
+            {unidadeValida === 'min'
+              ? 'capacidade e demanda em minutos; parada é sempre minuto'
+              : `capacidade e demanda convertidas pelo índice do cenário; `
+                + 'parada continua em minutos'}
+          </span>
         </div>
 
         <div className="linha-opcao">
