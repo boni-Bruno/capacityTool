@@ -1159,6 +1159,23 @@ por ele que dá para achar a forma certa para arrastar e depois LER de volta
 onde ela parou. Sem nome, o painel lista "Retângulo 47" trinta vezes, e ajustar
 o leiaute vira adivinhação em código.
 
+**A largura da tabela vem da RÉGUA, e não da caixa marcada.** O Bruno pediu de
+−13 cm a +16 cm na régua do PowerPoint; a régua é centrada, e num slide de
+33,87 cm o zero está em 16,93 — de modo que é de 3,93 cm a 32,93 cm da borda
+esquerda. São duas perguntas diferentes com duas respostas: a **caixa marcada**
+diz onde o modelo deixou espaço livre, e dela saem o topo e a esquerda; a
+**largura da tabela** é decisão de quem projeta o slide na parede. A calha do
+grupo deixou de ser estimada por proporção e passou a ser medida, porque é ela
+que faz a primeira coluna cair onde foi pedido. Nunca encolhe abaixo da caixa:
+se a régua pedisse menos, quem estaria errado é o desenho.
+
+**A capacidade perdeu a linha e ficou só a área.** As duas diziam a mesma coisa
+— o contorno é a borda do preenchimento —, e o traço grosso disputava atenção
+com as barras, que são a outra série. A chave da legenda virou bloco junto: uma
+chave em forma de linha representaria um traço que não existe mais. O tom dela é
+mais forte que o da área porque num quadrado de três milímetros os 20% do
+gráfico somem no branco.
+
 **Os dois blocos ganharam respiro entre si.** Cálculo e cadastro são duas
 tabelas, e coladas leem como uma só de onze linhas. A tinta e a chave já diziam
 que eram duas; espaço é o que o olho entende antes de ler qualquer rótulo. A
