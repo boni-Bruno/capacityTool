@@ -1248,6 +1248,16 @@ e UM nem aparecem — melhor não oferecer do que oferecer e mostrar zero; e a
 **instalada não converte**, então escolhê-la derruba a unidade de volta para
 minuto em vez de deixar um botão marcado que não vale mais.
 
+**A UM sai como `UM*`, e o asterisco tem nota no pé do slide**: *"Unidade de
+Medida padrão do material conforme Ficha Técnica."* O nome por extenso dentro do
+rótulo não caberia na coluna, e repetido em duas linhas viraria parede de texto
+— a definição sai uma vez só. A nota mora **abaixo da área do desenho**, na
+fatia de cima da margem que `MARGEM_INFERIOR` reserva para o rodapé do modelo:
+a grade termina exatamente onde a área termina, e roubar altura dela mudaria a
+altura de todas as linhas de um leiaute que já está fechado. Sem nota, o slide
+sai idêntico ao de antes — há teste comparando os dois XML caractere a
+caractere.
+
 ### As cores da ocupação
 
 Um botão **Cores da ocupação** abre um pop-up onde se cadastra faixa por faixa:
