@@ -1191,6 +1191,27 @@ escolhido de antemão (`corpoQueCabe`); e a **altura do título segue o número 
 linhas** em vez de ser fixa em 0,22 — era isso que deixava a descrição entrar
 por cima. Dois testes guardam as duas metades.
 
+**O leiaute foi fechado pelo arquivo, e não por print.** O Bruno abriu o
+`configuracoes_2027.pptx` gerado, ajustou o que faltava no PowerPoint e
+devolveu o arquivo. Lendo a geometria de volta, os ajustes dele foram quatro, e
+todos na calha da esquerda: os dois cartões de grupo e os dois títulos
+esticados **só pela borda esquerda** — de 0,667" para 0,297" —, com a direita
+intacta; e as duas frases reescritas. As quatro formas nomeadas (pílula,
+gráfico, bloco 1, bloco 2) já batiam ao milímetro, o que confirmou que o resto
+do desenho estava certo.
+
+Daí saiu `CARTAO_DE`, irmã de `DADOS_DE` e `DADOS_ATE`: os cartões do grupo
+começam **antes** da caixa marcada, porque o modelo reserva dali para a frente
+e o cartão mora fora dessa reserva. O cartão passou a esticar pela esquerda
+mantendo a direita presa na chave — o contrário moveria a chave e desalinharia
+o abraço das linhas. E a margem de baixo da frase caiu de 0,14 para 0,05: era
+ela que engolia a descrição do bloco de três linhas, que precisa de 0,18 e
+tinha 0,10.
+
+Um teste guarda a geometria inteira contra os números medidos do arquivo dele.
+É o contrato: mexeu numa constante do leiaute, aparece ali — e não projetado
+numa reunião.
+
 **Os dois blocos ganharam respiro entre si.** Cálculo e cadastro são duas
 tabelas, e coladas leem como uma só de onze linhas. A tinta e a chave já diziam
 que eram duas; espaço é o que o olho entende antes de ler qualquer rótulo. A
