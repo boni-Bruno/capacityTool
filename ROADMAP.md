@@ -1176,6 +1176,21 @@ chave em forma de linha representaria um traço que não existe mais. O tom dela
 mais forte que o da área porque num quadrado de três milímetros os 20% do
 gráfico somem no branco.
 
+**Cartão estreito não encolhe texto, ele o derrama** — a mesma armadilha, pela
+segunda vez. Quando a calha do grupo passou a ser medida pela régua, ela caiu
+para 0,85 polegada; a chave (0,12) e a folga (0,26) fixas comiam 0,38, o recuo
+comia mais 0,22, e sobravam **0,25 para escrever "CADASTROS", que precisa de
+0,58 no menor corpo legível**. O PowerPoint não avisa: quebra a palavra e
+escreve por cima do que vier embaixo. Saiu "CAD ASTR OS" com a descrição
+atravessada.
+
+O conserto tem três partes, e nenhuma é um número novo chutado: chave e folga
+**encolhem junto com a calha** (o acessório cede espaço ao conteúdo, não o
+contrário); o **corpo do rótulo sai da largura que sobrou** em vez de ser
+escolhido de antemão (`corpoQueCabe`); e a **altura do título segue o número de
+linhas** em vez de ser fixa em 0,22 — era isso que deixava a descrição entrar
+por cima. Dois testes guardam as duas metades.
+
 **Os dois blocos ganharam respiro entre si.** Cálculo e cadastro são duas
 tabelas, e coladas leem como uma só de onze linhas. A tinta e a chave já diziam
 que eram duas; espaço é o que o olho entende antes de ler qualquer rótulo. A
