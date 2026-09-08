@@ -928,11 +928,65 @@ destes?", e responder do mesmo jeito dispensa aprender cada uma:
 
 | escolha | opções |
 |---|---|
-| **Slides** | um slide só (resumo) · um por CC · um por CT |
+| **Slides** | um slide só (resumo) · um por CC · um por CT · **aberto por CT + consolidações** |
 | **Ano** | os anos com rodada, mais a janela em volta do corrente |
 | **Período** | de mês a mês, dentro do ano |
 | **Capacidade** | disponível · planejada · instalada, e OEE meta ou simulado |
+| **Unidade** | minutos · metros · UM |
 | **Demanda** | um cenário de carga, ou nenhum |
+
+### "Aberto por CT + consolidações": a apresentação inteira de uma vez
+
+As três primeiras opções são um NÍVEL só. Esta é a **apresentação**: a planta,
+cada área, e então, para cada centro de custo, o consolidado dele seguido dos
+CTs que o compõem — e o próximo CC só depois de fechados os CTs do anterior.
+
+**Consolidado antes da abertura**, que é o pedido e é a ordem que funciona na
+sala: quem assiste vê o número do CC e só então de onde ele veio. O contrário
+obriga a somar de cabeça enquanto os slides passam.
+
+O que faz isso funcionar sem o resto do código saber de nada é que **cada grupo
+carrega a própria granularidade**. Antes a tela dizia o nível e valia para todos
+os slides; agora quem monta cada slide pergunta ao grupo em que nível ele está.
+Sem isso, todos filtrariam a série pela mesma chave e sairiam quarenta slides
+com o número da planta inteira — e nenhum erro para denunciar, porque o número
+existe.
+
+O **RESUMO fica de fora** da sequência: num recorte de uma planta e uma área ele
+repetiria os mesmos números um terceiro slide seguido, e três slides idênticos
+em sequência fazem quem assiste achar que a apresentação travou. E **planta e
+área não herdam o CC do primeiro da lista** — "CC 163" no subtítulo de um slide
+que soma a fábrica inteira é legenda mentindo num documento apresentado.
+
+### A capa deixa de abrir escrita "Título"
+
+O modelo traz um slide de abertura com a palavra "Título" esperando alguém, e
+ele saía assim no documento entregue. Agora recebe **"S&OP" e "CAPACITY TOOL"**,
+em duas linhas.
+
+A quebra é um `<a:br/>` entre dois runs, e não um caractere: dentro de `<a:t>` a
+nova linha vira **espaço** ao desenhar, e o título sairia numa linha só sem erro
+nenhum para denunciar. Os dois runs repetem as mesmas propriedades de fonte,
+copiadas do que já estava lá — senão a segunda linha herda o padrão do leiaute e
+o título sai meio negrito, meio não.
+
+A capa é achada por **busca**, e não pelo número do slide: "slide 2" é verdade
+neste modelo e mentira no próximo, e um modelo reordenado escreveria "S&OP" no
+lugar errado sem avisar. A regra é *o primeiro slide com campo de título que não
+é o do conteúdo*.
+
+### A ocupação diz em que faixa o ano fechou
+
+O rótulo da linha passou a nomear a faixa em que o **consolidado do ano** caiu:
+"Ocupação (ideal)", "Ocupação (estourado)", "Ocupação (ociosidade)". A cor já
+dizia isso mês a mês, mas **a legenda das cores não está no slide** — quem
+assiste teria que lembrar que verde é bom e amarelo é apertado. Escrito, o
+rótulo responde sozinho a pergunta que a apresentação inteira existe para
+responder.
+
+Do ANO e não do mês: doze faixas no rótulo não caberiam, e o mês continua
+colorido para quem quiser o detalhe. Sem faixa cadastrada que cubra o valor, o
+rótulo fica seco — parêntese vazio é pior que parêntese nenhum.
 
 **Um slide por grupo exige CLONAR o slide da marca**, e clonar um slide do .pptx
 é mais do que copiar o `.xml`: ele é citado em quatro lugares — o tipo da parte,

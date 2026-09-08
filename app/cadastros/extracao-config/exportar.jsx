@@ -9,7 +9,7 @@ import {
   slidesDo, tamanhoDoSlide,
 } from '../../../lib/pptx';
 import {
-  GRANULARIDADES, MEDIDAS, UNIDADES_SAIDA, agrupa, fmt as fmtNum,
+  GRANULARIDADES, MEDIDAS, TITULO_CAPA, UNIDADES_SAIDA, agrupa, fmt as fmtNum,
   medidaAceitaUnidade, secoesDoGrupo, secoesDoTitulo,
   subtituloDoSlide, tituloDoSlide, visualDoGrupo,
 } from '../../../lib/documento';
@@ -240,8 +240,13 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
       de: j.de ?? de, ate: j.ate ?? ate, medida, origem,
       cenario: carga?.cenario ?? null,
     };
+    // A GRANULARIDADE É DO GRUPO, e não da tela. Em "aberto por CT" cada slide
+    // está num nível diferente — planta, área, CC, CT —, e é o grupo que sabe
+    // em qual. Passar a da tela faria todos filtrarem a série pela mesma
+    // chave, e sairiam quarenta slides com o número da planta inteira.
     const visual = visualDoGrupo({
-      grupo, granularidade, serie: j.serie, turnos: j.turnos,
+      grupo, granularidade: grupo.granularidade, serie: j.serie,
+      turnos: j.turnos,
       medida, unidade: unidadeValida, cenario: carga?.cenario ?? null,
       de: opcoes.de, ate: opcoes.ate, origem, faixas,
       turnosCadastrados: j.cadastrados,
@@ -285,6 +290,18 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
       // para dentro dela e o desenho cede a faixa de cima.
       const temTitulo = preencheCampo(texto(dentro.get(alvos[0])), 'titulo', 'x')
         .trocou;
+
+      // A CAPA: o primeiro slide com campo de título que NÃO é o do conteúdo.
+      // Achado por busca e não por número, porque "slide 2" é verdade neste
+      // modelo e mentira no próximo — e um modelo reordenado escreveria
+      // "S&OP" no lugar errado sem avisar.
+      const capa = slidesDo(dentro).find(
+        (n) => !alvos.includes(n)
+          && preencheCampo(texto(dentro.get(n)), 'titulo', 'x').trocou);
+      if (capa) {
+        dentro.set(capa, new TextEncoder().encode(
+          preencheCampo(texto(dentro.get(capa)), 'titulo', TITULO_CAPA).xml));
+      }
 
       // A área sai da própria caixa da marca, lida ANTES de o texto entrar:
       // depois de preenchida, a marca já não está lá para ser achada. Todas as
