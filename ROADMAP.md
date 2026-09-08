@@ -988,6 +988,21 @@ Do ANO e não do mês: doze faixas no rótulo não caberiam, e o mês continua
 colorido para quem quiser o detalhe. Sem faixa cadastrada que cubra o valor, o
 rótulo fica seco — parêntese vazio é pior que parêntese nenhum.
 
+**E a calha do rótulo cresceu por causa disso**, de 1,15 para 1,38 polegada. Os
+rótulos ganharam a unidade e a faixa entre parênteses, e passaram a não caber:
+"Ocupação (ociosidade)" pede 1,13 a 7,5pt e a caixa tinha 0,95 — o texto
+quebrava em duas linhas dentro de uma faixa de 0,17 e saía por cima da linha
+seguinte. "Capacidade (minutos)" quebrava junto.
+
+Alargar resolve o caso de hoje; duas redes resolvem o de amanhã, porque uma
+faixa aceita **quarenta caracteres** de nome no cadastro e isso não cabe em
+calha nenhuma. O **corpo do rótulo sai do maior deles** e vale para a coluna
+inteira — nunca maior que os 7,5pt do desenho, só menor quando precisa, e igual
+em todas as linhas porque um rótulo menor que os outros no meio da tabela
+parece defeito. E o que não couber nem no piso de 5,5pt é **cortado com
+reticências**: entre derramar por cima da linha de baixo e cortar, o corte é o
+único que ainda deixa o slide legível.
+
 **Um slide por grupo exige CLONAR o slide da marca**, e clonar um slide do .pptx
 é mais do que copiar o `.xml`: ele é citado em quatro lugares — o tipo da parte,
 os relacionamentos da apresentação, a ordem dos slides e o `_rels` do próprio
