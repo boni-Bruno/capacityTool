@@ -66,9 +66,20 @@ O resumo do que vale saber daqui:
   no Hub seria uma revogação apenas teórica. Quem entra pela senha continua com
   os 30 dias.
 - Existe também um `cap_usuario`, assinado, que **não autentica** — carrega nome,
-  e-mail e papel. Hoje só serviria para a tela dizer quem está usando; é o degrau
+  e-mail e id. Hoje só serviria para a tela dizer quem está usando; é o degrau
   que permite auditoria por pessoa mais adiante sem migrar nenhuma tabela do
   domínio.
+- **O Hub não manda papel.** Ele responde uma pergunta só: esta pessoa pode abrir
+  esta ferramenta? O papel de quem entra — leitor, editor, quem pode recalcular —
+  é assunto **desta** ferramenta, e sai do banco daqui. Vocabulário de papel muda
+  no ritmo de cada ferramenta, e mantê-lo no Hub obrigaria quem administra o portal
+  a saber o que "editor" significa em cada uma delas.
+
+  **E isso ainda não existe aqui.** A Capacity Tool não tem autorização por pessoa
+  nenhuma: `cap_sessao` é o mesmo valor para todo mundo, e quem entra pode tudo.
+  Fica registrado para não passar por feito — a mudança no Hub não regrediu nada,
+  porque o papel que ele mandava nunca foi lido, mas o outro lado da promessa
+  continua por construir.
 - **`SSO_SEGREDO` vale tanto quanto `APP_SENHA`.** Quem tem um dos dois entra.
   Não há como fazer SSO sem essa equivalência; o que dá para fazer, e foi feito, é
   o token durar 90 s, valer uma vez e o segredo ser específico desta ferramenta —

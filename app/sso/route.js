@@ -100,9 +100,15 @@ export async function POST(req) {
     });
 
     // Cookie separado que NAO autentica: quem decide acesso continua sendo o
-    // cap_sessao. Este so carimba quem e a pessoa, para a tela poder dizer o nome
+    // cap_sessao. Este so carimba QUEM e a pessoa, para a tela poder dizer o nome
     // dela e, mais adiante, para a auditoria por pessoa nascer sem migrar o
     // schema do dominio.
+    //
+    // Ele nao carrega papel. O Hub responde uma pergunta so — esta pessoa pode
+    // abrir esta ferramenta? — e o papel DENTRO da Capacidade, quando existir, sai
+    // do banco daqui e nao de um token assinado la fora. Papel vindo de fora seria
+    // um vocabulario que o Hub teria de conhecer e manter sincronizado com cada
+    // ferramenta, e nenhuma tela chegou a ler o valor que ele mandava.
     const agora = Math.floor(Date.now() / 1000);
     res.cookies.set('cap_usuario', await assina({
       iss: EMISSOR,
@@ -110,7 +116,6 @@ export async function POST(req) {
       sub: r.claims.sub,
       email: r.claims.email,
       nome: r.claims.nome,
-      papel: r.claims.papel ?? 'USUARIO',
       jti: r.claims.jti,
       iat: agora,
       exp: agora + VIDA_COOKIE,
