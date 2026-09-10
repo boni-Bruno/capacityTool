@@ -1492,6 +1492,20 @@ Agora moram em `memoria/`, versionadas, e o índice local só aponta para lá.
 Fonte única: a regra fica no CLAUDE.md e não se repete na pasta — repetida, as
 duas versões divergem e ninguém sabe qual vale.
 
+**E as permissões do assistente ganharam o arquivo do projeto.** O Claude Code
+tem dois: `.claude/settings.json`, versionado e válido para quem clona, e
+`.claude/settings.local.json`, pessoal e fora do git. Só o segundo existia, com
+163 regras — e ele não podia virar o primeiro: **80 eram caminhos de scripts
+descartáveis de uma única sessão**, inúteis até na sessão seguinte da mesma
+máquina, e boa parte do resto era aprovação pontual casando com um comando
+exato. Sobraram 18 que são regra de verdade, e elas agora vêm no clone.
+
+Ficaram de fora `git checkout`, `git push` e `git rm`: auto-aprovar um checkout
+que descarta trabalho não commitado é decisão de cada um, e num arquivo
+versionado ela seria tomada por todo mundo de uma vez — por quem clonasse sem
+ler. As duas regras do conector Neon também ficam no pessoal, porque carregam o
+id da instalação.
+
 ---
 
 ## O QUE FALTA

@@ -1,0 +1,45 @@
+{
+  "$comentario": [
+    "PERMISSÕES DO PROJETO — versionadas, valem para quem clonar o repositório.",
+    "",
+    "Ao lado deste arquivo mora o settings.local.json, que é PESSOAL e fica fora",
+    "do git. A divisão é do próprio Claude Code, e a linha entre os dois é:",
+    "aqui entra o que é verdade sobre o PROJETO em qualquer máquina; lá fica o",
+    "que é da instalação — id de conector, caminho de pasta, aprovação avulsa.",
+    "",
+    "Este arquivo nasceu em 10/09/2026, mudando o projeto de computador. As 163",
+    "regras que existiam no arquivo pessoal não podiam viajar: 80 eram caminhos",
+    "de scripts descartáveis de uma única sessão, e a maioria do resto era",
+    "aprovação pontual casando com um comando exato. Sobraram estas.",
+    "",
+    "O QUE NÃO ENTROU, e por quê: git checkout, git push e git rm. Auto-aprovar",
+    "um checkout que descarta trabalho não commitado, ou um push, é decisão de",
+    "cada um — e num arquivo versionado ela seria tomada por todo mundo de uma",
+    "vez, por quem clonasse sem ler. Quem quiser, põe no próprio local.",
+    "",
+    "Nada aqui instala ou executa a aplicação: é a regra 1 do CLAUDE.md. As de",
+    "npm são só leitura de versão e teste."
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(node --check *)",
+      "Bash(node --test lib/)",
+      "Bash(node --test lib/*.test.js)",
+      "Bash(node -e ' *)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(python -)",
+      "Bash(python -c ' *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git ls-tree *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git mv *)",
+      "Bash(npm -v)",
+      "Bash(npm test *)",
+      "Bash(npm audit *)"
+    ]
+  }
+}
