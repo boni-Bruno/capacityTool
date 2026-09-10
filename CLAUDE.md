@@ -1,7 +1,3 @@
-<!-- TESTE DE SINCRONIA — 10/09/2026, feito a pedido do Bruno para conferir se
-     o computador novo puxa do origin. Estas quatro linhas SAEM assim que ele
-     confirmar; se você está lendo isto e a confirmação já veio, apague. -->
-
 # capacityTool — como trabalhar neste projeto
 
 Ferramenta de planejamento de capacidade fabril, substituindo uma solução em
@@ -60,8 +56,17 @@ CONCEITO do domínio ou a estrutura de pastas. Não é changelog: se cada tela n
 acrescentasse um parágrafo aqui, o arquivo deixaria de ser lido de uma sentada —
 e um acordo de trabalho que ninguém lê não governa nada.
 
+**memoria/ — o PORQUÊ.** Como cada regra daqui nasceu: o dia, o erro, o que
+custou. Este arquivo diz que as regras "já foram aprendidas do jeito caro pelo
+menos uma vez"; a pasta conta como. Regra sem motivo é a primeira coisa que
+alguém revoga achando que está simplificando.
+
+A regra fica aqui e **não se repete lá** — repetida, as duas versões divergem e
+ninguém sabe qual vale. Ver `memoria/README.md`.
+
 Na prática: tela nova vai só para o ROADMAP; convenção nova, motor puro novo ou
-regra de trabalho nova vem para os dois.
+regra de trabalho nova vem para os dois — e, quando ela nasceu de um erro, a
+história vai para `memoria/` no mesmo commit.
 
 ---
 
@@ -152,6 +157,7 @@ lib/estrutura.js   plantas, áreas, recursos, máquinas
 app/painel/        Painel da Capacidade — "quanto cabe"
 app/ocupacao/      Painel da Ocupação — "cabe?"
 app/cadastros/     todas as telas de cadastro
+memoria/           por que cada regra deste arquivo existe — o erro que a criou
 NN_*.sql           migrações, na ordem em que devem rodar
 ```
 

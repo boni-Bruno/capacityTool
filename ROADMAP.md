@@ -1475,6 +1475,25 @@ catraca do `VACUUM FULL` é estrutural.
 
 ---
 
+## A memória do assistente passou a ser do projeto
+
+As regras de trabalho que este projeto acumulou — não instalar nada local, o
+ROADMAP andar junto do commit, os papéis separados de ROADMAP e CLAUDE.md —
+viviam na memória local do assistente, dentro do perfil do usuário e **fora do
+repositório**. A regra em si já estava no CLAUDE.md; o que não estava em lugar
+nenhum versionado era o **porquê**: a data, o erro que a criou, o que custou.
+
+Em 10/09/2026, mudando o projeto de computador, ficou claro o buraco — o clone
+trazia as regras e deixava para trás o motivo delas. A decisão do Bruno foi
+direta: *"isso é do projeto e não de nós dois"*. Se outra pessoa assumir, ela
+recebe as premissas junto com o código.
+
+Agora moram em `memoria/`, versionadas, e o índice local só aponta para lá.
+Fonte única: a regra fica no CLAUDE.md e não se repete na pasta — repetida, as
+duas versões divergem e ninguém sabe qual vale.
+
+---
+
 ## O QUE FALTA
 
 Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
