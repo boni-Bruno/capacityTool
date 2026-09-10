@@ -1,3 +1,7 @@
+<!-- TESTE DE SINCRONIA — 10/09/2026, feito a pedido do Bruno para conferir se
+     o computador novo puxa do origin. Estas quatro linhas SAEM assim que ele
+     confirmar; se você está lendo isto e a confirmação já veio, apague. -->
+
 # capacityTool — como trabalhar neste projeto
 
 Ferramenta de planejamento de capacidade fabril, substituindo uma solução em
