@@ -50,7 +50,15 @@ export async function GET() {
 
 export async function POST(req) {
   const segredo = process.env.SSO_SEGREDO;
-  if (!segredo) return recusa('O SSO nao esta configurado neste ambiente.');
+  if (!segredo) {
+    // O log aqui existe porque a falta dele ja custou caro uma vez: a primeira
+    // entrada pelo Hub devolveu 401 em silencio, e descobrir o motivo exigiu
+    // deduzir por eliminacao qual dos caminhos de recusa nao registra nada.
+    // Dizer isto no log do servidor nao entrega nada a quem esta do outro lado —
+    // a tela continua mostrando a mesma frase generica.
+    console.error('SSO recusado: SSO_SEGREDO ausente neste ambiente.');
+    return recusa('O SSO nao esta configurado neste ambiente.');
+  }
 
   let bruto = '';
   try {
