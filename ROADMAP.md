@@ -29,6 +29,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Índice guardado, refeito nos gatilhos conhecidos | `22` | `mv_demanda_indice` |
 | Capacidade por dia útil, mês a mês | — | Painel, ao lado dos indicadores |
 | Painel em metro de tecelagem e em UM do material | — | Painel |
+| Entrada vinda do Hub S&OP, sem digitar senha de novo | `34` | `app/sso/route.js` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -48,6 +49,35 @@ minutos, quando ninguém pediu conversão. Materializada, a definição continua
 lugar só e a leitura vira busca por índice. Os gatilhos do refresh são três e
 todos passam por `atualizarIndice()`: concluir carga, apagar carga e mexer nas
 regras de herança.
+
+Sobre a `34`: a entrada vinda do Hub. Ela não substitui nada — `/entrar` e a
+`APP_SENHA` continuam funcionando —, mas passa a existir uma segunda porta. O
+desenho completo está em `app/sso/route.js` e no `SSO.md` do repositório do Hub.
+O resumo do que vale saber daqui:
+
+- O Hub assina um token de **90 segundos**, o navegador o entrega por **POST** em
+  `/sso`, e essa rota emite o **mesmo** `cap_sessao` de sempre. Middleware,
+  `exigeSessao()` e as rotas de escrita não sabem que o Hub existe.
+- O token vale **uma vez só**: o `jti` é queimado na tabela `sso_jti`, aqui e não
+  no Hub — um callback custaria um round-trip dentro do login e faria Hub fora do
+  ar virar ninguém entra na Capacidade.
+- Quem entra pelo Hub recebe cookie de **24 h**, não de 30 dias. O cookie é o
+  mesmo valor para todo mundo e não sabe de quem é: com 30 dias, bloquear alguém
+  no Hub seria uma revogação apenas teórica. Quem entra pela senha continua com
+  os 30 dias.
+- Existe também um `cap_usuario`, assinado, que **não autentica** — carrega nome,
+  e-mail e papel. Hoje só serviria para a tela dizer quem está usando; é o degrau
+  que permite auditoria por pessoa mais adiante sem migrar nenhuma tabela do
+  domínio.
+- **`SSO_SEGREDO` vale tanto quanto `APP_SENHA`.** Quem tem um dos dois entra.
+  Não há como fazer SSO sem essa equivalência; o que dá para fazer, e foi feito, é
+  o token durar 90 s, valer uma vez e o segredo ser específico desta ferramenta —
+  ele não abre nenhuma outra.
+
+O buraco conhecido, e ele é herdado, não criado: **tirar o acesso de alguém no
+Hub não derruba a sessão que essa pessoa já tem aqui.** Ela vale até o cookie
+vencer. Some de vez quando esta ferramenta tiver sessão por usuário — o que hoje
+está fora de escopo.
 
 ---
 

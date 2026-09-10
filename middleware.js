@@ -24,6 +24,10 @@ export async function middleware(req) {
 
 export const config = {
   matcher: [
-    '/((?!entrar|api/entrar|_next/static|_next/image|favicon.ico).*)',
+    // 'sso' fica de fora porque a rota de entrada vinda do Hub S&OP e atingida
+    // sem cookie nenhum — se o porteiro a barrasse, ela nunca teria chance de
+    // conferir o token e emitir o cookie. Ela tem a propria tranca, mais dura que
+    // esta: sem SSO_SEGREDO, recusa; ver app/sso/route.js.
+    '/((?!entrar|api/entrar|sso|_next/static|_next/image|favicon.ico).*)',
   ],
 };
