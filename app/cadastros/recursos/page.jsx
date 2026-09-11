@@ -90,7 +90,7 @@ export default async function Page() {
             // quantas pessoas trabalham é pergunta do turno. O servidor grava
             // 1 e a tela nem pergunta.
             { nome: 'qt_recursos',  rot: 'Qtd',          padrao: '1',
-              oculto: (v) => v.tipo_recurso === 'PESSOA' },
+              ocultoSe: { campo: 'tipo_recurso', valor: 'PESSOA' } },
             { nome: 'equivalencia', rot: 'Equivalência', padrao: '1' },
             // A janela em que a máquina existe. Fora dela o motor não gera
             // linha nenhuma — nem instalada. Vazio dos dois lados é o normal.

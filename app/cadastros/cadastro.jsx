@@ -15,10 +15,15 @@ import { COOKIE, escreveOrdem, leOrdem, ordenar } from '../../lib/ordem';
 // editável em linha porque mudar a planta de uma área move junto tudo que pende
 // dela — é uma operação diferente de corrigir um nome.
 //
-// Campo com `oculto(valores)` some quando outro campo diz que ele não se
-// aplica — a Qtd de um recurso de pessoa, que não tem teto. Some do formulário,
+// Campo com `ocultoSe: { campo, valor }` some quando outro campo tem aquele
+// valor — a Qtd de um recurso de pessoa, que não tem teto. Some do formulário,
 // da edição em linha e da célula da tabela, e não conta como obrigatório; o
 // servidor é quem decide o valor que vai no lugar.
+//
+// DADO, E NÃO FUNÇÃO: a página que monta `campos` é componente de servidor e
+// este aqui é de cliente, e o Next serializa as props na fronteira. Uma função
+// ali derruba a página inteira com "Functions cannot be passed directly to
+// Client Components" — foi assim que a tela de Recursos caiu em 11/09/2026.
 export default function Cadastro({
   rota,
   itens,
@@ -97,7 +102,8 @@ export default function Cadastro({
       }
     });
 
-  const escondido = (c, valores) => Boolean(c.oculto?.(valores));
+  const escondido = (c, valores) => Boolean(c.ocultoSe)
+    && String(valores?.[c.ocultoSe.campo] ?? '') === String(c.ocultoSe.valor);
 
   const podeCriar = camposForm
     .filter((c) => c.obrigatorio !== false && !escondido(c, novo))
