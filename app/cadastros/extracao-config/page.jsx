@@ -51,7 +51,7 @@ export default async function Page({ searchParams }) {
   return (
     <>
       <div className="topo">
-        <h1 className="titulo">Extração das configurações</h1>
+        <h1 className="titulo">Extração das configurações - teste</h1>
       </div>
 
       {!linhas.length ? (

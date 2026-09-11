@@ -103,7 +103,7 @@ const EXTRACAO = [
   },
   {
     href: '/cadastros/extracao-config',
-    titulo: 'Extração das configurações',
+    titulo: 'Extração das configurações - teste',
     texto: 'Como a fábrica está configurada num recorte, e quanta capacidade ' +
            'isso produz. Em .pptx dentro do seu modelo, ou em PDF.',
   },
