@@ -635,7 +635,12 @@ export default async function Page({ searchParams }) {
   const somaBruta = (campo) =>
     dados.reduce((t, x) => t + Number(x.bruto?.[campo] ?? 0), 0);
   const totalDias = dados.reduce((t, x) => t + Number(x.dias ?? 0), 0);
-  const porDia = (campo) =>
+  // NÃO se chama `porDia`: esse nome é a consulta importada de lib/db que o
+  // nível de dia usa lá em cima. Uma const com o mesmo nome aqui esconde a
+  // importada na função inteira — inclusive ANTES desta linha, onde o acesso
+  // dá "Cannot access before initialization" —, e o drill-down por dia caiu
+  // com erro de servidor de 03/09 a 11/09 sem que o mês a mês sentisse nada.
+  const porDiaUtilDe = (campo) =>
     (totalDias > 0 ? somaBruta(campo) / totalDias : 0);
   // Em unidade física o gráfico já traz metros; para dizer "de X h de
   // capacidade" ainda é preciso o tempo, então ele vem da tabela por recurso,
@@ -647,9 +652,9 @@ export default async function Page({ searchParams }) {
   const semIndice = visiveis.filter((r) => !r.tem_demanda);
   const tot = porDiaUtil
     ? {
-        instalada: mostrarInstalada ? porDia('instalada') : teto,
-        planejada: porDia('planejada'),
-        disponivel: porDia('disponivel'),
+        instalada: mostrarInstalada ? porDiaUtilDe('instalada') : teto,
+        planejada: porDiaUtilDe('planejada'),
+        disponivel: porDiaUtilDe('disponivel'),
       }
     : {
         instalada: mostrarInstalada ? soma('instalada') : teto,
@@ -662,8 +667,8 @@ export default async function Page({ searchParams }) {
   // diferença, e trocá-las passa despercebido.
   const sufixo = sufixoUnidade(unidade, porDiaUtil);
   const totais = porDiaUtil
-    ? { instalada: porDia('instalada'), planejada: porDia('planejada'),
-        disponivel: porDia('disponivel') }
+    ? { instalada: porDiaUtilDe('instalada'), planejada: porDiaUtilDe('planejada'),
+        disponivel: porDiaUtilDe('disponivel') }
     : null;
 
   const oeeMedio = tot.planejada === 0
