@@ -33,7 +33,7 @@ export default function Definitivo({ itens }) {
       setConfirmando(null);
       setFeito(
         `Recurso apagado. Saíram ${j.fato} linha(s) de cálculo, ` +
-        `${j.instalada} de instalada e ${j.memoria} do memorial.`
+        `${j.instalada} faixa(s) de instalada e ${j.memoria} do memorial.`
       );
       router.refresh();
     } catch (e) {

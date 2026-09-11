@@ -63,7 +63,12 @@ export default function RecalcularTudo({ areas, anos }) {
         // Rodada sem linha não é falha: é área cujos recursos não têm operação
         // ou turno naquele ano. Vai para uma lista à parte, e a tela conta as
         // duas coisas separadas — misturá-las mandaria caçar erro onde não há.
-        if (!j.instalada) vazias.push(passo);
+        //
+        // `instalada` conta faixas desde a migração 35, uma por recurso que
+        // existia no período — continua sendo o sinal de "gerou alguma coisa".
+        // O fato entra na conta por segurança: uma rodada que calculou turno
+        // nunca é vazia, seja qual for a contagem de teto.
+        if (!j.instalada && !j.fato) vazias.push(passo);
       } catch (e) {
         falhas.push({ passo, erro: e.message ?? 'falhou' });
       }

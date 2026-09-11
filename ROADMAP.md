@@ -30,6 +30,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Capacidade por dia útil, mês a mês | — | Painel, ao lado dos indicadores |
 | Painel em metro de tecelagem e em UM do material | — | Painel |
 | Entrada vinda do Hub S&OP, sem digitar senha de novo | `34` | `app/sso/route.js` |
+| Instalada em faixas, dia a dia gerado na leitura | `35` | `capacidade_instalada` · `vw_instalada_dia` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -1467,11 +1468,61 @@ contado), **um lugar só decidindo** (painel, ocupação e extração leem a mes
 divergir) e **estabilidade** (recalcular é um botão de propósito, para o número
 não mudar debaixo de quem está lendo).
 
-**O que ficou de dívida**: a `capacidade_instalada_dia` continua em grão dia,
+**O que ficou de dívida**: a `capacidade_instalada_dia` continuou em grão dia,
 guardando uma linha por recurso por dia para um número que é
-`1440 × qt × equivalência` e só muda quando o parâmetro muda. São ~128 MB. É o
-próximo corte quando o espaço apertar de novo — e ele vai apertar, porque a
-catraca do `VACUUM FULL` é estrutural.
+`1440 × qt × equivalência` e só muda quando o parâmetro muda. Ficou registrado
+como o próximo corte quando o espaço apertasse de novo — e apertou.
+
+### A segunda vez, e a instalada vira faixa (migração 35)
+
+Em 11/09/2026 o Neon recusou de novo, no meio de outro *Recalcular tudo*: o
+Bruno tinha cadastrado uma leva de recursos (308 → 326), e a Tecelagem 2027 —
+162 mil linhas de fato por origem, a maior rodada da fábrica — não coube. Três
+rodadas ficaram com os números de 09/09 ao lado de 45 com os de hoje.
+
+A medida antes do corte: `capacidade_instalada_dia` com **950 mil linhas e
+167 MB para 2.604 pares recurso × rodada**. 58% delas em rodadas sem uma única
+linha de fato (anos sem turno), e META e SIMULADO com cópias idênticas, porque
+o OEE não entra na instalada.
+
+**A instalada passou a ser uma faixa** (`capacidade_instalada`): uma linha por
+rodada, recurso e vigência, com os minutos **por dia** que valem ali. Um recurso
+que não trocou de quantidade no ano é uma linha; 950 mil viram 2,6 mil. Para
+pessoa a faixa existe mas não tem valor — o teto dela é a planejada, que varia
+por dia e já está no fato — e a decisão de quem é pessoa é **gravada na
+rodada**, para o número não mudar se o tipo do recurso mudar depois.
+
+**O dia a dia não se perdeu**, e essa foi a pergunta do Bruno antes de
+autorizar. A view `vw_instalada_dia` devolve a forma antiga — recurso × dia,
+`min_instalada` — expandindo a faixa com `generate_series` e lendo a planejada
+do fato para pessoa. As nove consultas que liam a tabela trocaram o nome e nada
+mais; o valor de um dia nunca dependeu de outro dia, então pedir 17 de março,
+ou 15/03 a 10/04, devolve o mesmo número que a tabela devolvia. Conferido antes
+do drop: soma idêntica nas 48 rodadas, zero dias com valor diferente, e as
+únicas linhas que a view não gera são as 15.030 de pessoa com teto zero em dia
+sem turno — que somavam zero.
+
+Uma view e não a conta de dias em cada consulta porque são nove consultas com
+fatia, filtro de recurso e recorte de datas no meio: nove implementações da
+sobreposição de vigência com intervalo é onde uma erra o dia da ponta e ninguém
+vê.
+
+**Duas coisas que a rodada ensinou:**
+
+- A branch estava em 512,85 MiB medidos pelo Neon — acima do teto — e o
+  `create table` de uma tabela de kilobytes falhou. `Drop index` é a única
+  operação que devolve espaço sem precisar de espaço, e foi por aí que a
+  migração começou: os dois índices `(area_id, data)` saíram antes de tudo (31
+  MB, 20 e 107 leituras na vida do banco; toda consulta filtra `execucao_id`
+  primeiro e a chave primária cobre).
+- Foi a primeira migração em **duas partes**: a tabela nova, a view e o motor
+  antes do deploy; o `drop` da tabela velha depois, para o painel no ar não
+  ficar sem tabela nos minutos entre uma coisa e outra. O ganho de espaço não
+  tem pressa de minutos.
+
+O assistente não pôde rodar os `drop`: o classificador de permissão do Claude
+Code recusou, e a regra do CLAUDE.md valeu — o comando foi entregue ao Bruno
+para o SQL Editor, dito como recusa de permissão e não como escolha.
 
 ---
 
@@ -1521,14 +1572,12 @@ por quê — útil para não redecidir, mas já construído.
 
 ### Limpeza de schema
 
-- **`capacidade_instalada_dia` não precisa ser grão dia.** A instalada é
-  `1440 × qt × equivalência`, um número que só muda quando o parâmetro muda — e
-  está guardado uma vez por recurso **por dia**, 731 mil linhas e 106 MB. Dois
-  terços disso (72 MB, 491.792 linhas) são de rodadas que não têm um único
-  registro de cálculo: anos onde nenhum recurso tem turno, em que o teto existe
-  e a planejada é zero. Grão mês, ou derivar na leitura, devolveria quase 100 MB.
-  É o maior desperdício conhecido do banco, e foi ele que estourou o limite do
-  Neon em 03/09/2026.
+- **O que ainda pesa depois da 35**: `capacidade_fato` com 708 mil linhas e
+  218 MB, 94 deles em índice — a chave primária `(execucao_id, recurso_id,
+  data, turno_id)` sozinha tem 65 MB. É o grão do cálculo e não tem o que
+  colapsar; o que dá para olhar quando apertar de novo é `ix_cf_recurso_data`
+  (15 MB) e as colunas mortas `unidade_medida_id`, `qtd_planejada` e
+  `qtd_disponivel`, que nunca receberam valor.
 - **O memorial saiu** (migração 33) — ver abaixo. Se um dia voltar, a
   `descricao` de cada etapa não precisa ser gravada: dá para remontá-la na
   leitura a partir de `etapa` e `origem_tabela`, e isso sozinho cortava quase

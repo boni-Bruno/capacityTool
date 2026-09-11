@@ -95,7 +95,6 @@ select arquivo,
 --
 --     vacuum full capacidade_memoria;
 --     vacuum full capacidade_fato;
---     vacuum full capacidade_instalada_dia;
 --     vacuum full demanda_linha;
 --     vacuum full modelo_slide;
 --
