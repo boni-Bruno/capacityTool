@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import {
   ultimaExecucao, areas, arraysDeFatia, capacidadePorCtMes, porMes, porDia,
-  porTurnoDoDia, tetoDoDia, porRecurso, memoriaDoDia, anosComRodada,
+  porTurnoDoDia, tetoDoDia, porRecurso, anosComRodada,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
@@ -36,7 +36,6 @@ import { FiltrosTopo, FiltrosRecurso, SeletorAno } from './filtros';
 import TabelaMes from './tabela-mes';
 import TabelaAtributo from './tabela-atributo';
 import FiltroColuna from './filtro-coluna';
-import Memoria from './memoria';
 import Shell from '../shell';
 
 export const dynamic = 'force-dynamic';
@@ -557,7 +556,6 @@ export default async function Page({ searchParams }) {
   // tem quantidade correspondente na demanda para ser convertida.
   let mostrarInstalada = !fisica;
   let teto = null;
-  let memoria = null;
 
   if (periodo.nivel === 'TURNO') {
     // Turno: sem instalada nas barras. Ela é grão dia — repetir o teto em cada
@@ -573,10 +571,6 @@ export default async function Page({ searchParams }) {
     }));
     mostrarInstalada = false;
     teto = tetoDia;
-
-    // O memorial é por recurso: com a área inteira somada, "de quanto para
-    // quanto" não teria sujeito. Só carrega quando há um recurso em foco.
-    if (foco) memoria = await memoriaDoDia(exec.id, foco.id, dataISO);
   } else if (periodo.nivel === 'DIA') {
     const linhas = await porDia(exec.id, areaId, periodo.de, periodo.ate, listaIds,
                                 carga?.id ?? null, faEfetivo);
@@ -964,30 +958,12 @@ export default async function Page({ searchParams }) {
         </p>
       </div>
 
-      {dataISO && (
-        <div className="painel">
-          <div className="painel-topo">
-            <h2>
-              Por que deu esse número
-              {foco && <span className="foco"> · {foco.nome}</span>}
-            </h2>
-            <span className="muted" style={{ fontSize: 12 }}>
-              {foco
-                ? (fisica
-                    ? 'sempre em minutos: o memorial é a cadeia do cálculo, e ela acontece em tempo'
-                    : 'cada linha mostra de quanto para quanto foi, e por quê')
-                : 'escolha um recurso na tabela abaixo para ver o passo a passo'}
-            </span>
-          </div>
-          {foco
-            ? <Memoria linhas={memoria ?? []}
-                       unidade={fisica ? 'min' : unidade} />
-            : <p className="muted">
-                O memorial é por recurso — com a área inteira somada, "de quanto
-                para quanto" não teria sujeito.
-              </p>}
-        </div>
-      )}
+      {/* O bloco "Por que deu esse número" morou aqui até 11/09/2026. Ele lia
+          o memorial do cálculo, que o motor deixou de gravar na migração 33 —
+          e um painel que só sabe dizer "isto não está sendo gravado" ocupa
+          espaço para explicar uma ausência. Saiu a pedido do Bruno. Voltar é
+          restaurar o componente do histórico do git e devolver o insert ao
+          motor; a tabela capacidade_memoria continua no banco, vazia. */}
 
       {fisica && semIndice.length > 0 && (
         <div className="aviso" style={{ marginBottom: '1.5rem' }}>

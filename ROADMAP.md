@@ -679,6 +679,14 @@ ordena por qualquer coluna — a ordem vive na URL, como o resto do painel.
 Filtros de CC e CT entraram ao lado de sub-área e tipo, e valem também para os
 indicadores e o gráfico.
 
+**A instalada é área, atrás das barras** (11/09/2026), no mês a mês e no dia
+a dia — como a capacidade no Painel da Ocupação, e pela mesma razão: ela é um
+teto, vale o período inteiro, e uma superfície contínua é o que se parece com
+isso. Como barra ela era a maior das três em toda coluna e disputava o olho
+com as duas que de fato mudam; como fundo, planejada e disponível passam a ser
+lidas dentro do teto. Mesma cor de antes, para a legenda não mudar de
+significado. No turno a turno ela continua fora do gráfico: é grão dia.
+
 **No painel, o ano subiu** para a caixa de leitura ao lado dos indicadores,
 acima dos botões de unidade — e vem como botões, não lista suspensa: são quatro
 ou cinco anos, e escondê-los atrás de um clique custa mais que a largura. Ele é o recorte mais graúdo que existe — tudo ali
@@ -1458,6 +1466,12 @@ tabela. Com 35 MB livres e a menor tabela em 87 MB, não cabia nenhuma. Só o
 limite inteiro, para explicar um recurso num dia. Nenhum número do painel vem
 dele. É reversível: a tabela ficou, vazia, e devolver o `insert` ao motor mais
 um Recalcular tudo o traz completo, porque ele sempre foi derivado.
+
+Em 11/09/2026 o bloco **"Por que deu esse número"** saiu do painel também, a
+pedido do Bruno: um painel que só sabe dizer "isto não está sendo gravado"
+ocupa espaço para explicar uma ausência. O componente (`app/painel/memoria.jsx`)
+e a consulta (`memoriaDoDia`) estão no histórico do git; a tabela continua no
+banco. Voltar é restaurar os dois e devolver o `insert` ao motor.
 
 **A pergunta que apareceu na hora de decidir, e a resposta certa.** "Se o
 memorial sai, calcular no motor ainda é necessário?" Sim — e o memorial nunca

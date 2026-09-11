@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer,
+  Area, Bar, CartesianGrid, ComposedChart, Legend, ResponsiveContainer,
+  Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
   detalhe, eFisica, emUnidade, formataUnidade, sufixoUnidade, eMinuto,
@@ -19,6 +19,13 @@ import { coresDoTema } from './cores';
 //
 // `mostrarInstalada` é falso no nível de turno: instalada é grão dia, e
 // repeti-la em cada barra de turno era o que inflava o total no Qlik antigo.
+//
+// A INSTALADA É ÁREA, ATRÁS DAS BARRAS — como a capacidade no Painel da
+// Ocupação, e pela mesma razão: ela é um teto, vale o período inteiro, e uma
+// superfície contínua é o que se parece com isso. Como barra ela era a maior
+// das três em toda coluna e disputava o olho com as duas que de fato mudam;
+// como fundo, planejada e disponível passam a ser lidas DENTRO do teto, que é
+// a pergunta do painel — quanto do que existe está sendo usado.
 // `sufixo` chega pronto porque ele pode dizer mais que a unidade: em capacidade
 // por dia útil vira "m/dia útil", e sem isso o gráfico mostraria uma ordem de
 // grandeza a menos com o mesmo rótulo de antes.
@@ -58,7 +65,7 @@ export default function Grafico({
 
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <BarChart
+      <ComposedChart
         data={d}
         // As margens vêm da mesma grade da tabela logo abaixo: é isso que
         // faz janeiro cair embaixo de janeiro. Ver ./grade.js.
@@ -92,12 +99,19 @@ export default function Grafico({
           contentStyle={{ fontSize: 13, borderRadius: 8, background: cor.caixa,
                           border: `1px solid ${cor.borda}` }} />
         <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+        {/* A área vem ANTES das barras: o recharts desenha na ordem dos
+            filhos, e depois delas ela cobriria justamente o que se quer ler
+            dentro dela. A mesma cor de quando era barra, para quem já conhece
+            o painel não ter que reaprender a legenda. */}
         {mostrarInstalada && (
-          <Bar dataKey="Instalada" fill="#c9c7c0" radius={[3, 3, 0, 0]} />
+          <Area type="monotone" dataKey="Instalada"
+                stroke="#c9c7c0" strokeWidth={2}
+                fill="#c9c7c0" fillOpacity={0.22}
+                dot={{ r: 3, fill: '#c9c7c0' }} activeDot={{ r: 5 }} />
         )}
         <Bar dataKey="Planejada"  fill="#2a78d6" radius={[3, 3, 0, 0]} />
         <Bar dataKey="Disponível" fill="#1baf7a" radius={[3, 3, 0, 0]} />
-      </BarChart>
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }
