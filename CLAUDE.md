@@ -169,6 +169,10 @@ NN_*.sql           migrações, na ordem em que devem rodar
   converte para metro nem UM**, no painel nem na extração: teto de 24 h vezes o
   índice do mix daria "quantos metros caberiam se a máquina rodasse o ano no
   ritmo deste mês", que ninguém pediu e parece capacidade.
+- **Qtd do recurso é de MÁQUINA**: quantas iguais existem — o teto. **Pessoa
+  não tem Qtd** (fica 1 no banco, a tela não pergunta): quantas pessoas
+  trabalham é um número **por turno**, na matriz de Turnos do recurso, sem
+  teto e sempre explícito. Máquina e pessoa nunca dividem a mesma matriz.
 - **planejada** = turnos, menos intervalos e paradas.
 - **disponível** = planejada × OEE. Setup já está embutido no OEE. **OEE não
   cadastrado vale 0%**, e por isso **recurso novo nasce com OEE 100%** nas duas

@@ -86,7 +86,11 @@ export default async function Page() {
             { nome: 'ct',         rot: 'CT',         placeholder: 'centro de trabalho' },
             { nome: 'patrimonio', rot: 'Patrimônio', placeholder: 'nº do bem' },
             // Entram direto na fórmula: instalada = 1440 x qt x equivalência.
-            { nome: 'qt_recursos',  rot: 'Qtd',          padrao: '1' },
+            // Pessoa não tem Qtd (migração 36): não há teto de gente, e
+            // quantas pessoas trabalham é pergunta do turno. O servidor grava
+            // 1 e a tela nem pergunta.
+            { nome: 'qt_recursos',  rot: 'Qtd',          padrao: '1',
+              oculto: (v) => v.tipo_recurso === 'PESSOA' },
             { nome: 'equivalencia', rot: 'Equivalência', padrao: '1' },
             // A janela em que a máquina existe. Fora dela o motor não gera
             // linha nenhuma — nem instalada. Vazio dos dois lados é o normal.
@@ -126,6 +130,10 @@ export default async function Page() {
           ela existe mesmo no feriado; para pessoa o teto é o turno escalado,
           e a instalada sai igual à planejada. Trocar o tipo de um recurso muda
           o &ldquo;% do teto&rdquo; dele no próximo Recalcular.
+          {' '}<strong>Qtd</strong> é quantas máquinas iguais este recurso
+          representa — o teto físico. <strong>Pessoa não tem Qtd</strong>: não
+          existe teto de gente, e quantas pessoas trabalham é um número por
+          turno, digitado em Turnos do recurso.
           {' '}<strong>Sub-área</strong> é texto livre e opcional — serve para
           agrupar na leitura e não tem cadastro nem regra própria.
         </p>

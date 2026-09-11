@@ -32,6 +32,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Entrada vinda do Hub S&OP, sem digitar senha de novo | `34` | `app/sso/route.js` |
 | Instalada em faixas, dia a dia gerado na leitura | `35` | `capacidade_instalada` · `vw_instalada_dia` |
 | Recursos para o Excel e de volta, sem dependência | — | Cadastros › Recursos · `lib/xlsx.js` |
+| Pessoa sem Qtd: gente é por turno, sem teto | `36` | Turnos do recurso |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -557,6 +558,39 @@ duplicadas. O que falhou é dito no fim, com nome.
 
 Calendários ficou de fora porque lá não há o que aplicar em lote: o calendário é
 da ÁREA, e já vale para todos os recursos dela.
+
+### Pessoa não tem quantidade; tem gente por turno (migração 36)
+
+A `Qtd` do cadastro de recurso é o teto físico da máquina — quantas existem,
+e é dela que sai a instalada de 24 h. Para pessoa não há teto (a instalada é a
+planejada, migração 16), mas a matriz de Turnos do recurso recusava número
+maior que a `Qtd`: um limite herdado da máquina que, em pessoa, não
+significava nada — e travava o cadastro real de doze no 1º turno e vinte no
+3º. Bruno percebeu em 11/09/2026.
+
+**A decisão foi dele, e mais limpa que a alternativa de reinterpretar o
+número:** a `Qtd` deixa de existir para pessoa. A tela não pergunta, o
+servidor grava 1 (só para a multiplicação não zerar), e **quantas pessoas
+trabalham é um número por turno**, digitado na matriz, sem teto e sempre
+explícito — "todas" não quer dizer nada para gente. Cada turno ganhou uma
+caixa **→ ano todo** que aplica um número aos doze meses (vale para máquina de
+várias também).
+
+**A migração fez o dado antes de a tela mudar**: 25 vínculos de pessoa em
+"todas" receberam o número que "todas" valia — a planejada é a mesma ao
+minuto, e Recalcular não foi necessário. Onze postos da Confecção Cama tinham
+Qtd (de 2 a 22) e nenhum turno; o número não tinha para onde ir e ficou
+escrito no cabeçalho da migração para quando os turnos deles entrarem.
+
+**Máquina e pessoa nunca dividem a mesma matriz.** Um lote misto gravaria as
+duas coisas com a mesma marca. A saída foi do Bruno: o seletor **Tipo** entra
+na cascata de Turnos do recurso **sem "todos"**, nasce em máquina, e a tela
+diz "esta área também tem N recursos do tipo pessoa — mude o Tipo" antes de
+qualquer clique. Assim ninguém acha que cadastrou em lote o que ficou de fora
+por depender de ler um motivo. Lote de pessoas grava o mesmo número em todos
+os postos; lote de máquinas continua gravando "todas".
+
+Na planilha de recursos a `Qtd` de pessoa sai vazia e, na volta, é ignorada.
 
 ### A tabela de recursos vai para o Excel e volta
 

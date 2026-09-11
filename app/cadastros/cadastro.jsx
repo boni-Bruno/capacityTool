@@ -14,6 +14,11 @@ import { COOKIE, escreveOrdem, leOrdem, ordenar } from '../../lib/ordem';
 // formulário como escolha obrigatória e aparece na tabela como texto. Não é
 // editável em linha porque mudar a planta de uma área move junto tudo que pende
 // dela — é uma operação diferente de corrigir um nome.
+//
+// Campo com `oculto(valores)` some quando outro campo diz que ele não se
+// aplica — a Qtd de um recurso de pessoa, que não tem teto. Some do formulário,
+// da edição em linha e da célula da tabela, e não conta como obrigatório; o
+// servidor é quem decide o valor que vai no lugar.
 export default function Cadastro({
   rota,
   itens,
@@ -92,8 +97,10 @@ export default function Cadastro({
       }
     });
 
+  const escondido = (c, valores) => Boolean(c.oculto?.(valores));
+
   const podeCriar = camposForm
-    .filter((c) => c.obrigatorio !== false)
+    .filter((c) => c.obrigatorio !== false && !escondido(c, novo))
     .every((c) => String(novo[c.nome] ?? '').trim());
 
   /**
@@ -138,6 +145,7 @@ export default function Cadastro({
 
   // Na tabela, o vínculo mostra o nome (`col`), não o id que vai no formulário.
   function texto(c, item) {
+    if (escondido(c, item)) return '—';
     if (c.col) return item[c.col];
     if (c.tipo === 'select') {
       return c.opcoes.find((o) => String(o.valor) === String(item[c.nome]))?.rotulo
@@ -243,7 +251,7 @@ export default function Cadastro({
       {(!formularioSobDemanda || criando) && (
       <div className="form-grade"
            style={formularioSobDemanda ? { marginBottom: 20 } : { marginTop: 16 }}>
-        {camposForm.map((c) => (
+        {camposForm.filter((c) => !escondido(c, novo)).map((c) => (
           <label key={c.nome} className="campo">
             <span className="campo-rot">
               {c.rot}
@@ -402,9 +410,10 @@ export default function Cadastro({
                     {campos.map((c, i) => (
                       <td key={c.nome}>
                         {edit && !c.soCriacao && !c.soLeitura
+                            && !escondido(c, rascunho)
                           ? entrada(c, rascunho[c.nome], (e) =>
                               setRascunho({ ...rascunho, [c.nome]: e.target.value }))
-                          : texto(c, it)}
+                          : edit && escondido(c, rascunho) ? '—' : texto(c, it)}
                         {i === 0 && inativo && (
                           <span className="selo padrao" style={{ marginLeft: 8 }}>
                             desativado

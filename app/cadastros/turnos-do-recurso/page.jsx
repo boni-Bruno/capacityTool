@@ -35,7 +35,18 @@ export default async function Page({ searchParams }) {
   // Mesma lista do painel: ano com rodada não some quando o tempo passa.
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
-  const todosRecursos = await recursos(areaId);
+  const daArea = await recursos(areaId);
+
+  // O TIPO É O PRIMEIRO CORTE, e não tem "todos". Máquina e pessoa não podem
+  // dividir uma matriz: para a máquina "todas" quer dizer as que existem, e
+  // para a pessoa a célula é um número livre de gente. Um lote misto gravaria
+  // as duas coisas com a mesma marca. Então a tela é sempre de um tipo — nasce
+  // em máquina, que é a maioria —, e diz na hora quando a área tem do outro
+  // tipo, para ninguém achar que cadastrou em lote o que ficou de fora.
+  const tipo = searchParams?.tipo === 'PESSOA' ? 'PESSOA' : 'MAQUINA';
+  const pessoa = tipo === 'PESSOA';
+  const todosRecursos = daArea.filter((r) => r.tipo_recurso === tipo);
+  const doOutroTipo = daArea.length - todosRecursos.length;
 
   // CC, CT e Patrimônio estreitam a lista antes de escolher a máquina — quem
   // trabalha com a controladoria procura por eles, não pelo apelido. Cada um
@@ -69,6 +80,12 @@ export default async function Page({ searchParams }) {
       opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: rotuloArea(a) })),
     },
     {
+      // Sem "todos", de propósito — ver o comentário do corte por tipo.
+      nome: 'tipo', rotulo: 'Tipo', tipo: 'select', valor: tipo,
+      opcoes: [{ valor: 'MAQUINA', rotulo: 'máquina' },
+               { valor: 'PESSOA', rotulo: 'pessoa' }],
+    },
+    {
       nome: 'cc', rotulo: 'CC', tipo: 'select', valor: cc ?? '',
       opcoes: [opcaoTodos('todos'),
                ...ccs.map((v) => ({ valor: v, rotulo: v }))],
@@ -85,6 +102,18 @@ export default async function Page({ searchParams }) {
     },
   ];
 
+  // O aviso do outro tipo: dito sempre que a área tem, e não só quando a lista
+  // ficou vazia. Quem monta a Confecção em lote precisa saber, antes de
+  // clicar, que os postos de pessoa não estão nesta matriz.
+  const outroTipo = doOutroTipo > 0 && (
+    <p className="rodape" style={{ marginTop: 0 }}>
+      Esta área também tem <strong>{doOutroTipo}</strong> recurso(s) do tipo{' '}
+      <strong>{pessoa ? 'máquina' : 'pessoa'}</strong>, que não aparecem aqui —
+      máquina e pessoa não dividem a mesma matriz. Mude o <strong>Tipo</strong>{' '}
+      no seletor acima para cadastrá-los.
+    </p>
+  );
+
   if (!listaRecursos.length) {
     return (
       <>
@@ -92,7 +121,13 @@ export default async function Page({ searchParams }) {
           <h1 className="titulo">Turnos do recurso</h1>
           <Suspense><Seletor campos={campos} /></Suspense>
         </div>
-        <div className="aviso"><strong>Nenhum recurso nesta área.</strong></div>
+        <div className="aviso">
+          <strong>
+            Nenhum recurso do tipo {pessoa ? 'pessoa' : 'máquina'} nesta área
+            {cc || ct || pat ? ' com este recorte' : ''}.
+          </strong>
+        </div>
+        {outroTipo}
       </>
     );
   }
@@ -205,10 +240,20 @@ export default async function Page({ searchParams }) {
         <p style={{ margin: '8px 0 0' }}>
           A matriz começa em branco de propósito: herdar a de um recurso faria a
           tela propor, sem avisar, a configuração de uma máquina para as outras.
-          Turno marcado grava <strong>todas as máquinas</strong> do recurso — os
-          recursos do lote têm quantidades diferentes, e um número fixo seria
-          demais para um e de menos para outro. Para pôr um número, escolha o
-          recurso um a um.
+          {pessoa ? (
+            <>
+              {' '}O número digitado em cada célula é <strong>quantas pessoas</strong>{' '}
+              naquele turno, e vale <strong>igual para todos os postos</strong> do
+              lote. Posto com lotação diferente se cadastra um a um.
+            </>
+          ) : (
+            <>
+              {' '}Turno marcado grava <strong>todas as máquinas</strong> do
+              recurso — os recursos do lote têm quantidades diferentes, e um
+              número fixo seria demais para um e de menos para outro. Para pôr um
+              número, escolha o recurso um a um.
+            </>
+          )}
         </p>
         <p style={{ margin: '6px 0 0' }}>
           O <strong>regime de dias</strong> também é aplicado em lote, e ali
@@ -274,7 +319,18 @@ export default async function Page({ searchParams }) {
           )}
         </h2>
 
-        {!emLote && qtRecurso > 1 && (
+        {outroTipo}
+
+        {pessoa && (
+          <p className="rodape" style={{ marginTop: 0 }}>
+            Recurso de <strong>pessoa</strong>: a célula é <strong>quantas
+            pessoas</strong> trabalham naquele turno naquele mês, sem teto —
+            doze no 1º e vinte no 3º é cadastro legítimo. É esse número que vira
+            a capacidade, e para pessoa a instalada é a própria planejada.
+          </p>
+        )}
+
+        {!emLote && !pessoa && qtRecurso > 1 && (
           <div className="aviso" style={{ marginBottom: 14 }}>
             <strong>
               Este recurso tem {qtRecurso} máquinas, então a célula pede um
@@ -282,9 +338,9 @@ export default async function Page({ searchParams }) {
             </strong>
             <p style={{ margin: '6px 0 0' }}>
               Digite quantas rodam naquele turno: dá para pôr {qtRecurso} no 1º
-              e {qtRecurso - 1} no 2º e no 3º. Campo vazio é não trabalha, e o
-              botão <strong>ano todo</strong> preenche os doze meses com{' '}
-              {qtRecurso} de uma vez.
+              e {qtRecurso - 1} no 2º e no 3º. Campo vazio é não trabalha, e a
+              caixa <strong>→ ano todo</strong> no alto de cada turno preenche
+              os doze meses com o número digitado nela.
               {' '}Quando o número é igual a {qtRecurso}, o cadastro guarda
               &ldquo;todas&rdquo;: se um dia o recurso passar a ter{' '}
               {qtRecurso + 1}, esse turno acompanha sozinho.
@@ -308,6 +364,7 @@ export default async function Page({ searchParams }) {
           recursoId={recurso.id}
           ano={ano}
           qtRecurso={qtRecurso}
+          pessoa={pessoa}
           turnos={turnos}
           inicial={inicial}
           parciais={parciais}

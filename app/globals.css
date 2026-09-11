@@ -492,6 +492,14 @@ input.invalido { border-color: var(--erro); }
 }
 .matriz-ano input { width: 13px; height: 13px; cursor: pointer; }
 .matriz-ano:hover { color: var(--accent); }
+/* No modo numérico o cabeçalho leva um campo de número e a seta que aplica
+   aos doze meses — a regra da caixinha de 13px acima não pode valer aqui. */
+.matriz-ano input.matriz-qt {
+  width: 54px; height: 26px; padding: 0 4px; text-align: center;
+  font: inherit; font-size: 13px; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); color: var(--text); cursor: text;
+}
 
 /* Seleção múltipla nas listas de cadastro. */
 .col-marca { width: 34px; text-align: center; }
