@@ -31,6 +31,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Painel em metro de tecelagem e em UM do material | — | Painel |
 | Entrada vinda do Hub S&OP, sem digitar senha de novo | `34` | `app/sso/route.js` |
 | Instalada em faixas, dia a dia gerado na leitura | `35` | `capacidade_instalada` · `vw_instalada_dia` |
+| Recursos para o Excel e de volta, sem dependência | — | Cadastros › Recursos · `lib/xlsx.js` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -556,6 +557,50 @@ duplicadas. O que falhou é dito no fim, com nome.
 
 Calendários ficou de fora porque lá não há o que aplicar em lote: o calendário é
 da ÁREA, e já vale para todos os recursos dela.
+
+### A tabela de recursos vai para o Excel e volta
+
+Em **Recursos**, dois botões: **Exportar .xlsx** e **Importar .xlsx**. A leva
+de recursos que o Bruno cadastrou à mão em 11/09/2026 foi o motivo: o
+cadastro nasce numa planilha da controladoria, e digitar quarenta linhas uma a
+uma é onde uma fica de fora.
+
+**O arquivo é a mesma tabela**, com uma coluna a mais — **Planta**, antes da
+Área, porque "Confecção" existe em Ibirama e na Matriz e só o nome não diz
+qual. É `.xlsx` e não `.csv` por uma razão só: **texto é texto**. CC, CT e
+Patrimônio saem como célula de texto com formato `@`, e o Excel não transforma
+`001` em `1` — em CSV transformaria, e seria a história dos zeros à esquerda
+voltando por outra porta. Lido e escrito à mão (`lib/xlsx.js`), como o parquet
+e o pptx: é um ZIP de XML e o `lib/zip.js` já existia.
+
+**Quatro decisões, todas do Bruno:**
+
+- **A chave é a trinca CC-CT-Patrimônio**, que é o Código. Trinca que existe
+  altera (nome, sub-área, tipo, quantidade, equivalência, janela de operação,
+  ativo); trinca nova cria. Linha que está no banco e não está no arquivo
+  **fica intocada** — importar nunca apaga por omissão, a lição do `escopo`
+  da matriz de turnos.
+- **Planta ou área que não existe: a linha inteira é ignorada, e a prévia
+  avisa** com o número da linha. Criar planta por erro de digitação seria pior
+  que não criar.
+- **Recurso existente não muda de área pelo arquivo.** A tela também não deixa
+  — mover levaria turnos, OEE e paradas junto. Vira linha com erro, não
+  mudança silenciosa.
+- **Ativo é sim/não em qualquer grafia**: "não", "Não", "nao", "NAO" e "n" são
+  a mesma resposta. O mesmo vale para máquina/pessoa e para o cabeçalho, que
+  casa sem acento e em qualquer ordem.
+
+**A prévia vem antes de qualquer gravação** — quantas criam, quantas alteram,
+quantas estão iguais (e não geram pedido nenhum), quais ficam de fora e por
+quê. O que está escrito na célula é o que entra, sem normalizar: um CT `1`
+onde se esperava `001` grava `1`, como na tela (decisão de 30/08), e a prévia
+é onde isso se vê. Datas aceitam `AAAA-MM-DD`, `dd/mm/aaaa` ou a data do
+próprio Excel.
+
+O arquivo é montado e lido **no navegador**; o servidor recebe um pedido por
+linha, pelas rotas que a tela já usa, com o laço no navegador — o mesmo
+caminho da demanda e do lote de paradas, e erro numa linha não para as outras.
+`lib/recursos-formato.js` faz a tradução e o plano, puro, com 15 verificações.
 
 ### As observações do cenário
 

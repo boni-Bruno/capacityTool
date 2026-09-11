@@ -5,6 +5,7 @@ import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
 import { ordemGuardada } from '../../../lib/ordem-servidor';
 import Definitivo from './definitivo';
+import Planilha from './planilha';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +47,11 @@ export default async function Page() {
       </div>
 
       <div className="painel">
+        {/* A tabela inteira para o Excel e de volta — ver planilha.jsx. Fica
+            acima do "Adicionar recurso" porque é o caminho de quem tem
+            quarenta para cadastrar, e um a um é o de quem tem um. */}
+        <Planilha itens={recursos} areas={areas} />
+
         <Cadastro
           rota="/api/cadastro/recurso"
           itens={recursos}
