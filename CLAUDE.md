@@ -189,13 +189,16 @@ NN_*.sql           migrações, na ordem em que devem rodar
   ocupa. As fatias de um CT somam 1, e é essa propriedade que faz a soma dos
   rótulos fechar com o total.
 - **uma rodada por (área, ano, origem)**: a nova substitui a anterior. O sistema
-  mostra a capacidade atual; rodada velha não é consultada por ninguém.
+  mostra a capacidade atual; rodada velha não é consultada por ninguém. O
+  **Recalcular parcial** não cria rodada: regrava só os recursos escolhidos
+  **dentro** da que existe, e carimba `parcial_em` — rodada com idades
+  misturadas tem que se declarar, e o rodapé do painel a declara.
 
 ## O que a ferramenta não faz de propósito
 
-- Não recalcula sozinho ao mudar cadastro. **Recalcular tudo** é um botão, e o
-  laço roda no navegador — uma requisição por rodada, porque função serverless
-  tem minuto contado.
+- Não recalcula sozinho ao mudar cadastro. **Recalcular** é um botão — tudo,
+  ou parcial por recurso/ano/origem — e o laço roda no navegador: uma
+  requisição por rodada, porque função serverless tem minuto contado.
 - Não guarda histórico de rodada.
 - **Não guarda o memorial do cálculo** (migração 33). O motor grava só a
   `capacidade_fato` — o resultado. A explicação passo a passo custava 44% do

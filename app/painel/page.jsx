@@ -1142,10 +1142,17 @@ export default async function Page({ searchParams }) {
         <p className="rodape">
           Rodada {exec.id} · OEE {rotuloOrigem(exec.origem)} · cenário{' '}
           {exec.cenario} · calculada em{' '}
-          {new Date(exec.concluido_em).toLocaleString('pt-BR')}.
+          {new Date(exec.concluido_em).toLocaleString('pt-BR')}
+          {/* Uma rodada com idades misturadas tem que se declarar: é a única
+              coisa que separa o parcial escolhido do "meio recalculado" que
+              ninguém pediu. */}
+          {exec.parcial_em && (
+            <> · <strong>recursos recalculados em{' '}
+              {new Date(exec.parcial_em).toLocaleString('pt-BR')}</strong></>
+          )}.
           {' '}Cadastro alterado depois disso só entra na conta ao
-          {' '}<strong>Recalcular tudo</strong>, que refaz todas as áreas e
-          anos de uma vez.
+          {' '}<strong>Recalcular</strong> — tudo, ou parcial para escolher
+          recursos, anos e origens.
         </p>
       </div>
     </Shell>

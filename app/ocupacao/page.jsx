@@ -698,8 +698,14 @@ export default async function Page({ searchParams }) {
 
         <p className="rodape">
           Rodada {exec.id} · OEE {rotuloOrigem(exec.origem)} · base{' '}
-          {carga.cenario}. Cadastro alterado depois disso só entra na conta ao{' '}
-          <strong>Recalcular tudo</strong>.
+          {carga.cenario} · calculada em{' '}
+          {new Date(exec.concluido_em).toLocaleString('pt-BR')}
+          {exec.parcial_em && (
+            <> · <strong>recursos recalculados em{' '}
+              {new Date(exec.parcial_em).toLocaleString('pt-BR')}</strong></>
+          )}.
+          {' '}Cadastro alterado depois disso só entra na conta ao{' '}
+          <strong>Recalcular</strong> — tudo, ou parcial.
         </p>
       </div>
     </Shell>

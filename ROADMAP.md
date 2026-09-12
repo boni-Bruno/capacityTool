@@ -33,6 +33,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Instalada em faixas, dia a dia gerado na leitura | `35` | `capacidade_instalada` · `vw_instalada_dia` |
 | Recursos para o Excel e de volta, sem dependência | — | Cadastros › Recursos · `lib/xlsx.js` |
 | Pessoa sem Qtd: gente é por turno, sem teto | `36` | Turnos do recurso |
+| Recalcular parcial: recursos, anos e origens à escolha | `37` | Painel · botão ao lado do Recalcular tudo |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -817,6 +818,31 @@ fim.**
 
 Área sem recurso não entra. Rodada sem linha é contada à parte das que
 falharam — misturá-las mandaria caçar erro onde não há.
+
+**Recalcular parcial** (migração `37_recalculo_parcial.sql`, 11/09/2026). Um
+segundo botão abre um pop-up com planta, área, CC, CT, patrimônio, código,
+recurso, ano e origem — tudo em "todos", em cascata, o mesmo funil da extração
+para o AP. Quem trocou o turno de três máquinas não precisa dos dois minutos
+das 48 rodadas; e era assim que o botão deixava de ser apertado e o painel
+envelhecia.
+
+**A rodada continua sendo por (área, ano, origem).** Recurso não tem rodada
+própria, e uma rodada nova só com três máquinas apagaria as outras quarenta.
+Então o parcial não cria rodada: o motor — a mesma função, com `p_recursos` e
+`p_execucao_id` a mais — entra na rodada que existe, apaga as linhas daqueles
+recursos e as regrava. Área escolhida por inteiro, ou área sem rodada, vira
+rodada cheia normal; quem decide é `lib/db.js`.
+
+**O custo, declarado**: uma rodada passa a poder ter linhas de idades
+diferentes — o "meio recalculado" que este arquivo chama de pior que não
+recalculado quando acontece sem ninguém saber. A diferença é que aqui é
+escolha de quem clicou e fica escrita: `parcial_em` carimba a rodada, e o
+rodapé dos dois painéis diz "calculada em X · recursos recalculados em Y".
+Recalcular tudo, ou a área inteira, zera a marca.
+
+De quebra, a assinatura nova exigiu `drop` das antigas — e a sobrecarga de 4
+argumentos que a migração 10 deixou morta no banco (dívida registrada aqui
+desde 03/09) saiu junto. Ficou uma função só.
 
 **O banco guarda só a rodada corrente** (migração `26_so_a_rodada_corrente.sql`).
 Vale uma rodada por (área, ano, origem): a nova substitui a anterior, e o banco
@@ -1678,14 +1704,6 @@ por quê — útil para não redecidir, mas já construído.
 - **Apagar `produto`, `recurso_taxa` e `recurso_taxa.min_setup`.** A base de
   demanda tornou o cadastro de taxa desnecessário, e as três estão no banco
   prometendo uma coisa que não acontece. Vale uma migração.
-- **Apagar a sobrecarga de 4 argumentos de `fn_calcular_capacidade`.** A
-  migração 10 acrescentou `p_origem`, e `create or replace` com assinatura nova
-  **cria uma segunda função** em vez de substituir a primeira — a de 4
-  argumentos ficou no banco, congelada na versão de antes da 10: sem origem, sem
-  memorial, sem fração de minuto, sem teto de pessoa, e com o `coalesce(oee, 1.0)`
-  que a 31 veio tirar. O app sempre chama com 5 argumentos, então ela é código
-  morto; o risco é o dia em que alguém chamar com 4 e receber, sem erro nenhum,
-  um cálculo de duas dúzias de migrações atrás.
 
 ### Dívidas conhecidas do motor
 
