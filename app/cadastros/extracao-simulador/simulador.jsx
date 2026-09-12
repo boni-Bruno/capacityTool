@@ -220,9 +220,10 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
                     <th>Unidade</th>
                     <th className="num">Demanda (min)</th>
                     <th className="num">Dias úteis</th>
-                    <th className="num">Min/unid./dia</th>
-                    <th className="num">Unidades/dia</th>
+                    <th className="num">Min planej./unid./dia</th>
                     <th className="num">OEE</th>
+                    <th className="num">Min dispon./unid./dia</th>
+                    <th className="num">Unidades/dia</th>
                     <th className="num">Disponível (min)</th>
                     <th className="num">Ocupação</th>
                     <th>Aviso</th>
@@ -239,8 +240,9 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
                       <td className="num">{fmt(Math.round(r.demanda))}</td>
                       <td className="num">{fmt(r.diasUteis)}</td>
                       <td className="num">{r.minPorUnidadeDia === null ? '—' : fmt(Math.round(r.minPorUnidadeDia))}</td>
-                      <td className="num forte">{r.unidades === null ? '—' : fmt2(r.unidades)}</td>
                       <td className="num">{r.oee === null ? '—' : pct(r.oee)}</td>
+                      <td className="num">{r.minDisponiveisPorUnidadeDia === null ? '—' : fmt(Math.round(r.minDisponiveisPorUnidadeDia))}</td>
+                      <td className="num forte">{r.unidades === null ? '—' : fmt2(r.unidades)}</td>
                       <td className="num">{fmt(Math.round(r.disponivel))}</td>
                       <td className="num forte">{r.ocupacao === null ? '—' : pct(r.ocupacao)}</td>
                       <td className="muted">{r.aviso ?? ''}</td>
@@ -253,15 +255,16 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
         )}
 
         <p className="rodape">
-          A planilha abre o disponível da rodada em quatro fatores, por CT e
-          mês: <strong>unidades por dia</strong> (a soma dos turnos — 10 no 1º
-          e 8 no 2º são 18) × <strong>minutos por unidade por dia</strong> (o
-          turno líquido médio, já com intervalos e paradas) × <strong>dias
-          úteis</strong> (os do motor, sem os de apresentação) ×
-          {' '}<strong>OEE</strong>. Com os valores da rodada a fórmula devolve
-          exatamente o disponível do painel. <strong>Unidades e OEE são as
-          células de entrada</strong> (destacadas): mude e o disponível e a
-          ocupação respondem. A linha de ano pondera pelos dias, e a aba
+          A planilha abre o disponível da rodada em fatores, por CT e mês, em
+          duas etapas: <strong>minutos planejados por unidade por dia</strong>
+          {' '}(o turno líquido médio, já com intervalos e paradas) ×
+          {' '}<strong>OEE</strong> = <strong>minutos disponíveis por unidade
+          por dia</strong>; e esses × <strong>unidades por dia</strong> (a
+          soma dos turnos — 10 no 1º e 8 no 2º são 18) × <strong>dias
+          úteis</strong> (os do motor, sem os de apresentação) = disponível.
+          Com os valores da rodada a fórmula devolve exatamente o disponível
+          do painel. <strong>OEE e unidades são as células de entrada</strong>
+          {' '}(destacadas): mude e tudo à direita responde. A linha de ano pondera pelos dias, e a aba
           {' '}<em>Por CC</em> soma os CTs. Como dividir as unidades entre os
           turnos é decisão sua na hora de cadastrar: Qtd em <em>Recursos</em>
           {' '}para máquina, pessoas por turno em <em>Turnos do recurso</em>,

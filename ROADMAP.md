@@ -1548,20 +1548,27 @@ lugar decidindo capacidade, e o cadastro já é o primeiro.
 `lib/simulador.js` (motor puro, testado):
 
 ```
-disponível = unidades/dia × min por unidade por dia × dias úteis × OEE
-ocupação   = demanda ÷ disponível
+min disponíveis/unid/dia = min planejados/unid/dia × OEE
+disponível               = unidades/dia × min disponíveis/unid/dia × dias úteis
+ocupação                 = demanda ÷ disponível
 
-unidades/dia   Σ qt_recursos dos turnos de dia útil ÷ dias úteis   ← 10 no 1º + 8 no 2º = 18
-min/unid/dia   planejada ÷ (unidades × dias úteis)                  ← turno líquido médio
-dias úteis     os do MOTOR (dia_util do fato), sem os de apresentação
-OEE            disponível ÷ planejada, o da rodada
+min planejados/unid/dia   planejada ÷ (unidades × dias úteis)   ← turno líquido médio, SEM OEE
+OEE                       disponível ÷ planejada, o da rodada
+unidades/dia              Σ qt_recursos dos turnos de dia útil ÷ dias úteis   ← 10 + 8 = 18
+dias úteis                os do MOTOR (dia_util do fato), sem os de apresentação
 ```
+
+**O OEE entra uma vez, nos minutos por unidade** — a leitura do Bruno é "cada
+pessoa entrega X minutos por dia num OEE Y", e a planilha segue essa ordem. A
+forma anterior multiplicava minutos planejados × OEE dentro da fórmula do
+disponível, e quem lia "minutos por unidade por dia" esperava o OEE já ali
+dentro: a coluna parecia mentir. Agora os planejados são valor da rodada, os
+disponíveis são fórmula deles com o OEE, e o disponível só multiplica.
 
 Com os valores da rodada a fórmula devolve **exatamente o disponível do
 painel** — provado no banco para o 465-002 de 2027, mês a mês, ao minuto — e é
-isso que autoriza mexer nela. **Unidades e OEE são as células de entrada**
-(destacadas): muda-se 18 para 22, ou 65% para 70%, e disponível e ocupação
-respondem. Sem ocupação-alvo, decisão do Bruno: a ocupação é só demonstração.
+isso que autoriza mexer nela. **OEE e unidades são as células de entrada**
+(destacadas): muda-se 65% para 70%, ou 18 para 22, e tudo à direita responde. Sem ocupação-alvo, decisão do Bruno: a ocupação é só demonstração.
 Tudo que depende das entradas sai como fórmula, e o workbook pede recálculo ao
 abrir (`fullCalcOnLoad`), porque a fórmula vai sem valor calculado.
 
