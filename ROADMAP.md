@@ -34,6 +34,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Recursos para o Excel e de volta, sem dependência | — | Cadastros › Recursos · `lib/xlsx.js` |
 | Pessoa sem Qtd: gente é por turno, sem teto | `36` | Turnos do recurso |
 | Recalcular parcial: recursos, anos e origens à escolha | `37` | Painel · botão ao lado do Recalcular tudo |
+| Simulador de quantidade de recursos, em .xlsx com fórmulas | — | Extração › Simulador de recursos · `lib/simulador.js` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -1530,6 +1531,66 @@ projeto assim. A marcação da árvore é estado, e trocar `searchParams` remont
 o componente e apagaria o recorte que a pessoa acabou de montar clicando em
 vinte centros de custo. Ano e origem continuam sendo lidos da URL para um link
 antigo continuar valendo.
+
+---
+
+## Simulador de quantidade de recursos — PRONTO
+
+Terceira tela do grupo Extração (11/09/2026). Responde "quantas máquinas ou
+pessoas cada CT precisaria para atender a demanda deste cenário?" — e responde
+num **.xlsx com fórmulas**, não numa tela. Foi decisão do Bruno: ele simula no
+Excel, onde já mora a conversa com a fábrica, e cadastra o que decidir na
+aplicação pelo caminho de sempre (Qtd em Recursos para máquina, pessoas por
+turno em Turnos do recurso, Recalcular). Uma tela de simulação seria um segundo
+lugar decidindo capacidade, e o cadastro já é o primeiro.
+
+**A conta**, por CT e mês, em `lib/simulador.js` (motor puro, testado):
+
+```
+por_unidade = Σ ( min_disponivel ÷ qt_recursos )     o que UMA unidade entrega no mês
+atuais      = disponível ÷ por_unidade                 unidades efetivas
+ocupação    = demanda ÷ (disponível × fator)
+necessárias = ROUNDUP( demanda ÷ (por_unidade × fator), 0 )
+diferença   = necessárias − atuais
+```
+
+A divisão por `qt_recursos` é **linha a linha do fato, antes da soma**: cada
+linha é um turno de um dia com a quantidade daquele turno, e um recurso que roda
+3 máquinas de dia e 1 de noite tem "atuais" 1,2 — que é a verdade, e que a
+quantidade cadastrada não diria. Pessoa entra na mesma fórmula, porque desde a
+migração 36 o `qt_recursos` do fato é a quantidade de pessoas do turno e a
+planejada é linear nisso do mesmo jeito. A coluna Unidade diz máquinas, pessoas
+ou misto por CT.
+
+**Linha do ano por CT**: soma dos doze meses e divisão das somas — nunca a média
+das doze quantidades. **Pico** é o `MAX` das doze necessárias: quem dimensiona
+pelo ano aceita fila nos meses acima da média; quem dimensiona pelo pico, não. A
+planilha mostra os dois e não escolhe. **Aba Por CC** soma a aba Por CT com
+`SUMIFS` por planta, área, CC e mês — o mesmo CC existe em duas áreas, e sem
+planta e área no critério a soma misturaria.
+
+**O fator de OEE é a única célula de entrada** (B1 da aba Por CT, em destaque):
+1 é o OEE cadastrado na rodada; 1,1 pergunta "e se cada unidade rendesse 10% a
+mais?". Sem ocupação-alvo, também decisão do Bruno: a ocupação é só demonstração.
+Tudo que depende do fator sai como fórmula, e o workbook pede recálculo ao abrir
+(`fullCalcOnLoad`), porque a fórmula vai sem valor calculado.
+
+**O cenário é obrigatório**, ao contrário da extração das configurações: sem
+demanda a planilha diria "precisa de zero máquinas" com toda a convicção. E o
+recorte é **o ano inteiro**, sem período: pico dentro de três meses é pico falso.
+
+Para isso `lib/xlsx.js` aprendeu **fórmula** (`{ f }`, gravada em inglês e com
+vírgula, como o OOXML exige — o Excel em português mostra `ARRED.PARA.CIMA`
+sozinho), **estilos numéricos** (percentual, duas casas, inteiro com milhar,
+célula de entrada) e **várias abas** com linhas livres acima do cabeçalho. A
+planilha de recursos continua usando a assinatura antiga.
+
+A tela (`app/cadastros/extracao-simulador/`) reutiliza a árvore planta › área ›
+CC da extração das configurações, mostra uma **prévia por CT e ano** com fator
+1 — calculada em JS pelo mesmo motor, que é o teste de que fórmula e número
+batem — e avisa CT sem capacidade calculada ou sem demanda. O servidor só
+entrega os números (`simuladorPorCtMes`, irmã de `serieDoRecorte`); a planilha
+nasce no navegador.
 
 ---
 

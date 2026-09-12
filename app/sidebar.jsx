@@ -58,6 +58,7 @@ const GRUPOS = [
     itens: [
       { href: '/cadastros/extracao-ap',     rotulo: 'Extração para o AP' },
       { href: '/cadastros/extracao-config', rotulo: 'Extração das configurações' },
+      { href: '/cadastros/extracao-simulador', rotulo: 'Simulador de recursos' },
     ],
   },
 ];

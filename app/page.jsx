@@ -107,6 +107,12 @@ const EXTRACAO = [
     texto: 'Como a fábrica está configurada num recorte, e quanta capacidade ' +
            'isso produz. Em .pptx dentro do seu modelo, ou em PDF.',
   },
+  {
+    href: '/cadastros/extracao-simulador',
+    titulo: 'Simulador de recursos',
+    texto: 'Quantas máquinas ou pessoas cada CT precisaria para a demanda de ' +
+           'um cenário. Em .xlsx com fórmulas, para simular no Excel.',
+  },
 ];
 
 function Cartao({ href, titulo, texto }) {
