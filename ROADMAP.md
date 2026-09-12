@@ -1567,10 +1567,32 @@ disponíveis são fórmula deles com o OEE, e o disponível só multiplica.
 
 Com os valores da rodada a fórmula devolve **exatamente o disponível do
 painel** — provado no banco para o 465-002 de 2027, mês a mês, ao minuto — e é
-isso que autoriza mexer nela. **OEE e unidades são as células de entrada**
-(destacadas): muda-se 65% para 70%, ou 18 para 22, e tudo à direita responde. Sem ocupação-alvo, decisão do Bruno: a ocupação é só demonstração.
-Tudo que depende das entradas sai como fórmula, e o workbook pede recálculo ao
-abrir (`fullCalcOnLoad`), porque a fórmula vai sem valor calculado.
+isso que autoriza mexer nela. **OEE, unidades e ocupação alvo são as células
+de entrada** (destacadas): muda-se 65% para 70%, ou 18 para 22, e tudo à
+direita responde. Tudo que depende das entradas sai como fórmula, e o workbook
+pede recálculo ao abrir (`fullCalcOnLoad`), porque a fórmula vai sem valor
+calculado.
+
+**O alvo fecha a conta de trás para a frente** (12/09/2026): ao lado da
+ocupação calculada vai a ocupação alvo, e
+
+```
+unidades/dia necessárias = (demanda ÷ dias úteis) ÷ min disponíveis/unid/dia ÷ ocupação alvo
+```
+
+O alvo **divide**: a 100% é o mínimo que cabe a demanda; a 85% precisa de
+1/0,85 a mais — quem quer folga precisa de gente. A fórmula pedida vinha com
+`× (1 + (alvo − 1))`, que é `× alvo` e faria o número andar ao contrário; foi
+apontado e trocado. A ocupação alvo nasce em 100% em toda linha.
+
+Duas colunas auxiliares fecham a planilha — **planejado (min)** e **unidades ×
+dias úteis** — porque a linha do ano e a aba Por CC precisam ponderar minutos
+por unidade e OEE pela soma (planejado ÷ unidades×dias; disponível ÷ planejado),
+e não pela média das linhas.
+
+O "min planejados por unidade por dia" é **média por dia útil**: sábado tem
+240 min e segunda 480, e em janeiro dá 436 — isso não é OEE, é sábado. Já foi
+confundido uma vez.
 
 **Por que não abre por turno**: a planilha responde "quantas unidades por dia";
 como dividi-las entre os turnos é decisão de quem cadastra, depois, e abrir por
@@ -1585,10 +1607,13 @@ junto só poluíam; saíram todas com o fator global de OEE, que o OEE editável
 linha substitui.
 
 **Linha do ano por CT**: soma de demanda, dias úteis e disponível; unidades e
-minutos por unidade como média **ponderada** por `SUMPRODUCT` — a média das doze
-linhas mentiria num ano em que a equipe cresce em julho. **Aba Por CC** soma a
-aba Por CT com `SUMIFS` por planta, área, CC e mês — o mesmo CC existe em duas
-áreas, e sem planta e área no critério a soma misturaria.
+minutos por unidade derivados das auxiliares — a média das doze linhas mentiria
+num ano em que a equipe cresce em julho. **Aba Por CC** tem as mesmas colunas
+e soma a Por CT **por referência direta** (`'Por CT'!H2+'Por CT'!H15`): o
+motor sabe em que linha cada CT está. A primeira forma usava `SUMIFS` com
+critério de planta, área, CC e mês, e no Excel do Bruno as colunas vieram
+vazias; sem critério não há o que casar errado. Dias úteis do CC é o `MAX`
+dos CTs, porque somar diria que o CC tem 44 dias no mês.
 
 **O cenário é obrigatório**, ao contrário da extração das configurações: sem
 demanda a planilha diria ocupação zero com toda a convicção. E o recorte é **o

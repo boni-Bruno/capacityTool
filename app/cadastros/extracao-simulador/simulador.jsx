@@ -225,7 +225,8 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
                     <th className="num">Min dispon./unid./dia</th>
                     <th className="num">Unidades/dia</th>
                     <th className="num">Disponível (min)</th>
-                    <th className="num">Ocupação</th>
+                    <th className="num">Ocupação calculada</th>
+                    <th className="num">Unid./dia necessárias (alvo 100%)</th>
                     <th>Aviso</th>
                   </tr>
                 </thead>
@@ -245,6 +246,7 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
                       <td className="num forte">{r.unidades === null ? '—' : fmt2(r.unidades)}</td>
                       <td className="num">{fmt(Math.round(r.disponivel))}</td>
                       <td className="num forte">{r.ocupacao === null ? '—' : pct(r.ocupacao)}</td>
+                      <td className="num forte">{r.necessarias === null ? '—' : fmt2(r.necessarias)}</td>
                       <td className="muted">{r.aviso ?? ''}</td>
                     </tr>
                   ))}
@@ -263,9 +265,14 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
           soma dos turnos — 10 no 1º e 8 no 2º são 18) × <strong>dias
           úteis</strong> (os do motor, sem os de apresentação) = disponível.
           Com os valores da rodada a fórmula devolve exatamente o disponível
-          do painel. <strong>OEE e unidades são as células de entrada</strong>
-          {' '}(destacadas): mude e tudo à direita responde. A linha de ano pondera pelos dias, e a aba
-          {' '}<em>Por CC</em> soma os CTs. Como dividir as unidades entre os
+          do painel. Ao lado da <strong>ocupação calculada</strong> vai a
+          {' '}<strong>ocupação alvo</strong>, e as <strong>unidades por dia
+          necessárias</strong> fecham a conta de trás para a frente: demanda
+          por dia ÷ minutos disponíveis por unidade ÷ alvo — a 85% precisa de
+          mais gente que a 100%. <strong>OEE, unidades e alvo são as células
+          de entrada</strong> (destacadas): mude e tudo à direita responde. A
+          linha de ano pondera pelos dias, e a aba <em>Por CC</em> tem as
+          mesmas colunas somando os CTs. Como dividir as unidades entre os
           turnos é decisão sua na hora de cadastrar: Qtd em <em>Recursos</em>
           {' '}para máquina, pessoas por turno em <em>Turnos do recurso</em>,
           e Recalcular.
