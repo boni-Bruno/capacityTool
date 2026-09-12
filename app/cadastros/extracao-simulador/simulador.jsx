@@ -7,11 +7,11 @@ import Arvore from '../extracao-config/arvore';
 
 // A tela do simulador de quantidade de recursos.
 //
-// O SERVIDOR SÓ ENTREGA NÚMEROS — por CT e mês, demanda, disponível e o que
-// uma unidade entrega. A prévia por CT×ano é `resumoDoSimulador`, e o .xlsx é
-// `montarSimulador` + `escreveXlsx`, os dois aqui no navegador. A prévia mostra
-// com fator 1 o que a planilha mostrará ao abrir; a planilha é que aceita
-// mexer no fator.
+// O SERVIDOR SÓ ENTREGA NÚMEROS — por CT e mês, demanda, planejada, disponível,
+// dias úteis e unidades-dia da rodada. A prévia por CT×ano é
+// `resumoDoSimulador`, e o .xlsx é `montarSimulador` + `escreveXlsx`, os dois
+// aqui no navegador. A prévia mostra o que a planilha mostrará ao abrir; a
+// planilha é que aceita mexer em unidades e OEE.
 //
 // AS ESCOLHAS MORAM EM ESTADO, como na extração das configurações: a marcação
 // da árvore é estado, e navegar remontaria o componente e apagaria o recorte.
@@ -109,7 +109,7 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
     setOcupado('xlsx');
     setErro(null);
     try {
-      const { abas } = montarSimulador(resultado.linhas, { fator: 1 });
+      const { abas } = montarSimulador(resultado.linhas);
       const bytes = await escreveXlsx({ abas });
       baixar(new Blob([bytes], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -144,7 +144,7 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
           <span className="rotulo-opcao">Ano</span>
           <Grupo mini valor={ano} onEscolhe={setAno}
                  opcoes={(anos ?? []).map((a) => ({ valor: a, rotulo: String(a) }))} />
-          <span className="muted">o ano inteiro, mês a mês — o pico precisa dos doze</span>
+          <span className="muted">o ano inteiro, mês a mês, com linha de ano por CT</span>
         </div>
 
         <div className="linha-opcao">
@@ -206,7 +206,7 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
             <p className="rodape" style={{ margin: '12px 0 8px' }}>
               <strong>{fmt(resumo.length)} CT(s)</strong> · {resultado.ano} ·
               {' '}OEE {resultado.origem === 'META' ? 'meta' : 'simulado'} ·
-              cenário <strong>{resultado.cenario}</strong> · fator de OEE 1,00
+              cenário <strong>{resultado.cenario}</strong> · valores da rodada
               {comAviso > 0 && ` · ${fmt(comAviso)} com aviso`}
             </p>
             <div className="grade-rolagem">
@@ -219,11 +219,12 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
                     <th>CT</th>
                     <th>Unidade</th>
                     <th className="num">Demanda (min)</th>
+                    <th className="num">Dias úteis</th>
+                    <th className="num">Min/unid./dia</th>
+                    <th className="num">Unidades/dia</th>
+                    <th className="num">OEE</th>
                     <th className="num">Disponível (min)</th>
-                    <th className="num">Atuais</th>
                     <th className="num">Ocupação</th>
-                    <th className="num">Necessárias (ano)</th>
-                    <th className="num">Pico (mês)</th>
                     <th>Aviso</th>
                   </tr>
                 </thead>
@@ -236,11 +237,12 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
                       <td><code>{r.ct}</code></td>
                       <td className="muted">{UNIDADE[r.unidade] ?? r.unidade}</td>
                       <td className="num">{fmt(Math.round(r.demanda))}</td>
+                      <td className="num">{fmt(r.diasUteis)}</td>
+                      <td className="num">{r.minPorUnidadeDia === null ? '—' : fmt(Math.round(r.minPorUnidadeDia))}</td>
+                      <td className="num forte">{r.unidades === null ? '—' : fmt2(r.unidades)}</td>
+                      <td className="num">{r.oee === null ? '—' : pct(r.oee)}</td>
                       <td className="num">{fmt(Math.round(r.disponivel))}</td>
-                      <td className="num">{r.atuais === null ? '—' : fmt2(r.atuais)}</td>
-                      <td className="num">{r.ocupacao === null ? '—' : pct(r.ocupacao)}</td>
-                      <td className="num forte">{r.necessarias === null ? '—' : fmt(r.necessarias)}</td>
-                      <td className="num">{r.pico === null ? '—' : fmt(r.pico)}</td>
+                      <td className="num forte">{r.ocupacao === null ? '—' : pct(r.ocupacao)}</td>
                       <td className="muted">{r.aviso ?? ''}</td>
                     </tr>
                   ))}
@@ -251,19 +253,19 @@ export default function Simulador({ linhas, ano: anoInicial, origem: origemInici
         )}
 
         <p className="rodape">
-          <strong>Atuais</strong> é disponível ÷ o que uma unidade entrega —
-          sai fracionário quando os turnos têm quantidades diferentes.
-          {' '}<strong>Necessárias</strong> é a demanda ÷ o que uma unidade
-          entrega, arredondado para cima: quantas cabem a 100% de ocupação.
-          {' '}<strong>Ano</strong> divide as somas dos doze meses;
-          {' '}<strong>pico</strong> é o mês que mais pede. No .xlsx, cada CT
-          sai mês a mês com uma linha de ano, e a aba <em>Por CC</em> soma
-          os CTs. A única célula para editar é o <strong>fator de OEE</strong>
-          {' '}(B1 da aba Por CT): 1 é o OEE cadastrado; 1,1 pergunta "e se
-          cada unidade rendesse 10% a mais?" — ocupação e necessárias
-          recalculam. O que você decidir se cadastra aqui como sempre:
-          Qtd em <em>Recursos</em> para máquina, pessoas por turno em
-          {' '}<em>Turnos do recurso</em>, e Recalcular.
+          A planilha abre o disponível da rodada em quatro fatores, por CT e
+          mês: <strong>unidades por dia</strong> (a soma dos turnos — 10 no 1º
+          e 8 no 2º são 18) × <strong>minutos por unidade por dia</strong> (o
+          turno líquido médio, já com intervalos e paradas) × <strong>dias
+          úteis</strong> (os do motor, sem os de apresentação) ×
+          {' '}<strong>OEE</strong>. Com os valores da rodada a fórmula devolve
+          exatamente o disponível do painel. <strong>Unidades e OEE são as
+          células de entrada</strong> (destacadas): mude e o disponível e a
+          ocupação respondem. A linha de ano pondera pelos dias, e a aba
+          {' '}<em>Por CC</em> soma os CTs. Como dividir as unidades entre os
+          turnos é decisão sua na hora de cadastrar: Qtd em <em>Recursos</em>
+          {' '}para máquina, pessoas por turno em <em>Turnos do recurso</em>,
+          e Recalcular.
         </p>
       </div>
     </>

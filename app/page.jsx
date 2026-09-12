@@ -110,8 +110,8 @@ const EXTRACAO = [
   {
     href: '/cadastros/extracao-simulador',
     titulo: 'Simulador de recursos',
-    texto: 'Quantas máquinas ou pessoas cada CT precisaria para a demanda de ' +
-           'um cenário. Em .xlsx com fórmulas, para simular no Excel.',
+    texto: 'O disponível de cada CT aberto em unidades por dia, minutos, dias ' +
+           'úteis e OEE, contra a demanda de um cenário. Em .xlsx com fórmulas.',
   },
 ];
 

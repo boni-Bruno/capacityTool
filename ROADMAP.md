@@ -1544,40 +1544,48 @@ aplicação pelo caminho de sempre (Qtd em Recursos para máquina, pessoas por
 turno em Turnos do recurso, Recalcular). Uma tela de simulação seria um segundo
 lugar decidindo capacidade, e o cadastro já é o primeiro.
 
-**A conta**, por CT e mês, em `lib/simulador.js` (motor puro, testado):
+**A planilha decompõe o disponível da rodada**, por CT e mês, em
+`lib/simulador.js` (motor puro, testado):
 
 ```
-por_unidade = Σ ( min_disponivel ÷ qt_recursos )     o que UMA unidade entrega no mês
-atuais      = disponível ÷ por_unidade                 unidades efetivas
-ocupação    = demanda ÷ (disponível × fator)
-necessárias = ROUNDUP( demanda ÷ (por_unidade × fator), 0 )
-diferença   = necessárias − atuais
+disponível = unidades/dia × min por unidade por dia × dias úteis × OEE
+ocupação   = demanda ÷ disponível
+
+unidades/dia   Σ qt_recursos dos turnos de dia útil ÷ dias úteis   ← 10 no 1º + 8 no 2º = 18
+min/unid/dia   planejada ÷ (unidades × dias úteis)                  ← turno líquido médio
+dias úteis     os do MOTOR (dia_util do fato), sem os de apresentação
+OEE            disponível ÷ planejada, o da rodada
 ```
 
-A divisão por `qt_recursos` é **linha a linha do fato, antes da soma**: cada
-linha é um turno de um dia com a quantidade daquele turno, e um recurso que roda
-3 máquinas de dia e 1 de noite tem "atuais" 1,2 — que é a verdade, e que a
-quantidade cadastrada não diria. Pessoa entra na mesma fórmula, porque desde a
-migração 36 o `qt_recursos` do fato é a quantidade de pessoas do turno e a
-planejada é linear nisso do mesmo jeito. A coluna Unidade diz máquinas, pessoas
-ou misto por CT.
+Com os valores da rodada a fórmula devolve **exatamente o disponível do
+painel** — provado no banco para o 465-002 de 2027, mês a mês, ao minuto — e é
+isso que autoriza mexer nela. **Unidades e OEE são as células de entrada**
+(destacadas): muda-se 18 para 22, ou 65% para 70%, e disponível e ocupação
+respondem. Sem ocupação-alvo, decisão do Bruno: a ocupação é só demonstração.
+Tudo que depende das entradas sai como fórmula, e o workbook pede recálculo ao
+abrir (`fullCalcOnLoad`), porque a fórmula vai sem valor calculado.
 
-**Linha do ano por CT**: soma dos doze meses e divisão das somas — nunca a média
-das doze quantidades. **Pico** é o `MAX` das doze necessárias: quem dimensiona
-pelo ano aceita fila nos meses acima da média; quem dimensiona pelo pico, não. A
-planilha mostra os dois e não escolhe. **Aba Por CC** soma a aba Por CT com
-`SUMIFS` por planta, área, CC e mês — o mesmo CC existe em duas áreas, e sem
-planta e área no critério a soma misturaria.
+**Por que não abre por turno**: a planilha responde "quantas unidades por dia";
+como dividi-las entre os turnos é decisão de quem cadastra, depois, e abrir por
+turno só espalharia a mesma pergunta em mais linhas. "Unidades por dia" para
+máquina também é a soma dos turnos — 3 de dia e 1 de noite aparecem como 4.
 
-**O fator de OEE é a única célula de entrada** (B1 da aba Por CT, em destaque):
-1 é o OEE cadastrado na rodada; 1,1 pergunta "e se cada unidade rendesse 10% a
-mais?". Sem ocupação-alvo, também decisão do Bruno: a ocupação é só demonstração.
-Tudo que depende do fator sai como fórmula, e o workbook pede recálculo ao abrir
-(`fullCalcOnLoad`), porque a fórmula vai sem valor calculado.
+**A primeira versão errou o conceito** (mesmo dia, mais cedo): dividia o
+disponível pelo que UMA pessoa entregava somando os turnos e chamava de
+"atuais" — dava 9 para 10 + 8 cadastradas. Aritmética certa, e ninguém cadastra
+pessoa de dois turnos. As colunas de necessárias, diferença e pico que vinham
+junto só poluíam; saíram todas com o fator global de OEE, que o OEE editável por
+linha substitui.
+
+**Linha do ano por CT**: soma de demanda, dias úteis e disponível; unidades e
+minutos por unidade como média **ponderada** por `SUMPRODUCT` — a média das doze
+linhas mentiria num ano em que a equipe cresce em julho. **Aba Por CC** soma a
+aba Por CT com `SUMIFS` por planta, área, CC e mês — o mesmo CC existe em duas
+áreas, e sem planta e área no critério a soma misturaria.
 
 **O cenário é obrigatório**, ao contrário da extração das configurações: sem
-demanda a planilha diria "precisa de zero máquinas" com toda a convicção. E o
-recorte é **o ano inteiro**, sem período: pico dentro de três meses é pico falso.
+demanda a planilha diria ocupação zero com toda a convicção. E o recorte é **o
+ano inteiro**, sem período: a linha de ano só fecha com os doze meses.
 
 Para isso `lib/xlsx.js` aprendeu **fórmula** (`{ f }`, gravada em inglês e com
 vírgula, como o OOXML exige — o Excel em português mostra `ARRED.PARA.CIMA`
@@ -1586,9 +1594,9 @@ célula de entrada) e **várias abas** com linhas livres acima do cabeçalho. A
 planilha de recursos continua usando a assinatura antiga.
 
 A tela (`app/cadastros/extracao-simulador/`) reutiliza a árvore planta › área ›
-CC da extração das configurações, mostra uma **prévia por CT e ano** com fator
-1 — calculada em JS pelo mesmo motor, que é o teste de que fórmula e número
-batem — e avisa CT sem capacidade calculada ou sem demanda. O servidor só
+CC da extração das configurações, mostra uma **prévia por CT e ano** com os
+valores da rodada — calculada em JS pelo mesmo motor, que é o teste de que
+fórmula e número batem — e avisa CT sem capacidade calculada ou sem demanda. O servidor só
 entrega os números (`simuladorPorCtMes`, irmã de `serieDoRecorte`); a planilha
 nasce no navegador.
 
