@@ -317,12 +317,20 @@ export default function RecalcularTudo({ areas, anos }) {
                    rotuloDe={(o) => o.nome} />
             </div>
 
+            {/* A conta das rodadas, aberta: "8 rodadas" para um recurso parece
+                trabalho a mais até se ler que são 4 anos × 2 origens — e que
+                cada uma regrava só esse recurso. Ano e OEE existem no pop-up
+                justamente para isto virar 1. */}
             <p className="rodape" style={{ margin: '12px 0' }}>
               {filtrando
                 ? <><strong>{nSel}</strong> recurso(s) no recorte</>
                 : <>Sem recorte: todos os {recursos.length} recursos — é o mesmo que Recalcular tudo</>}
-              {' '}· <strong>{planoParcial.length}</strong> rodada(s)
-              {planoParcial.some((p) => p.recursos) && ', parte delas parcial'}
+              {' '}· <strong>{planoParcial.length}</strong> rodada(s):{' '}
+              {new Set(planoParcial.map((p) => p.area.id)).size} área(s) ×{' '}
+              {filtro.ano ? 1 : anos.length} ano(s) ×{' '}
+              {filtro.origem ? 1 : ORIGENS.length} origem(ns)
+              {planoParcial.some((p) => p.recursos)
+                && ' — em cada uma o motor regrava só os recursos do recorte'}
             </p>
 
             <div className="acoes">
