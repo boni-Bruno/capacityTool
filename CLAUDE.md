@@ -64,9 +64,17 @@ alguém revoga achando que está simplificando.
 A regra fica aqui e **não se repete lá** — repetida, as duas versões divergem e
 ninguém sabe qual vale. Ver `memoria/README.md`.
 
-Na prática: tela nova vai só para o ROADMAP; convenção nova, motor puro novo ou
-regra de trabalho nova vem para os dois — e, quando ela nasceu de um erro, a
-história vai para `memoria/` no mesmo commit.
+**manual/ — para QUEM OPERA.** O único documento do projeto cujo leitor é o
+usuário da ferramenta (e a IA a quem ele cola o `MANUAL.md`). Conceitos, uma
+página por tela, POPs e a lista de pegadinhas em sintoma → causa → o que
+fazer. Tela que muda atualiza o manual **no mesmo commit**, e
+`manual/juntar.ps1` regera o `MANUAL.md`. **O que o Bruno relata "para o
+manual" é conteúdo, não pedido de correção**: vai para `04-perguntas.md`, e o
+código fica como está — se parecer defeito de verdade, dizer isso e perguntar.
+
+Na prática: tela nova vai para o ROADMAP e para o manual; convenção nova,
+motor puro novo ou regra de trabalho nova vem para o ROADMAP e para cá — e,
+quando ela nasceu de um erro, a história vai para `memoria/` no mesmo commit.
 
 ---
 
@@ -158,6 +166,7 @@ lib/estrutura.js   plantas, áreas, recursos, máquinas
 app/painel/        Painel da Capacidade — "quanto cabe"
 app/ocupacao/      Painel da Ocupação — "cabe?"
 app/cadastros/     todas as telas de cadastro
+manual/            o manual de quem opera; MANUAL.md na raiz é a junção
 memoria/           por que cada regra deste arquivo existe — o erro que a criou
 NN_*.sql           migrações, na ordem em que devem rodar
 ```

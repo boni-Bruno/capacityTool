@@ -35,6 +35,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Pessoa sem Qtd: gente é por turno, sem teto | `36` | Turnos do recurso |
 | Recalcular parcial: recursos, anos e origens à escolha | `37` | Painel · botão ao lado do Recalcular tudo |
 | Simulador de quantidade de recursos, em .xlsx com fórmulas | — | Extração › Simulador de recursos · `lib/simulador.js` |
+| Manual de quem opera: conceitos, telas, POPs e pegadinhas | — | `manual/` · `MANUAL.md` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -1631,6 +1632,27 @@ valores da rodada — calculada em JS pelo mesmo motor, que é o teste de que
 fórmula e número batem — e avisa CT sem capacidade calculada ou sem demanda. O servidor só
 entrega os números (`simuladorPorCtMes`, irmã de `serieDoRecorte`); a planilha
 nasce no navegador.
+
+---
+
+## O manual de quem opera — PRONTO, e cresce com o uso
+
+Em 14/09/2026 o Bruno começou a usar a ferramenta a sério e pediu um lugar
+para anotar o que aprende — POP, manual e base para perguntar a uma IA. Nasceu
+`manual/`: `01-conceitos`, uma página por tela em `02-telas/`, os POPs em
+`03-procedimentos/` (forma fixa: quando usar · antes · passos · conferir · o
+que dá errado) e `04-perguntas.md` (sintoma → causa → o que fazer). O
+`MANUAL.md` na raiz é a junção, regerada por `manual/juntar.ps1`, para colar
+numa IA.
+
+É o único documento do projeto cujo leitor é o operador; CLAUDE.md, ROADMAP e
+memoria/ falam com quem desenvolve. A regra de trabalho está no CLAUDE.md:
+manual atualizado no mesmo commit da tela, e relato "para o manual" é conteúdo,
+não correção de código.
+
+A primeira pegadinha registrada foi a que define a ferramenta: base nova,
+calendário, turnos e OEE cadastrados, simulador baixado — e "sem capacidade
+calculada", porque **nada é recalculado sozinho**. Ela abre a lista.
 
 ---
 
