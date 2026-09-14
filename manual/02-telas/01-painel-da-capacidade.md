@@ -29,6 +29,26 @@ ao **dia**; no dia, ao **turno**.
   parcial** depois. Se a data é anterior ao seu último cadastro, o painel ainda
   não viu o cadastro.
 
+## A aba "Capacidade por recurso (Tab. Din.)"
+
+A mesma capacidade, no grão **recurso × mês**, como tabela dinâmica:
+
+- **Agrupar por**: clique nos campos na ordem em que devem empilhar (Planta,
+  Área, Sub-área, CC, CT, Recurso, Tipo, Calendário, Mês). O número no chip é
+  a posição; as setas ao lado do caminho reordenam. Clicar de novo tira o
+  campo.
+- **▸ / ▾** abre e fecha cada grupo; *abrir tudo* e *fechar tudo* no alto.
+- **Agregação** por medida: soma (padrão), média, mediana, máximo, mínimo,
+  contagem. Vale para as **linhas do grão** dentro do grupo: média num CC é a
+  média dos recurso × mês daquele CC.
+- **% do teto e OEE** não seguem a função escolhida: são sempre soma sobre
+  soma do grupo.
+- O número pequeno ao lado do nome do grupo é quantas linhas recurso × mês ele
+  tem.
+- Os filtros da barra e da árvore valem aqui também. Agrupamento e agregação
+  ficam na URL; o que está aberto, não.
+- Em metro e UM a instalada fica de fora, como no resto do painel.
+
 ## Cuidados
 
 - Sem rodada para a área/ano/origem escolhidos a tela avisa e fica vazia. Não é

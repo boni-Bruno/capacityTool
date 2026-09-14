@@ -804,6 +804,41 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 .ocup-estoura { color: var(--erro); font-weight: 600; }
 .ocup-aperta  { color: #8a4b0d; font-weight: 600; }
 
+/* ---- a tabela dinamica dos dois paineis ---- */
+
+/* Tres blocos em linha: niveis, agregacao, abrir/fechar. Envolve no celular. */
+.pivot-config {
+  display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start;
+  margin-bottom: 12px;
+}
+.pivot-bloco { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* O numero dentro do chip diz a ordem do nivel — e a ordem que faz a arvore. */
+.pivot-ordem {
+  display: inline-block; min-width: 16px; height: 16px; line-height: 16px;
+  margin-right: 6px; border-radius: 999px; background: rgba(255,255,255,.28);
+  font-size: 11px; text-align: center;
+}
+.pivot-caminho { font-size: 13px; white-space: nowrap; }
+.pivot-seta {
+  border: none; background: none; padding: 0 2px; cursor: pointer;
+  font: inherit; font-size: 12px; color: var(--accent);
+}
+.pivot-seta:disabled { color: var(--border); cursor: default; }
+.pivot-fn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.pivot-fn select { height: 30px; font-size: 13px; }
+
+.pivot-toggle {
+  display: inline-block; width: 18px; border: none; background: none;
+  padding: 0; cursor: pointer; font: inherit; font-size: 12px; color: var(--accent);
+  text-align: left;
+}
+.pivot-folha { cursor: default; }
+.pivot-n { font-size: 11px; }
+/* Total e grupos em negrito: e a hierarquia que se le, nao a cor. */
+.tabela-pivot tr.pivot-total td { font-weight: 700; border-bottom: 2px solid var(--border); }
+.tabela-pivot tr.pivot-grupo td { font-weight: 600; }
+.tabela-pivot td:first-child { white-space: nowrap; }
+
 /* ---- a grade que alinha grafico e tabela ---- */
 
 /* `fixed` e o que faz os doze meses terem larguras iguais: sem ele, a coluna

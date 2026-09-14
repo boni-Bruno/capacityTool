@@ -36,6 +36,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Recalcular parcial: recursos, anos e origens à escolha | `37` | Painel · botão ao lado do Recalcular tudo |
 | Simulador de quantidade de recursos, em .xlsx com fórmulas | — | Extração › Simulador de recursos · `lib/simulador.js` |
 | Manual de quem opera: conceitos, telas, POPs e pegadinhas | — | `manual/` · `MANUAL.md` |
+| Tabela dinâmica nos dois painéis, no grão de mês | — | Painel · Ocupação › aba "(Tab. Din.)" · `lib/pivot.js` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -1632,6 +1633,48 @@ valores da rodada — calculada em JS pelo mesmo motor, que é o teste de que
 fórmula e número batem — e avisa CT sem capacidade calculada ou sem demanda. O servidor só
 entrega os números (`simuladorPorCtMes`, irmã de `serieDoRecorte`); a planilha
 nasce no navegador.
+
+---
+
+## Tabela dinâmica nos dois painéis — PRONTO
+
+Pedido do Bruno em 14/09/2026, olhando a tabela por CT da ocupação: "dá para
+trabalhar como tabela dinâmica?" — agrupar por qualquer campo, abrir e fechar,
+e escolher se o número do grupo é soma, média, mediana, máximo ou mínimo. A
+pergunta que veio junto era se isso é um motor de cálculo novo. **Não é**: os
+números já existem por linha; a tabela dinâmica só agrupa e agrega no
+navegador. `lib/pivot.js` (motor puro, testado) monta a árvore; a tela
+`app/painel/pivot.jsx` a desenha, e os dois painéis a usam com campos e
+medidas diferentes.
+
+**O grão é o mês**, decisão do Bruno entre as duas opções oferecidas: recurso
+× mês no painel da capacidade (`porRecursoMes`), CT × mês na ocupação
+(`ocupacaoPorCtMes`). É o que faz "média" significar alguma coisa — média
+mensal de um CC é uma pergunta; média por recurso no período inteiro é outra —
+e Mês vira um nível como os outros. As duas consultas são irmãs das que já
+alimentam as tabelas de cima, com a mesma fatia, o mesmo índice e o mesmo
+FULL JOIN; provado no banco que a soma dos meses fecha com as somas do painel
+(Tecelagem 2026: instalada, planejada, disponível e demanda iguais ao minuto).
+Para isso a instalada entrou na união das chaves — um recurso com teto e sem
+turno num mês tem instalada e não tem fato.
+
+**Três regras da tabela**, que não são do Excel:
+
+- **A agregação é sobre as linhas do grão do grupo**, nunca sobre os subtotais
+  dos filhos. Média num CC é a média dos CT × mês daquele CC, como o Excel faz
+  com a tabela de origem — a média dos subtotais mudaria conforme a ordem em
+  que a pessoa empilhou os níveis.
+- **A razão não se agrega.** Ocupação, % do teto e OEE são sempre Σ numerador
+  ÷ Σ denominador do grupo, seja qual for a função escolhida para as medidas.
+  Média de ocupações não é ocupação; mediana de máximos não é nada.
+- **Recurso não é nível na ocupação**: a capacidade é do recurso e a demanda
+  é do CT, e dois recursos no mesmo CT dividem uma demanda que não sabe deles.
+  Na capacidade, recurso é nível, e Sub-área, Tipo e Calendário também.
+
+Níveis e agregações moram na URL (`pv_n`, `pv_f_<medida>`) e sobrevivem à
+troca de mês, unidade e ordenação; o que está aberto fica em estado — dezenas
+de chaves que mudam a cada clique não são endereço. Só com a aba aberta a
+consulta roda, como a de atributo.
 
 ---
 

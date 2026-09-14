@@ -23,6 +23,16 @@ sempre o que está **no ar** na tela de Demanda.
   não foi recalculado. A tela de Demanda lista esses CTs em *demanda sem
   capacidade*.
 
+## A aba "Ocupação por centro de trabalho (Tab. Din.)"
+
+A mesma ocupação, no grão **CT × mês**, como tabela dinâmica: agrupar por
+Planta, Área, CC, CT e Mês na ordem que quiser, abrir e fechar grupos, e
+escolher a agregação (soma, média, mediana, máximo, mínimo, contagem) da
+capacidade e da demanda. A agregação vale para as linhas CT × mês do grupo.
+**A ocupação é sempre Σ demanda ÷ Σ capacidade do grupo**, seja qual for a
+função escolhida — média de ocupações não é ocupação. Recurso não é nível
+aqui: a demanda é do CT e não se reparte entre os recursos dele.
+
 ## Cuidados
 
 - Depende de **duas** coisas estarem atualizadas: a rodada (Recalcular) e a

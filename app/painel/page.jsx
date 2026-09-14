@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import {
   ultimaExecucao, areas, arraysDeFatia, capacidadePorCtMes, porMes, porDia,
-  porTurnoDoDia, tetoDoDia, porRecurso, anosComRodada,
+  porTurnoDoDia, tetoDoDia, porRecurso, porRecursoMes, anosComRodada,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
@@ -36,6 +36,7 @@ import { FiltrosTopo, FiltrosRecurso, SeletorAno } from './filtros';
 import TabelaMes from './tabela-mes';
 import TabelaAtributo from './tabela-atributo';
 import FiltroColuna from './filtro-coluna';
+import Pivot from './pivot';
 import Shell from '../shell';
 
 export const metadata = { title: 'Painel da Capacidade' };
@@ -362,7 +363,8 @@ export default async function Page({ searchParams }) {
   // A aba vive na URL como o resto do painel, e é isso que permite a leitura
   // cara da segunda só acontecer quando alguém a abre.
   const podeAtributo = Boolean(carga && atributosFiltro.length);
-  const aba = podeAtributo && searchParams?.aba === 'atributo' ? 'atributo' : 'recurso';
+  const aba = podeAtributo && searchParams?.aba === 'atributo' ? 'atributo'
+    : searchParams?.aba === 'pivot' ? 'pivot' : 'recurso';
   const attrTabela = aba === 'atributo'
     ? (atributosFiltro.some((a) => a.codigo === searchParams?.attr_tab)
         ? searchParams.attr_tab : atributosFiltro[0].codigo)
@@ -424,6 +426,12 @@ export default async function Page({ searchParams }) {
     if (ord) p.set('ordem', ord);
     if (abaSel === 'atributo') p.set('aba', 'atributo');
     if (abaSel === 'atributo' && attrTab) p.set('attr_tab', attrTab);
+    if (abaSel === 'pivot') p.set('aba', 'pivot');
+    // Os níveis e agregações da tabela dinâmica também: trocar de mês ou de
+    // unidade não deveria desmontar o agrupamento que a pessoa empilhou.
+    for (const [k, v] of Object.entries(searchParams ?? {})) {
+      if (k.startsWith('pv_') && typeof v === 'string' && v) p.set(k, v);
+    }
     // Ano inteiro é a ausência de recorte, e some do endereço: parâmetro que
     // repete o padrão só atrapalha quem lê a URL.
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
@@ -509,6 +517,26 @@ export default async function Page({ searchParams }) {
   //
   // O rateio e a conversão acontecem em JavaScript, com o mesmo motor do resto
   // do painel, então o mix ajustado à mão vale aqui do mesmo jeito.
+  // A TABELA DINÂMICA lê o mesmo recorte no grão recurso × mês, com a mesma
+  // fatia e o mesmo índice de porRecurso — e recorta pelos mesmos ids que a
+  // tabela por recurso mostra, para as duas fecharem. Só com a aba aberta.
+  // Em metro e UM a instalada fica de fora, como no resto do painel.
+  let linhasPivot = [];
+  if (aba === 'pivot') {
+    const ids = new Set(visiveis.map((r) => r.id));
+    const suf = sufixoCampo(unidade);
+    const cru = await porRecursoMes(exec.id, areaId, periodo.de, periodo.ate,
+                                    carga?.id ?? null, faEfetivo);
+    linhasPivot = cru.filter((r) => ids.has(r.id)).map((r) => ({
+      planta: r.planta, area: r.area, sub_area: r.sub_area, cc: r.cc, ct: r.ct,
+      recurso: r.nome, codigo: r.codigo, tipo_recurso: r.tipo_recurso,
+      calendario: r.calendario ?? '', mes: r.mes,
+      instalada: Number(r.instalada),
+      planejada: Number(r[`planejada${suf}`]),
+      disponivel: Number(r[`disponivel${suf}`]),
+    }));
+  }
+
   let porAtributo = { linhas: [], semIndice: [] };
   let mesesDaTabela = [];
   if (aba === 'atributo' && periodo.nivel === 'MES') {
@@ -1001,6 +1029,10 @@ export default async function Page({ searchParams }) {
                 Capacidade por atributo
               </Link>
             )}
+            <Link href={url({ abaSel: 'pivot' })}
+                  className={`chip ${aba === 'pivot' ? 'chip-on' : ''}`}>
+              Capacidade por recurso (Tab. Din.)
+            </Link>
           </div>
           <Suspense>
             <FiltrosRecurso ano={ano} periodo={periodo}
@@ -1069,6 +1101,53 @@ export default async function Page({ searchParams }) {
             carimbada no mês, e reparti-la por dia inventaria uma distribuição
             que o plano não deu. Volte ao ano inteiro para ver esta leitura.
           </p>
+        )}
+
+        {aba === 'pivot' && (
+          <>
+            <p className="rodape" style={{ margin: '0 0 1rem' }}>
+              A mesma capacidade da tabela por recurso, no grão{' '}
+              <strong>recurso × mês</strong>, para agrupar como se quiser:
+              clique nos campos na ordem em que devem empilhar, abra e feche
+              cada nível. A <strong>agregação</strong> vale para as linhas do
+              grão dentro do grupo — média num CC é a média dos recurso × mês
+              dele. <strong>% do teto</strong> e <strong>OEE</strong> são sempre
+              soma sobre soma do grupo, seja qual for a função escolhida.
+              {eFisica(unidade) && (
+                <> Em {UNIDADES.find((u) => u.valor === unidade)?.rotulo} a
+                  instalada fica de fora, como no resto do painel.</>
+              )}
+            </p>
+            <Suspense>
+              <Pivot linhas={linhasPivot}
+                     campos={[
+                       { campo: 'planta',       rotulo: 'Planta' },
+                       { campo: 'area',         rotulo: 'Área' },
+                       { campo: 'sub_area',     rotulo: 'Sub-área' },
+                       { campo: 'cc',           rotulo: 'CC' },
+                       { campo: 'ct',           rotulo: 'CT' },
+                       { campo: 'recurso',      rotulo: 'Recurso' },
+                       { campo: 'tipo_recurso', rotulo: 'Tipo' },
+                       { campo: 'calendario',   rotulo: 'Calendário' },
+                       { campo: 'mes',          rotulo: 'Mês' },
+                     ]}
+                     medidas={[
+                       ...(eFisica(unidade) ? [] : [
+                         { campo: 'instalada', rotulo: `Instalada (${sufixoUnidade(unidade)})` },
+                       ]),
+                       { campo: 'planejada',  rotulo: `Planejada (${sufixoUnidade(unidade)})` },
+                       { campo: 'disponivel', rotulo: `Disponível (${sufixoUnidade(unidade)})` },
+                     ]}
+                     razoes={[
+                       ...(eFisica(unidade) ? [] : [
+                         { nome: 'teto', rotulo: '% do teto', num: 'planejada', den: 'instalada' },
+                       ]),
+                       { nome: 'oee', rotulo: 'OEE', num: 'disponivel', den: 'planejada' },
+                     ]}
+                     unidade={unidade}
+                     padrao={['cc', 'ct', 'recurso']} />
+            </Suspense>
+          </>
         )}
 
         {aba === 'atributo' && periodo.nivel === 'MES' && (

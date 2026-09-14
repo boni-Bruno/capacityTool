@@ -3,8 +3,8 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import {
   anosComRodada, areas, capacidadePorCtMes, demandaPorDiaDaArea,
-  demandaPorMesDaArea, ocupacaoPorCt, porDia, porMes, porRecurso,
-  ultimaExecucao,
+  demandaPorMesDaArea, ocupacaoPorCt, ocupacaoPorCtMes, porDia, porMes,
+  porRecurso, ultimaExecucao,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
@@ -32,6 +32,7 @@ import TabelaAtributoOcupacao from './tabela-atributo';
 import FiltroColuna from '../painel/filtro-coluna';
 import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
+import Pivot from '../painel/pivot';
 import Shell from '../shell';
 
 export const metadata = { title: 'Painel da Ocupação' };
@@ -253,7 +254,8 @@ export default async function Page({ searchParams }) {
   ]);
   const atributosFiltro = [...attrsDePara, ...CAMPOS_BASE];
   const podeAtributo = atributosFiltro.length > 0;
-  const aba = podeAtributo && searchParams?.aba === 'atributo' ? 'atributo' : 'ct';
+  const aba = podeAtributo && searchParams?.aba === 'atributo' ? 'atributo'
+    : searchParams?.aba === 'pivot' ? 'pivot' : 'ct';
   const attrTabela = aba === 'atributo'
     ? (atributosFiltro.some((a) => a.codigo === searchParams?.attr_tab)
         ? searchParams.attr_tab : atributosFiltro[0].codigo)
@@ -279,11 +281,17 @@ export default async function Page({ searchParams }) {
     if (ord) p.set('ordem', ord);
     if (abaSel === 'atributo') p.set('aba', 'atributo');
     if (abaSel === 'atributo' && attrTab) p.set('attr_tab', attrTab);
+    if (abaSel === 'pivot') p.set('aba', 'pivot');
     // Os filtros viajam como vieram: reescrevê-los aqui seria uma segunda
     // serialização, livre para divergir da de lib/filtro.js.
     for (const c of CAMPOS_FILTRO) {
       const bruto = searchParams?.[`f_${c.campo}`];
       if (filtros[c.campo] && bruto) p.set(`f_${c.campo}`, bruto);
+    }
+    // Os níveis e agregações da tabela dinâmica também: trocar de mês ou de
+    // ordenação não deveria desmontar o agrupamento que a pessoa empilhou.
+    for (const [k, v] of Object.entries(searchParams ?? {})) {
+      if (k.startsWith('pv_') && typeof v === 'string' && v) p.set(k, v);
     }
     const inteiro = d1 === iso(ano, 1, 1) && d2 === iso(ano, 12, 31);
     if (d1 && d2 && !inteiro) { p.set('de', d1); p.set('ate', d2); }
@@ -397,6 +405,20 @@ export default async function Page({ searchParams }) {
     mesesDaTabela = mesesNoIntervalo(periodo.de, periodo.ate).map((m) => ({
       chave: iso(m.ano, m.mes, 1),
       rotulo: MESES[m.mes] + (m.parcial ? '*' : ''),
+    }));
+  }
+
+  // A TABELA DINÂMICA lê o mesmo recorte no grão CT × mês. Só com a aba aberta,
+  // como a de atributo: é uma consulta a mais e quem está na tabela por CT não
+  // paga por ela. As medidas seguem a capacidade escolhida nas barras, para a
+  // ocupação daqui bater com a de cima.
+  let linhasPivot = [];
+  if (aba === 'pivot') {
+    const cru = await ocupacaoPorCtMes(exec.id, areaId, periodo.de, periodo.ate,
+                                       listaIds, cargaId);
+    linhasPivot = cru.map((r) => ({
+      planta: r.planta, area: r.area, cc: r.cc, ct: r.ct, recursos: r.recursos,
+      mes: r.mes, capacidade: num(r[medida]), demanda: num(r.demanda),
     }));
   }
 
@@ -561,6 +583,10 @@ export default async function Page({ searchParams }) {
                 Ocupação por atributo
               </Link>
             )}
+            <Link href={url({ abaSel: 'pivot' })}
+                  className={`chip ${aba === 'pivot' ? 'chip-on' : ''}`}>
+              Ocupação por centro de trabalho (Tab. Din.)
+            </Link>
           </div>
           <Suspense>
             <FiltrosRecurso ano={ano} periodo={periodo}
@@ -620,6 +646,40 @@ export default async function Page({ searchParams }) {
             no mês, e reparti-la por dia inventaria uma distribuição que o plano
             não deu. Volte ao ano inteiro para ver esta leitura.
           </p>
+        )}
+
+        {aba === 'pivot' && (
+          <>
+            <p className="rodape" style={{ margin: '0 0 1rem' }}>
+              A mesma ocupação por CT, no grão <strong>CT × mês</strong>, para
+              agrupar como se quiser: clique nos campos na ordem em que devem
+              empilhar, abra e feche cada nível. A <strong>agregação</strong>{' '}
+              vale para as linhas do grão dentro do grupo — média num CC é a
+              média dos CT × mês dele. A <strong>ocupação</strong> é sempre a
+              soma da demanda sobre a soma da capacidade do grupo, seja qual for
+              a função escolhida: média de ocupações não é ocupação.
+            </p>
+            <Suspense>
+              <Pivot linhas={linhasPivot}
+                     campos={[
+                       { campo: 'planta', rotulo: 'Planta' },
+                       { campo: 'area',   rotulo: 'Área' },
+                       { campo: 'cc',     rotulo: 'CC' },
+                       { campo: 'ct',     rotulo: 'CT' },
+                       { campo: 'mes',    rotulo: 'Mês' },
+                     ]}
+                     medidas={[
+                       { campo: 'capacidade', rotulo: `${rotuloMedida} (${sufixoUnidade(unidade)})` },
+                       { campo: 'demanda',    rotulo: `Demanda (${sufixoUnidade(unidade)})` },
+                     ]}
+                     razoes={[
+                       { nome: 'ocupacao', rotulo: 'Ocupação', num: 'demanda',
+                         den: 'capacidade', estilo: 'ocupacao' },
+                     ]}
+                     unidade={unidade}
+                     padrao={['cc', 'ct']} />
+            </Suspense>
+          </>
         )}
 
         {aba === 'atributo' && nivelMes && (
