@@ -18,6 +18,7 @@ import Importar from './importar';
 import Ano from './ano';
 import EditorExcecao from './excecao';
 
+export const metadata = { title: 'Calendários' };
 export const dynamic = 'force-dynamic';
 
 function descreveDias(dias) {

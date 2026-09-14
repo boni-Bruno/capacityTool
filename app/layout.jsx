@@ -2,8 +2,10 @@ import { cookies } from 'next/headers';
 import './globals.css';
 import { COOKIE_TEMA, leTema } from '../lib/tema';
 
+// Cada página exporta o próprio título e ele entra no lugar do %s: com três
+// abas abertas, "Capacidade · Capacidade · Capacidade" não diz qual é qual.
 export const metadata = {
-  title: 'Capacidade',
+  title: { template: '%s · Capacidade', default: 'Capacidade' },
   description: 'Planejamento de capacidade',
 };
 

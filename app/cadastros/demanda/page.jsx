@@ -9,6 +9,7 @@ import EnviarDemanda from './enviar';
 import Cargas from './cargas';
 import Explorar from './explorar';
 
+export const metadata = { title: 'Demanda' };
 export const dynamic = 'force-dynamic';
 
 // A ORDEM DA PÁGINA É A ORDEM DO TRABALHO: importar, decidir qual carga está no

@@ -7,6 +7,7 @@ import { CAMPOS_BASE, camposUsados } from '../../../lib/regras';
 import AvisoBanco from '../aviso-banco';
 import AjusteMix from './ajuste';
 
+export const metadata = { title: 'Ajuste de mix' };
 export const dynamic = 'force-dynamic';
 
 // =============================================================================

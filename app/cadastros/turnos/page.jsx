@@ -7,6 +7,7 @@ import AvisoBanco from '../aviso-banco';
 import Turnos from './turnos';
 import EditorHorario from './editor';
 
+export const metadata = { title: 'Turnos' };
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ searchParams }) {

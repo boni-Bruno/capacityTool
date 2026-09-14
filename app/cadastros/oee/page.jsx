@@ -11,6 +11,7 @@ import Seletor from '../seletor';
 import EditorOee from './editor';
 import Ciente from '../ciente';
 
+export const metadata = { title: 'OEE' };
 export const dynamic = 'force-dynamic';
 
 // A lista de recursos vem ordenada por nome. O seletor de código precisa dela

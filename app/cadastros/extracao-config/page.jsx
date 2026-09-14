@@ -7,6 +7,7 @@ import { ORIGENS } from '../../../lib/origens';
 import AvisoBanco from '../aviso-banco';
 import Exportar from './exportar';
 
+export const metadata = { title: 'Extração das configurações' };
 export const dynamic = 'force-dynamic';
 
 // =============================================================================

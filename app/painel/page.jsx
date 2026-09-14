@@ -38,6 +38,7 @@ import TabelaAtributo from './tabela-atributo';
 import FiltroColuna from './filtro-coluna';
 import Shell from '../shell';
 
+export const metadata = { title: 'Painel da Capacidade' };
 export const dynamic = 'force-dynamic';
 
 // O gráfico pula mês sem resultado e a tabela ficaria fora do passo com ele.

@@ -3,6 +3,7 @@ import { ordemGuardada } from '../../../lib/ordem-servidor';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
 
+export const metadata = { title: 'Plantas' };
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {

@@ -4,6 +4,7 @@ import AvisoBanco from '../aviso-banco';
 import Extrator from './extrator';
 import ImportarAp from './importar-ap';
 
+export const metadata = { title: 'Extração para o AP' };
 export const dynamic = 'force-dynamic';
 
 // =============================================================================

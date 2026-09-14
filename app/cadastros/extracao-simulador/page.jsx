@@ -5,6 +5,7 @@ import { ORIGENS } from '../../../lib/origens';
 import AvisoBanco from '../aviso-banco';
 import Simulador from './simulador';
 
+export const metadata = { title: 'Simulador de recursos' };
 export const dynamic = 'force-dynamic';
 
 // =============================================================================

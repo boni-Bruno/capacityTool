@@ -34,6 +34,7 @@ import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
 import Shell from '../shell';
 
+export const metadata = { title: 'Painel da Ocupação' };
 export const dynamic = 'force-dynamic';
 
 // =============================================================================

@@ -7,6 +7,7 @@ import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorParadas from './editor';
 
+export const metadata = { title: 'Paradas' };
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ searchParams }) {

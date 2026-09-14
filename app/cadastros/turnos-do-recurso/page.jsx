@@ -12,6 +12,7 @@ import Calendario from './calendario';
 import Ciente from '../ciente';
 import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
 
+export const metadata = { title: 'Turnos do recurso' };
 export const dynamic = 'force-dynamic';
 
 // A lista de recursos vem ordenada por nome. O seletor de código precisa dela

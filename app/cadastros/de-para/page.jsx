@@ -5,6 +5,7 @@ import {
 import AvisoBanco from '../aviso-banco';
 import Editor from './editor';
 
+export const metadata = { title: 'DE/PARA' };
 export const dynamic = 'force-dynamic';
 
 // =============================================================================

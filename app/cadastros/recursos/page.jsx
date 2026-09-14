@@ -7,6 +7,7 @@ import { ordemGuardada } from '../../../lib/ordem-servidor';
 import Definitivo from './definitivo';
 import Planilha from './planilha';
 
+export const metadata = { title: 'Recursos' };
 export const dynamic = 'force-dynamic';
 
 const TIPOS = [
