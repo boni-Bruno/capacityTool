@@ -453,6 +453,13 @@ Linhas = meses, colunas = turnos.
 - **Todos os filtrados** no seletor de recurso cadastra o mesmo desenho em
   todos os recursos do recorte — útil para montar uma área inteira. Vale só
   para máquina; pessoa se cadastra uma a uma.
+- **Quem entra no lote** aparece como lista de chips acima da matriz: clique
+  num para tirar, **nenhum** e **todos** para começar do zero. É assim que se
+  faz "2 turnos em 4 máquinas e 3 turnos nas outras 5" do mesmo CT: *nenhum*,
+  marque as 4, aplique; *nenhum*, marque as 5, aplique.
+- **Limpar turnos do ano** (ou **Limpar turnos em N recurso(s)**, no lote)
+  apaga os turnos do ano escolhido nos recursos da lista, com confirmação. Os
+  outros anos não mudam. É o caminho para desfazer um lote aplicado errado.
 
 ### Regime
 
@@ -490,8 +497,10 @@ planejada são iguais nas duas, só a disponível muda.
 ### Como usar
 
 Mesmos seletores das outras telas de planejamento (planta, área, CC, CT…, ano).
-Digite o percentual por mês; a caixa **→ ano todo** repete o valor nos doze
-meses. Recurso novo já nasce com **100%** nas duas origens.
+Digite o percentual por mês; *repetir no ano* copia o valor nos doze meses.
+Recurso novo já nasce com **100%** nas duas origens. Com *todos os
+filtrados*, a lista de chips acima da tabela diz quem entra no lote — clique
+para tirar, **nenhum**/**todos** para escolher só alguns.
 
 ### Cuidados
 
@@ -517,7 +526,9 @@ obra, inventário. Muda toda semana — é a tela mais viva do planejamento.
 Escolha área e ano; estreite por CC, CT, código ou recurso; escolha o tipo, o
 período (data ou intervalo), os turnos atingidos e os **minutos por turno**.
 Escolhendo *todos os filtrados* no Código ou no Recurso, a mesma parada entra
-em cada um deles — estreite antes, porque o alcance é o filtro de cima.
+em cada um deles — estreite antes, porque o alcance é o filtro de cima, e
+tire da lista de chips os que não entram (**nenhum**/**todos** para escolher
+só alguns).
 
 ### Cuidados
 
@@ -1091,6 +1102,29 @@ depois da última rodada ainda não existe para nenhuma dessas telas.
 mudaram) **antes de avaliar qualquer coisa** na ferramenta. Depois disso o
 simulador saiu certo. Regra geral: *mudou cadastro → recalcular → só então
 olhar número*.
+
+---
+
+### Cadastrei turnos em lote para vários recursos e não consigo desfazer
+
+**Sintoma.** Apliquei 3 turnos em 12 máquinas com *todos os filtrados*; para
+tirar, a matriz do lote nasce vazia e o botão Aplicar fica desabilitado.
+
+**Causa.** A matriz em lote é um molde e nasce em branco; vazia, não há
+"alteração" para salvar.
+
+**O que fazer.** Botão **Limpar turnos em N recurso(s)**, ao lado do Aplicar:
+apaga os turnos do ano nos recursos da lista, com confirmação. Depois,
+Recalcular.
+
+---
+
+### Quero 2 turnos em 4 máquinas e 3 turnos nas outras 5 do mesmo CT
+
+**O que fazer.** Filtre o CT, escolha *todos os filtrados*; na lista de chips
+acima da matriz clique em **nenhum** e marque as 4; monte a matriz e aplique.
+Depois **nenhum**, marque as 5, monte a outra matriz e aplique. O mesmo vale
+em OEE e Paradas.
 
 ---
 

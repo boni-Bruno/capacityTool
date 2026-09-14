@@ -563,6 +563,20 @@ duplicadas. O que falhou é dito no fim, com nome.
 Calendários ficou de fora porque lá não há o que aplicar em lote: o calendário é
 da ÁREA, e já vale para todos os recursos dela.
 
+**Escolher alguns do lote, e limpar o lote** (14/09/2026). Nove G6200 no CT
+291-001, quatro com dois turnos e cinco com três: o Bruno estava fazendo um a
+um, porque a lista de quem entra ficava embaixo do botão Aplicar — onde
+ninguém olhava — e só tirava de um em um. A lista de chips subiu para **antes
+da matriz** e ganhou **nenhum** e **todos**: *nenhum*, marca quatro, aplica;
+*nenhum*, marca cinco, aplica. Vale em Turnos do recurso, OEE e Paradas (que
+até então listava os códigos em texto, sem tirar ninguém).
+
+E a matriz do lote, por nascer vazia, não tinha como **desfazer** um lote
+aplicado errado: vazia, não há alteração para salvar. Entrou **Limpar turnos
+em N recurso(s)** (e *Limpar turnos do ano* no recurso só), que manda a
+matriz vazia direto, com confirmação, e apaga os turnos daquele ano nos
+recursos da lista — os outros anos não mudam.
+
 ### Pessoa não tem quantidade; tem gente por turno (migração 36)
 
 A `Qtd` do cadastro de recurso é o teto físico da máquina — quantas existem,

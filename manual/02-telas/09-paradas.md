@@ -12,7 +12,9 @@ obra, inventário. Muda toda semana — é a tela mais viva do planejamento.
 Escolha área e ano; estreite por CC, CT, código ou recurso; escolha o tipo, o
 período (data ou intervalo), os turnos atingidos e os **minutos por turno**.
 Escolhendo *todos os filtrados* no Código ou no Recurso, a mesma parada entra
-em cada um deles — estreite antes, porque o alcance é o filtro de cima.
+em cada um deles — estreite antes, porque o alcance é o filtro de cima, e
+tire da lista de chips os que não entram (**nenhum**/**todos** para escolher
+só alguns).
 
 ## Cuidados
 

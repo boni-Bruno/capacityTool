@@ -79,8 +79,24 @@ export default function EditorOee({
     }
   }
 
+  const alvosLista = lote && (
+    <Alvos alvos={alvos} fora={fora}
+           onDefine={(novo) => { setFora(novo); setOk(null); }}
+           onAlterna={(id) => {
+             setFora((f) => {
+               const novo = new Set(f);
+               if (novo.has(id)) novo.delete(id); else novo.add(id);
+               return novo;
+             });
+             setOk(null);
+           }} />
+  );
+
   return (
     <>
+      {/* Quem entra no lote vem antes da tabela, como na matriz de turnos. */}
+      {alvosLista}
+
       <table className="tabela-oee">
         <thead>
           <tr>
@@ -118,18 +134,6 @@ export default function EditorOee({
           })}
         </tbody>
       </table>
-
-      {lote && (
-        <Alvos alvos={alvos} fora={fora}
-               onAlterna={(id) => {
-                 setFora((f) => {
-                   const novo = new Set(f);
-                   if (novo.has(id)) novo.delete(id); else novo.add(id);
-                   return novo;
-                 });
-                 setOk(null);
-               }} />
-      )}
 
       <div className="acoes" style={{ marginTop: 16 }}>
         <button className="btn btn-primario" onClick={salvar}

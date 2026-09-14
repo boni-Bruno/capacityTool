@@ -11,8 +11,10 @@ planejada são iguais nas duas, só a disponível muda.
 ## Como usar
 
 Mesmos seletores das outras telas de planejamento (planta, área, CC, CT…, ano).
-Digite o percentual por mês; a caixa **→ ano todo** repete o valor nos doze
-meses. Recurso novo já nasce com **100%** nas duas origens.
+Digite o percentual por mês; *repetir no ano* copia o valor nos doze meses.
+Recurso novo já nasce com **100%** nas duas origens. Com *todos os
+filtrados*, a lista de chips acima da tabela diz quem entra no lote — clique
+para tirar, **nenhum**/**todos** para escolher só alguns.
 
 ## Cuidados
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Alvos from '../alvos';
 
 const hoje = () => new Date().toISOString().slice(0, 10);
 
@@ -28,6 +29,9 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
   const [erro, setErro] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [progresso, setProgresso] = useState(null);
+  // Quem saiu do lote a mão — a mesma lista de chips das outras telas de
+  // planejamento, para escolher quatro dos nove sem refazer o filtro.
+  const [fora, setFora] = useState(() => new Set());
 
   const set = (c) => (e) =>
     setForm((f) => ({
@@ -39,7 +43,7 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
   // Não existe uma segunda lista para manter em dia com a primeira — estreitar
   // por CC já é escolher o lote.
   const emLote = form.recurso_id === TODOS;
-  const alvos = emLote ? recursos : recursos.filter(
+  const alvos = emLote ? recursos.filter((r) => !fora.has(r.id)) : recursos.filter(
     (r) => String(r.id) === String(form.recurso_id));
 
   async function chamar(metodo, corpo) {
@@ -212,9 +216,13 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
         </div>
 
         {emLote && (
-          <p className="rodape">
-            <strong>No lote:</strong> {recursos.map((r) => r.codigo).join(' · ')}
-          </p>
+          <Alvos alvos={porCodigo(recursos)} fora={fora}
+                 onDefine={setFora}
+                 onAlterna={(id) => setFora((f) => {
+                   const novo = new Set(f);
+                   if (novo.has(id)) novo.delete(id); else novo.add(id);
+                   return novo;
+                 })} />
         )}
 
         <p className="rodape">
@@ -223,7 +231,8 @@ export default function EditorParadas({ recursos, tipos, turnos, paradas,
           já está embutido no OEE.
           {' '}Escolhendo <strong>todos os filtrados</strong> no Código ou no
           Recurso, a mesma parada entra em cada um deles — estreite antes por CC
-          ou CT, porque o alcance é o filtro de cima.
+          ou CT, porque o alcance é o filtro de cima, e tire da lista os que não
+          entram.
         </p>
       </div>
 

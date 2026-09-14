@@ -159,43 +159,75 @@ export default function Matriz({
         marcados[t.turno_id] = porMes;
       }
 
-      const grava = async (id) => {
-        const r = await fetch('/api/cadastro/recurso-turno', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recurso_id: id, ano, marcados,
-            // As colunas que esta tela mostrou. O servidor só reescreve estas:
-            // turno que a tela não ofereceu não é apagado por omissão.
-            escopo: turnos.map((t) => t.turno_id),
-          }),
-        });
-        const j = await r.json();
-        if (!j.ok) throw new Error(j.erro);
-        return j.turnosAlterados ?? 0;
-      };
+      await gravaEm(marcados);
+    } catch (e) {
+      setErro(e.message ?? 'Falhou');
+    } finally {
+      setAndamento(null);
+      setSalvando(false);
+    }
+  }
 
-      if (!lote) {
-        const n = await grava(recursoId);
-        setOk(n === 0 ? 'Nada mudou.'
-          : `${n} turno${n > 1 ? 's' : ''} atualizado${n > 1 ? 's' : ''}.`);
-      } else {
-        // UM RECURSO POR REQUISIÇÃO, com o laço aqui no navegador — é o mesmo
-        // caminho do Recalcular tudo e da importação, pela mesma razão: cada
-        // recurso são duas consultas e uma transação, e quarenta deles numa
-        // requisição só estouram o tempo da função no meio, deixando metade
-        // gravada e nenhum aviso.
-        let mexidos = 0;
-        for (const [i, alvo] of dentro.entries()) {
-          setAndamento({ feitos: i, total: dentro.length, nome: alvo.nome });
-          // eslint-disable-next-line no-await-in-loop
-          if (await grava(alvo.id) > 0) mexidos++;
-        }
-        setAndamento(null);
-        setOk(`${dentro.length} recurso(s) percorrido(s), `
-          + `${mexidos} com mudança de turno.`);
+  // Grava o mesmo desenho de turnos no recurso ou em cada recurso do lote.
+  async function gravaEm(marcados) {
+    const grava = async (id) => {
+      const r = await fetch('/api/cadastro/recurso-turno', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recurso_id: id, ano, marcados,
+          // As colunas que esta tela mostrou. O servidor só reescreve estas:
+          // turno que a tela não ofereceu não é apagado por omissão.
+          escopo: turnos.map((t) => t.turno_id),
+        }),
+      });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.erro);
+      return j.turnosAlterados ?? 0;
+    };
+
+    if (!lote) {
+      const n = await grava(recursoId);
+      setOk(n === 0 ? 'Nada mudou.'
+        : `${n} turno${n > 1 ? 's' : ''} atualizado${n > 1 ? 's' : ''}.`);
+    } else {
+      // UM RECURSO POR REQUISIÇÃO, com o laço aqui no navegador — é o mesmo
+      // caminho do Recalcular tudo e da importação, pela mesma razão: cada
+      // recurso são duas consultas e uma transação, e quarenta deles numa
+      // requisição só estouram o tempo da função no meio, deixando metade
+      // gravada e nenhum aviso.
+      let mexidos = 0;
+      for (const [i, alvo] of dentro.entries()) {
+        setAndamento({ feitos: i, total: dentro.length, nome: alvo.nome });
+        // eslint-disable-next-line no-await-in-loop
+        if (await grava(alvo.id) > 0) mexidos++;
       }
-      router.refresh();
+      setAndamento(null);
+      setOk(`${dentro.length} recurso(s) percorrido(s), `
+        + `${mexidos} com mudança de turno.`);
+    }
+    router.refresh();
+  }
+
+  // LIMPAR: apaga os turnos do ano nos recursos do lote (ou no recurso).
+  //
+  // Em lote a matriz nasce vazia, e vazia ela não tem o que salvar — então
+  // quem cadastrou três turnos em doze máquinas e quer desfazer não tinha
+  // como, a não ser máquina por máquina. Este botão manda a matriz vazia
+  // direto, com confirmação, porque apaga cadastro de verdade.
+  async function limpar() {
+    const quem = lote ? `${dentro.length} recurso(s)` : 'este recurso';
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Apagar todos os turnos de ${ano} em ${quem}? `
+                        + 'Os outros anos não mudam.')) return;
+    setSalvando(true);
+    setErro(null);
+    setOk(null);
+    try {
+      const vazio = Object.fromEntries(turnos.map((t) => [t.turno_id, {}]));
+      await gravaEm(vazio);
+      setCelulas({});
+      setAnoTodo({});
     } catch (e) {
       setErro(e.message ?? 'Falhou');
     } finally {
@@ -210,6 +242,22 @@ export default function Matriz({
 
   return (
     <>
+      {/* Quem entra no lote vem ANTES da matriz: escolher os quatro G6200 de
+          dois turnos é o primeiro passo, e a lista embaixo do Aplicar era onde
+          ninguém olhava. */}
+      {lote && (
+        <Alvos alvos={alvos} fora={fora}
+               onDefine={(novo) => { setFora(novo); setOk(null); }}
+               onAlterna={(id) => {
+                 setFora((f) => {
+                   const novo = new Set(f);
+                   if (novo.has(id)) novo.delete(id); else novo.add(id);
+                   return novo;
+                 });
+                 setOk(null);
+               }} />
+      )}
+
       <div className="grade-rolagem">
         <table className="matriz">
           <thead>
@@ -323,24 +371,17 @@ export default function Matriz({
         </table>
       </div>
 
-      {lote && (
-        <Alvos alvos={alvos} fora={fora}
-               onAlterna={(id) => {
-                 setFora((f) => {
-                   const novo = new Set(f);
-                   if (novo.has(id)) novo.delete(id); else novo.add(id);
-                   return novo;
-                 });
-                 setOk(null);
-               }} />
-      )}
-
       <div className="acoes" style={{ marginTop: 16 }}>
         <button className="btn btn-primario" onClick={salvar}
                 disabled={!sujo || salvando || (lote && dentro.length === 0)}>
           {salvando
             ? (lote ? 'Aplicando…' : 'Salvando…')
             : (lote ? `Aplicar em ${dentro.length} recurso(s)` : 'Salvar')}
+        </button>
+        <button type="button" className="btn" onClick={limpar}
+                disabled={salvando || (lote && dentro.length === 0)}
+                title={`Apagar todos os turnos de ${ano} ${lote ? 'nos recursos do lote' : 'neste recurso'}`}>
+          {lote ? `Limpar turnos em ${dentro.length} recurso(s)` : 'Limpar turnos do ano'}
         </button>
         {lote && dentro.length === 0 && (
           <span className="muted">nenhum recurso no lote</span>

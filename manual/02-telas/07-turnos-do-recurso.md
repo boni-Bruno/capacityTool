@@ -30,6 +30,13 @@ Linhas = meses, colunas = turnos.
 - **Todos os filtrados** no seletor de recurso cadastra o mesmo desenho em
   todos os recursos do recorte — útil para montar uma área inteira. Vale só
   para máquina; pessoa se cadastra uma a uma.
+- **Quem entra no lote** aparece como lista de chips acima da matriz: clique
+  num para tirar, **nenhum** e **todos** para começar do zero. É assim que se
+  faz "2 turnos em 4 máquinas e 3 turnos nas outras 5" do mesmo CT: *nenhum*,
+  marque as 4, aplique; *nenhum*, marque as 5, aplique.
+- **Limpar turnos do ano** (ou **Limpar turnos em N recurso(s)**, no lote)
+  apaga os turnos do ano escolhido nos recursos da lista, com confirmação. Os
+  outros anos não mudam. É o caminho para desfazer um lote aplicado errado.
 
 ## Regime
 

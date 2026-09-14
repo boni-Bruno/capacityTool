@@ -24,6 +24,29 @@ olhar número*.
 
 ---
 
+## Cadastrei turnos em lote para vários recursos e não consigo desfazer
+
+**Sintoma.** Apliquei 3 turnos em 12 máquinas com *todos os filtrados*; para
+tirar, a matriz do lote nasce vazia e o botão Aplicar fica desabilitado.
+
+**Causa.** A matriz em lote é um molde e nasce em branco; vazia, não há
+"alteração" para salvar.
+
+**O que fazer.** Botão **Limpar turnos em N recurso(s)**, ao lado do Aplicar:
+apaga os turnos do ano nos recursos da lista, com confirmação. Depois,
+Recalcular.
+
+---
+
+## Quero 2 turnos em 4 máquinas e 3 turnos nas outras 5 do mesmo CT
+
+**O que fazer.** Filtre o CT, escolha *todos os filtrados*; na lista de chips
+acima da matriz clique em **nenhum** e marque as 4; monte a matriz e aplique.
+Depois **nenhum**, marque as 5, monte a outra matriz e aplique. O mesmo vale
+em OEE e Paradas.
+
+---
+
 ## A planejada de segunda-feira é diferente da de terça, com os mesmos turnos
 
 **Sintoma.** Recurso com três turnos: segunda dá 1.410 min, terça dá 1.440.
