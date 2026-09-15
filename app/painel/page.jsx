@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   ultimaExecucao, areas, arraysDeFatia, capacidadePorCtMes, porMes, porDia,
   porTurnoDoDia, tetoDoDia, porRecurso, porRecursoMes, anosComRodada,
+  rodadasDasAreas,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
@@ -83,7 +84,19 @@ export default async function Page({ searchParams }) {
 
   // Área e ano vêm antes da execução: a rodada é por área, então só dá para
   // saber qual delas mostrar depois de saber o que o usuário está olhando.
-  const areaId = Number(searchParams?.area ?? listaAreas[0]?.id);
+  //
+  // O PAINEL ABRE SEM FÁBRICA. Antes a primeira da lista entrava sozinha, e a
+  // abertura já pagava todas as consultas dela — para quem ia trocar de área
+  // logo em seguida. Sem escolha, a página só desenha o seletor. "todas" soma
+  // as rodadas de todas as áreas: cada uma continua sendo uma rodada, e as
+  // consultas recebem a lista de ids.
+  const escolhaArea = String(searchParams?.area ?? '');
+  const todas = escolhaArea === 'todas';
+  const area = todas ? null
+    : (listaAreas.find((a) => String(a.id) === escolhaArea) ?? null);
+  const areasEscolhidas = todas ? listaAreas : (area ? [area] : []);
+  const areaId = areasEscolhidas.map((a) => a.id).join(',');
+  const rotuloDaEscolha = todas ? 'todas as fábricas' : (area ? rotuloArea(area) : null);
   // A lista sai do banco, não do relógio: ano com rodada guardada continua
   // acessível para sempre, e a janela em volta de hoje segue disponível para
   // planejar. Ver lib/anos.js.
@@ -109,7 +122,25 @@ export default async function Page({ searchParams }) {
   // META e SIMULADO são rodadas distintas; trocar aqui troca de rodada, não
   // recalcula. Default META, que é o cenário oficial.
   const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
-  const area = listaAreas.find((a) => a.id === areaId);
+
+  if (!areasEscolhidas.length) {
+    return (
+      <Shell>
+        <div className="topo">
+          <h1 className="titulo">Painel da Capacidade</h1>
+          <Suspense>
+            <FiltrosTopo areas={listaAreas} areaId="" ano={ano}
+                         origem={origem} anos={anos} />
+          </Suspense>
+        </div>
+        <p className="vazio">
+          Escolha uma fábrica no seletor acima — ou <strong>todas as
+          fábricas</strong>, que soma a rodada de cada área e leva mais tempo
+          para abrir.
+        </p>
+      </Shell>
+    );
+  }
 
   // FILTRO POR ATRIBUTO DO DE/PARA
   //
@@ -155,7 +186,11 @@ export default async function Page({ searchParams }) {
   //
   // As paradas de apresentação já entram no divisor: `diasUteisPorMes` desconta
   // o impacto delas, que é justamente o que elas existem para fazer.
-  const calendarios = await calendariosDaArea(areaId, `${ano}-12-31`);
+  //
+  // Em "todas as fábricas" a leitura por dia útil não existe: o divisor é de
+  // um calendário e das exceções de UMA área, e oito áreas com feriados
+  // diferentes não têm um dia útil comum para dividir.
+  const calendarios = area ? await calendariosDaArea(area.id, `${ano}-12-31`) : [];
   const calPedido = Number(searchParams?.cal);
   const cal = calendarios.find((c) => c.id === calPedido) ?? calendarios[0] ?? null;
 
@@ -163,11 +198,29 @@ export default async function Page({ searchParams }) {
 
   const uteis = cal
     ? diasUteisPorMes(
-        await diasTrabalhadosPorMes(cal.id, ano, areaId),
+        await diasTrabalhadosPorMes(cal.id, ano, area.id),
         await pesosDoCalendario(cal.id))
     : null;
 
-  const exec = await ultimaExecucao(areaId, ano, origem);
+  // A RODADA — ou as rodadas. Com uma área é a de sempre; com todas, é uma por
+  // área, e o que a tela chama de `exec` passa a ser a lista somada: os ids
+  // juntos para as consultas, a data mais antiga como "calculada em" (a
+  // fábrica inteira só está tão atual quanto a área mais velha) e o parcial
+  // mais recente, porque um parcial em qualquer área é idade misturada.
+  const rodadas = todas
+    ? await rodadasDasAreas(areaId, ano, origem)
+    : [await ultimaExecucao(areaId, ano, origem)].filter(Boolean);
+  const exec = rodadas.length ? {
+    id: rodadas.map((r) => r.id).join(','),
+    origem: rodadas[0].origem,
+    cenario: [...new Set(rodadas.map((r) => r.cenario))].join(', '),
+    concluido_em: rodadas.map((r) => r.concluido_em)
+      .sort((a, b) => new Date(a) - new Date(b))[0],
+    parcial_em: rodadas.map((r) => r.parcial_em).filter(Boolean)
+      .sort((a, b) => new Date(a) - new Date(b)).pop() ?? null,
+    quantas: rodadas.length,
+    faltam: todas ? listaAreas.length - rodadas.length : 0,
+  } : null;
 
   // Sem rodada para esta área e ano, os filtros e o Recalcular continuam na
   // tela. Antes a página saía cedo e mandava rodar SQL no Neon — sem cálculo
@@ -178,21 +231,19 @@ export default async function Page({ searchParams }) {
         <div className="topo">
           <h1 className="titulo">
             Painel da Capacidade
-            {area && (
-              <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
-                {' '}· {rotuloArea(area)}
-              </span>
-            )}
+            <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
+              {' '}· {rotuloDaEscolha}
+            </span>
           </h1>
           <Suspense>
-            <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano}
+            <FiltrosTopo areas={listaAreas} areaId={todas ? 'todas' : area.id} ano={ano}
                          origem={origem} anos={anos} />
           </Suspense>
         </div>
         <div className="aviso">
           <strong>
             Nenhum cálculo do OEE {rotuloOrigem(origem)} para{' '}
-            {area ? rotuloArea(area) : 'esta área'} em {ano}.
+            {rotuloDaEscolha} em {ano}.
           </strong>
           <p style={{ margin: '8px 0 12px' }}>
             Clique em <strong>Recalcular tudo</strong> aí em cima: ele refaz
@@ -406,7 +457,7 @@ export default async function Page({ searchParams }) {
     semFiltros = false,
   } = {}) => {
     const p = new URLSearchParams();
-    p.set('area', String(areaId));
+    p.set('area', todas ? 'todas' : String(area.id));
     p.set('ano', String(ano));
     p.set('unidade', um);
     p.set('origem', origem);
@@ -706,15 +757,13 @@ export default async function Page({ searchParams }) {
           {/* A área no título, com a planta junto. Sem isso, trocar entre duas
               áreas de mesmo nome — Ibirama e Matriz têm as duas uma Confecção —
               não mudava nada visível quando as duas estavam sem rodada. */}
-          {area && (
-            <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
-              {' '}· {rotuloArea(area)}
-            </span>
-          )}
+          <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
+            {' '}· {rotuloDaEscolha}
+          </span>
         </h1>
         <Suspense>
-          <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano}
-                         origem={origem} anos={anos} />
+          <FiltrosTopo areas={listaAreas} areaId={todas ? 'todas' : area.id} ano={ano}
+                       origem={origem} anos={anos} />
         </Suspense>
       </div>
 
@@ -933,7 +982,7 @@ export default async function Page({ searchParams }) {
           <p className="rodape">
             Cada barra é a capacidade do mês <strong>dividida pelos dias úteis
             daquele mês</strong> no calendário <strong>{cal.codigo}</strong>,
-            contados para {rotuloArea(area)} — o mesmo número que aparece em
+            contados para {rotuloDaEscolha} — o mesmo número que aparece em
             Calendários, com o peso de cada dia da semana e o desconto das
             paradas de apresentação.
             {' '}Fevereiro rende mais por dia útil que um mês de 22 dias sem
@@ -1220,9 +1269,15 @@ export default async function Page({ searchParams }) {
         )}
 
         <p className="rodape">
-          Rodada {exec.id} · OEE {rotuloOrigem(exec.origem)} · cenário{' '}
-          {exec.cenario} · calculada em{' '}
+          {exec.quantas > 1
+            ? `${exec.quantas} rodadas (${exec.id})`
+            : `Rodada ${exec.id}`} · OEE {rotuloOrigem(exec.origem)} · cenário{' '}
+          {exec.cenario} · {exec.quantas > 1 ? 'a mais antiga calculada' : 'calculada'} em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}
+          {exec.faltam > 0 && (
+            <> · <strong>{exec.faltam} área(s) sem rodada neste ano</strong>, fora
+              da soma</>
+          )}
           {/* Uma rodada com idades misturadas tem que se declarar: é a única
               coisa que separa o parcial escolhido do "meio recalculado" que
               ninguém pediu. */}

@@ -1660,6 +1660,29 @@ nasce no navegador.
 
 ---
 
+## Os painéis abrem sem fábrica, e somam todas — PRONTO
+
+Pedido do Bruno em 15/09/2026, duas coisas de uma vez. **Todas as fábricas
+juntas**: o seletor de área dos dois painéis ganhou "todas as fábricas". A
+rodada continua sendo por área — nada mudou no motor —, e o painel de todas
+soma as rodadas de cada uma: `rodadasDasAreas` pega a mais recente de cada
+área no ano e origem, e as consultas do painel passaram a aceitar `execucaoId`
+e `areaId` como lista ("711,712,…"), pelo mesmo caminho de texto → array que o
+filtro de recursos já usava. O rodapé diz quantas rodadas somou, a data da
+**mais antiga** (a fábrica inteira só está tão atual quanto a área mais velha),
+o parcial mais recente, e quantas áreas ficaram fora por não terem rodada.
+
+**Sem fábrica ao abrir**: o painel nasce com "selecionar fábrica…" e não faz
+consulta nenhuma — antes a primeira área da lista entrava sozinha e a abertura
+pagava todas as consultas dela para quem ia trocar de área em seguida. Quem
+escolhe todas paga o que todas custam; é escolha de quem clicou.
+
+**Por dia útil não existe em "todas"**: o divisor é de um calendário e das
+exceções de UMA área, e oito áreas com feriados diferentes não têm um dia útil
+comum. O botão some quando não há área única.
+
+---
+
 ## Tabela dinâmica nos dois painéis — PRONTO
 
 Pedido do Bruno em 14/09/2026, olhando a tabela por CT da ocupação: "dá para

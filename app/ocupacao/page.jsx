@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {
   anosComRodada, areas, capacidadePorCtMes, demandaPorDiaDaArea,
   demandaPorMesDaArea, ocupacaoPorCt, ocupacaoPorCtMes, porDia, porMes,
-  porRecurso, ultimaExecucao,
+  porRecurso, rodadasDasAreas, ultimaExecucao,
 } from '../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
@@ -104,8 +104,15 @@ export default async function Page({ searchParams }) {
     );
   }
 
-  const areaId = Number(searchParams?.area ?? listaAreas[0].id);
-  const area = listaAreas.find((a) => a.id === areaId);
+  // A MESMA ESCOLHA DE FÁBRICA DO PAINEL DA CAPACIDADE: vazio abre sem
+  // consulta, "todas" soma as rodadas de todas as áreas — ver o comentário lá.
+  const escolhaArea = String(searchParams?.area ?? '');
+  const todas = escolhaArea === 'todas';
+  const area = todas ? null
+    : (listaAreas.find((a) => String(a.id) === escolhaArea) ?? null);
+  const areasEscolhidas = todas ? listaAreas : (area ? [area] : []);
+  const areaId = areasEscolhidas.map((a) => a.id).join(',');
+  const rotuloDaEscolha = todas ? 'todas as fábricas' : (area ? rotuloArea(area) : null);
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
   const periodo = resolvePeriodo(searchParams, ano);
@@ -123,25 +130,50 @@ export default async function Page({ searchParams }) {
     ? Number(searchParams.carga) : (corrente?.id ?? null);
   const carga = listaCargas.find((c) => c.id === cargaId) ?? null;
 
-  const exec = await ultimaExecucao(areaId, ano, origem);
-
-
   const topo = (
     <div className="topo">
       <h1 className="titulo">
         Painel da Ocupação
-        {area && (
+        {rotuloDaEscolha && (
           <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
-            {' '}· {rotuloArea(area)}
+            {' '}· {rotuloDaEscolha}
           </span>
         )}
       </h1>
       <Suspense>
-        <FiltrosTopo areas={listaAreas} areaId={areaId} ano={ano}
-                     origem={origem} anos={anos} />
+        <FiltrosTopo areas={listaAreas} areaId={todas ? 'todas' : (area?.id ?? '')}
+                     ano={ano} origem={origem} anos={anos} />
       </Suspense>
     </div>
   );
+
+  if (!areasEscolhidas.length) {
+    return (
+      <Shell>
+        {topo}
+        <p className="vazio">
+          Escolha uma fábrica no seletor acima — ou <strong>todas as
+          fábricas</strong>, que soma a rodada de cada área e leva mais tempo
+          para abrir.
+        </p>
+      </Shell>
+    );
+  }
+
+  // Uma rodada por área somada — ver o painel da capacidade.
+  const rodadas = todas
+    ? await rodadasDasAreas(areaId, ano, origem)
+    : [await ultimaExecucao(areaId, ano, origem)].filter(Boolean);
+  const exec = rodadas.length ? {
+    id: rodadas.map((r) => r.id).join(','),
+    origem: rodadas[0].origem,
+    concluido_em: rodadas.map((r) => r.concluido_em)
+      .sort((a, b) => new Date(a) - new Date(b))[0],
+    parcial_em: rodadas.map((r) => r.parcial_em).filter(Boolean)
+      .sort((a, b) => new Date(a) - new Date(b)).pop() ?? null,
+    quantas: rodadas.length,
+    faltam: todas ? listaAreas.length - rodadas.length : 0,
+  } : null;
 
   if (!exec) {
     return (
@@ -150,7 +182,7 @@ export default async function Page({ searchParams }) {
         <div className="aviso">
           <strong>
             Nenhum cálculo do OEE {rotuloOrigem(origem)} para{' '}
-            {area ? rotuloArea(area) : 'esta área'} em {ano}.
+            {rotuloDaEscolha} em {ano}.
           </strong>
           <p style={{ margin: '8px 0 12px' }}>
             A ocupação compara a capacidade calculada com a demanda. Sem rodada
@@ -272,7 +304,7 @@ export default async function Page({ searchParams }) {
     attrTab = attrTabela,
   } = {}) => {
     const p = new URLSearchParams();
-    p.set('area', String(areaId));
+    p.set('area', todas ? 'todas' : String(area.id));
     p.set('ano', String(ano));
     p.set('origem', origem);
     if (med !== 'disponivel') p.set('medida', med);
@@ -758,9 +790,15 @@ export default async function Page({ searchParams }) {
         )}
 
         <p className="rodape">
-          Rodada {exec.id} · OEE {rotuloOrigem(exec.origem)} · base{' '}
-          {carga.cenario} · calculada em{' '}
+          {exec.quantas > 1
+            ? `${exec.quantas} rodadas (${exec.id})`
+            : `Rodada ${exec.id}`} · OEE {rotuloOrigem(exec.origem)} · base{' '}
+          {carga.cenario} · {exec.quantas > 1 ? 'a mais antiga calculada' : 'calculada'} em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}
+          {exec.faltam > 0 && (
+            <> · <strong>{exec.faltam} área(s) sem rodada neste ano</strong>, fora
+              da soma</>
+          )}
           {exec.parcial_em && (
             <> · <strong>recursos recalculados em{' '}
               {new Date(exec.parcial_em).toLocaleString('pt-BR')}</strong></>

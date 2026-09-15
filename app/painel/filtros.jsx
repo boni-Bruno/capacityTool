@@ -61,12 +61,19 @@ function useMuda() {
   };
 }
 
+// `areaId` é o id de uma área, 'todas', ou vazio — e vazio é o estado em que
+// o painel ABRE: sem fábrica escolhida, sem consulta nenhuma, e a página
+// aparece na hora. Antes a primeira área da lista entrava sozinha e a abertura
+// já pagava as consultas dela. "Todas" existe para somar a fábrica inteira, e
+// custa o que custa — é a escolha de quem clicou.
 export function FiltrosTopo({ areas, areaId, ano, origem, anos = [] }) {
   const muda = useMuda();
 
   return (
     <div className="filtros">
-      <select value={areaId} onChange={(e) => muda('area', e.target.value)}>
+      <select value={areaId ?? ''} onChange={(e) => muda('area', e.target.value)}>
+        <option value="">selecionar fábrica…</option>
+        {areas.length > 1 && <option value="todas">todas as fábricas</option>}
         {areas.map((a) => (
           <option key={a.id} value={a.id}>{rotuloArea(a)}</option>
         ))}

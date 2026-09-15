@@ -10,8 +10,9 @@ planta › área › CC › CT.
 
 ## Controles
 
-Os mesmos do Painel da Capacidade (planta, área, ano, OEE), mais o cenário —
-sempre o que está **no ar** na tela de Demanda.
+Os mesmos do Painel da Capacidade — fábrica (uma área, ou **todas as
+fábricas**; abre com "selecionar fábrica…"), ano, OEE —, mais o cenário, que
+nasce no que está **no ar** na tela de Demanda e pode ser trocado aqui.
 
 ## Como ler
 

@@ -173,8 +173,11 @@ ao **dia**; no dia, ao **turno**.
 
 ### Controles
 
-- **Planta / Área / Ano / OEE (meta ou simulado)** — o recorte. Tudo fica na
-  URL: o endereço descreve a tela, e um link colado abre no mesmo lugar.
+- **Fábrica** — o painel abre com "selecionar fábrica…" e sem número nenhum;
+  escolha uma área (`Planta · Área`) ou **todas as fábricas**, que soma a
+  rodada de cada área e demora mais para abrir. **Ano / OEE (meta ou
+  simulado)** completam o recorte. Tudo fica na URL: o endereço descreve a
+  tela, e um link colado abre no mesmo lugar.
 - **Unidade** — minuto, hora, metro, UM. Metro e UM só aparecem com cenário no
   ar, e a instalada não converte.
 - **Filtro por atributo** (quando há DE/PARA) — soma a *fatia* de cada CT que
@@ -189,7 +192,11 @@ ao **dia**; no dia, ao **turno**.
   isso é a ociosidade planejada, não erro.
 - O rodapé diz **quando** a rodada foi calculada e se houve **recálculo
   parcial** depois. Se a data é anterior ao seu último cadastro, o painel ainda
-  não viu o cadastro.
+  não viu o cadastro. Em *todas as fábricas* ele diz quantas rodadas somou, a
+  data da **mais antiga**, e quantas áreas ficaram de fora por não terem rodada
+  naquele ano.
+- **Capacidade por dia útil** só existe com uma área escolhida: o divisor é do
+  calendário e dos feriados daquela área.
 
 ### A aba "Capacidade por recurso (Tab. Din.)"
 
@@ -232,8 +239,9 @@ planta › área › CC › CT.
 
 ### Controles
 
-Os mesmos do Painel da Capacidade (planta, área, ano, OEE), mais o cenário —
-sempre o que está **no ar** na tela de Demanda.
+Os mesmos do Painel da Capacidade — fábrica (uma área, ou **todas as
+fábricas**; abre com "selecionar fábrica…"), ano, OEE —, mais o cenário, que
+nasce no que está **no ar** na tela de Demanda e pode ser trocado aqui.
 
 ### Como ler
 
