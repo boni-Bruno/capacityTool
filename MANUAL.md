@@ -1,6 +1,6 @@
 # capacityTool - Manual completo
 
-Gerado em 2026-09-14 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
+Gerado em 2026-09-15 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
 
 ---
 
@@ -683,6 +683,8 @@ nenhum), e as **faixas de cor** da ocupação.
 Cada slide leva o gráfico mês a mês (barras de capacidade, linha de demanda)
 e, alinhada coluna a coluna, uma grade com o OEE e a quantidade de recursos
 por turno — para ver se a barra de março caiu pelo OEE ou por um turno a menos.
+**Todos os turnos cadastrados** aparecem como linha; onde o recurso não roda
+naquele turno a célula fica em branco.
 
 ### Cuidados
 

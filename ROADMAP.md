@@ -1299,12 +1299,15 @@ configuração no meio do mês tem duas vigências tocando aquele mês, e a
 sobreposição casa com as duas — somar direto contaria o mesmo patrimônio duas
 vezes, e o slide diria que o turno tem seis máquinas onde há três.
 
-**Todos os turnos cadastrados aparecem, com "N/A" onde nada roda** — e não só os
-que o recorte usa. Turno ausente da lista é indistinguível de turno zerado, e a
-pergunta que o slide responde é como a fábrica está montada: "o terceiro turno
-não roda aqui" é resposta, e resposta que só existe se a linha estiver lá para
-dizê-la. Célula em branco seria ambígua entre "não tem" e "não consegui contar",
-e as duas mereciam reações diferentes de quem lê.
+**Todos os turnos cadastrados aparecem, em branco onde nada roda** — e não só
+os que o recorte usa. Turno ausente da lista é indistinguível de turno zerado,
+e a pergunta que o slide responde é como a fábrica está montada: "o terceiro
+turno não roda aqui" é resposta, e resposta que só existe se a linha estiver
+lá para dizê-la. De 03/09 a 15/09/2026 a célula dizia "N/A", com o argumento
+de que branco seria ambíguo entre "não tem" e "não consegui contar"; na
+prática, sete turnos cadastrados e dois em uso davam uma grade de N/A em que
+a linha que importava sumia. O Bruno pediu a célula em branco, e a linha do
+turno continua lá para dizer que ele existe.
 
 **O totalizador do período fica numa coluna à direita**, fora das colunas de mês
 — deixá-la entrar na divisão faria as doze barras encolherem para caber um treze
