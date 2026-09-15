@@ -1309,6 +1309,13 @@ prática, sete turnos cadastrados e dois em uso davam uma grade de N/A em que
 a linha que importava sumia. O Bruno pediu a célula em branco, e a linha do
 turno continua lá para dizer que ele existe.
 
+**Sobra / falta embaixo da ocupação** (15/09/2026, pedido do Bruno): capacidade
+menos demanda, mês a mês e no ano, com o sinal escrito — `+3.150` é sobra,
+`−1.234` é falta. É o mesmo número que o painel da ocupação escreve embaixo do
+indicador. A porcentagem diz se cabe; este diz quanto falta contratar ou quanto
+sobra para vender, e é ele que vai para a conversa com a fábrica. Sem cenário
+não sai, como a demanda e a ocupação.
+
 **O totalizador do período fica numa coluna à direita**, fora das colunas de mês
 — deixá-la entrar na divisão faria as doze barras encolherem para caber um treze
 que não existe no gráfico. Cada medida totaliza do jeito dela, e é aí que se
