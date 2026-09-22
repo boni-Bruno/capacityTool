@@ -6,6 +6,7 @@ import { turnos as turnosCadastrados } from '../../../lib/cadastro';
 import { resolvePeriodo } from '../../../lib/periodo';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeRota } from '../../../lib/sessao';
+import { alcancaArea } from '../../../lib/escopo';
 
 // Os números do recorte escolhido, para o .pptx e para a página de impressão.
 //
@@ -24,10 +25,13 @@ import { exigeRota } from '../../../lib/sessao';
 // grupo seria o jeito de um slide de CC mostrar o gráfico de outro.
 export async function POST(req) {
   try {
-    await exigeRota(req);
+    const s = await exigeRota(req);
     const b = await req.json();
 
-    const areas = (b.areas ?? []).map(Number).filter(Number.isInteger);
+    // Fora do escopo, a area simplesmente nao entra: pedir a Matriz inteira
+    // com escopo de Ibirama devolve Ibirama.
+    const areas = (b.areas ?? []).map(Number).filter(Number.isInteger)
+      .filter((id) => alcancaArea(s.areas, id));
     if (!areas.length) throw new Error('Escolha ao menos uma área.');
 
     const ccs = (b.ccs ?? []).map((c) => String(c).trim()).filter(Boolean);

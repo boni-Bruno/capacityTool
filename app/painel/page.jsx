@@ -39,7 +39,7 @@ import TabelaAtributo from './tabela-atributo';
 import FiltroColuna from './filtro-coluna';
 import Pivot from './pivot';
 import Shell from '../shell';
-import { exigeVer } from '../cadastros/guarda';
+import { areasDoEscopo, exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Capacidade' };
 export const dynamic = 'force-dynamic';
@@ -70,7 +70,7 @@ export default async function Page({ searchParams }) {
   let listaAreas;
 
   try {
-    listaAreas = await areas();
+    listaAreas = await areasDoEscopo();
   } catch (e) {
     return (
       <Shell>

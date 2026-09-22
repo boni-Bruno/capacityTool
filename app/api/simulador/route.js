@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { simuladorPorCtMes } from '../../../lib/db';
 import { mensagemDeErro } from '../../../lib/erros';
 import { exigeRota } from '../../../lib/sessao';
+import { alcancaArea } from '../../../lib/escopo';
 
 // Os números do simulador de quantidade de recursos: por CT e mês, demanda,
 // disponível e o que uma unidade entrega. O servidor só entrega números; a
@@ -12,10 +13,13 @@ import { exigeRota } from '../../../lib/sessao';
 // zerada diria "precisa de zero máquinas" com toda a convicção.
 export async function POST(req) {
   try {
-    await exigeRota(req);
+    const s = await exigeRota(req);
     const b = await req.json();
 
-    const areas = (b.areas ?? []).map(Number).filter(Number.isInteger);
+    // Fora do escopo, a área simplesmente não entra: pedir a Matriz inteira
+    // com escopo de Ibirama devolve Ibirama.
+    const areas = (b.areas ?? []).map(Number).filter(Number.isInteger)
+      .filter((id) => alcancaArea(s.areas, id));
     if (!areas.length) throw new Error('Escolha ao menos uma área.');
 
     const ccs = (b.ccs ?? []).map((c) => String(c).trim()).filter(Boolean);

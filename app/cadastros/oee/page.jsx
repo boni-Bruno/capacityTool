@@ -10,7 +10,7 @@ import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorOee from './editor';
 import Ciente from '../ciente';
-import { SomenteLeitura, exigeVer } from '../guarda';
+import { SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
 
 export const metadata = { title: 'OEE' };
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,7 @@ export default async function Page({ searchParams }) {
 
   let listaAreas;
   try {
-    listaAreas = await areas();
+    listaAreas = await areasDoEscopo();
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }
@@ -39,7 +39,10 @@ export default async function Page({ searchParams }) {
     return <div className="aviso"><strong>Nenhuma área cadastrada.</strong></div>;
   }
 
-  const areaId = Number(searchParams?.area ?? listaAreas[0].id);
+  // Area fora do escopo na URL cai na primeira permitida, e nao numa consulta
+  // que voltaria vazia parecendo cadastro sem nada.
+  const areaPedida = Number(searchParams?.area);
+  const areaId = listaAreas.some((a) => a.id === areaPedida) ? areaPedida : listaAreas[0].id;
   // Mesma lista do painel: ano com rodada não some quando o tempo passa.
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);

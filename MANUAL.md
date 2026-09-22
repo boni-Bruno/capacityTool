@@ -40,7 +40,7 @@ sempre isso.
 
 | parte | o que tem |
 |---|---|
-| `01-conceitos.md` | instalada, planejada, disponível, OEE, CC-CT, rodada, cenário, unidade |
+| `01-conceitos.md` | instalada, planejada, disponível, OEE, CC-CT, rodada, cenário, unidade, cargo e escopo |
 | `02-telas/` | uma página por tela, na ordem do menu |
 | `03-procedimentos/` | os POPs numerados |
 | `04-perguntas.md` | pegadinhas: sintoma → causa → o que fazer |
@@ -151,6 +151,20 @@ Os painéis mostram minuto, hora, **metro** e **UM** (unidade de medida do
 material). Metro e UM só existem com um cenário no ar, porque dependem do
 índice. A **instalada não converte** para metro nem UM em lugar nenhum: teto de
 24 h vezes o índice do mix daria um número que parece capacidade e não é.
+
+### Usuário, cargo, escopo e mestre
+
+Cada pessoa entra com **usuário e senha** (ou pelo Hub S&OP, reconhecida pelo
+e-mail). O **cargo** diz *o que* ela pode: por tela, **ver** ou **editar**,
+mais **Recalcular**. O **escopo** diz *onde*: a empresa inteira, plantas
+inteiras ou áreas soltas — sem nada marcado, a pessoa não vê fábrica nenhuma.
+O que é da planta (turno, calendário, feriado) só edita quem tem a planta
+inteira.
+
+A **senha mestre** (sem usuário) é a rede: entra com tudo, em toda parte,
+identificada como "mestre". Fechar o navegador encerra a sessão; o botão
+**Sair** também. Trocar o cargo ou desativar alguém vale na próxima tela que a
+pessoa abrir.
 
 ### Ocupação
 
@@ -1170,6 +1184,53 @@ Compra, venda, transferência, ou a Qtd de máquinas iguais mudou.
 
 ---
 
+## POP-08 — Convidar uma pessoa para a ferramenta
+
+### Quando usar
+
+Alguém novo vai usar o app, ou alguém vai passar a fazer mais (ou menos).
+
+### Antes de começar
+
+- Você está com um usuário do cargo **Gestor de Planejamento** (ou com a
+  senha mestre).
+- Existe um **cargo** com o que a pessoa vai fazer. Se não existe: Acesso ›
+  Cargos › *+ novo cargo*, nome, marque as telas (ver/editar) e Recalcular
+  se for o caso. Cargos típicos: *Leitor* (só ver nos painéis), *Planejador
+  da área* (editar planejamento, ver o resto), *Controladoria* (editar
+  demanda e extrações).
+
+### Passos
+
+1. **Acesso › Usuários › Convidar**.
+2. Usuário (login, minúsculo — `nome.sobrenome`), nome, **e-mail** (o do Hub,
+   para entrar pelo portal), cargo.
+3. **Senha inicial**: a lista de regras risca conforme cumpre.
+4. **Onde atua**: empresa inteira, planta(s) inteira(s) ou áreas soltas.
+5. **Convidar**. Passe a senha inicial para a pessoa por um canal seguro.
+
+### Como conferir que deu certo
+
+- A pessoa aparece na tabela com o cargo e o escopo descritos ("Matriz
+  inteira · Ibirama › Confecção Cama") e *senha inicial* ao lado do último
+  acesso.
+- Ela entra, é levada a **trocar a senha**, e depois vê só o menu do cargo e
+  só as fábricas do escopo. O *senha inicial* some da tabela.
+
+### O que costuma dar errado
+
+- **"Sem acesso a esta tela"** → o cargo não tem `ver` naquela tela.
+- **"Esta área está fora do seu escopo"** ao salvar → o escopo não cobre a
+  área; edite o usuário e marque a área ou a planta.
+- **"O que é da planta pede a planta inteira"** → turno/calendário só quem
+  tem a planta inteira, não uma área solta.
+- **Entrou pelo Hub e caiu em "Sem acesso"** → o e-mail cadastrado é
+  diferente do e-mail do Hub (ou está vazio). Edite o usuário.
+- **Não consigo desativar o gestor** → é o último gestor ativo; dê o cargo a
+  outra pessoa antes.
+
+---
+
 ## 4. Perguntas e pegadinhas
 
 Cada entrada tem a mesma forma: **sintoma** (o que se vê) · **causa** · **o
@@ -1193,6 +1254,44 @@ depois da última rodada ainda não existe para nenhuma dessas telas.
 mudaram) **antes de avaliar qualquer coisa** na ferramenta. Depois disso o
 simulador saiu certo. Regra geral: *mudou cadastro → recalcular → só então
 olhar número*.
+
+---
+
+### Não vejo a tela X no menu (ou abre "Sem acesso a esta tela")
+
+**Causa.** O seu cargo não tem `ver` naquela tela. O menu esconde e a página
+nega — mesmo pelo endereço.
+
+**O que fazer.** Peça ao gestor de planejamento que marque a tela no cargo
+(Acesso › Cargos) ou que troque o seu cargo. Vale na próxima tela que abrir.
+
+---
+
+### Salvei e veio "Esta área está fora do seu escopo" / "pede a planta inteira"
+
+**Causa.** O seu escopo (Onde atua, no cadastro de usuário) não cobre a área
+da coisa que você tentou gravar; ou você tentou mexer em turno, calendário ou
+feriado — que são da planta — tendo só uma área solta.
+
+**O que fazer.** O gestor edita o seu usuário e marca a área ou a planta
+inteira.
+
+---
+
+### Entrei pelo Hub S&OP e caí em "Sem acesso"
+
+**Causa.** O e-mail que o Hub mandou não está em nenhum usuário ativo aqui.
+
+**O que fazer.** O gestor cadastra (ou corrige o e-mail de) o seu usuário. A
+página mostra o e-mail que chegou, para não haver dúvida de qual é.
+
+---
+
+### Fechei o navegador e pediu login de novo
+
+**Causa.** É de propósito: a sessão é do navegador aberto, e o token vence em
+12 h de qualquer jeito. Navegador configurado para "continuar de onde parou"
+pode restaurar a sessão — é comportamento dele.
 
 ---
 

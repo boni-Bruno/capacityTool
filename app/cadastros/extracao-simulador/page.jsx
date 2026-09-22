@@ -4,7 +4,7 @@ import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { ORIGENS } from '../../../lib/origens';
 import AvisoBanco from '../aviso-banco';
 import Simulador from './simulador';
-import { exigeVer } from '../guarda';
+import { exigeVer, soDoEscopo } from '../guarda';
 
 export const metadata = { title: 'Simulador de recursos' };
 export const dynamic = 'force-dynamic';
@@ -38,6 +38,7 @@ export default async function Page({ searchParams }) {
     [linhas, anos, listaCargas, corrente] = await Promise.all([
       arvoreDeConfiguracao(), anosComRodada(), cargas(), cargaCorrente(),
     ]);
+    linhas = await soDoEscopo(linhas, 'area_id');
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }

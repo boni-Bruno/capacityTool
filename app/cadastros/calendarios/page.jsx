@@ -17,7 +17,7 @@ import DiasUteis from './dias-uteis';
 import Importar from './importar';
 import Ano from './ano';
 import EditorExcecao from './excecao';
-import { exigeVer, podeEditarTela } from '../guarda';
+import { exigeVer, podeEditarTela, soDoEscopo } from '../guarda';
 
 export const metadata = { title: 'Calendários' };
 export const dynamic = 'force-dynamic';
@@ -39,6 +39,11 @@ export default async function Page({ searchParams }) {
   try {
     [lista, plantas] = await Promise.all([
       calendariosCadastro(), plantasParaEscolha(),
+    ]);
+    // Calendário é da planta: aparece para quem tem a planta ou alguma área
+    // dela; criar e editar é para quem tem a planta inteira (a rota decide).
+    [lista, plantas] = await Promise.all([
+      soDoEscopo(lista, 'planta_id', 'planta'), soDoEscopo(plantas, 'id', 'planta'),
     ]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;

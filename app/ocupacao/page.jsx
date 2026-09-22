@@ -34,7 +34,7 @@ import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
 import Pivot from '../painel/pivot';
 import Shell from '../shell';
-import { exigeVer } from '../cadastros/guarda';
+import { areasDoEscopo, exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Ocupação' };
 export const dynamic = 'force-dynamic';
@@ -88,7 +88,7 @@ export default async function Page({ searchParams }) {
   let listaAreas;
   let listaCargas;
   try {
-    [listaAreas, listaCargas] = await Promise.all([areas(), cargas()]);
+    [listaAreas, listaCargas] = await Promise.all([areasDoEscopo(), cargas()]);
   } catch (e) {
     return (
       <Shell>

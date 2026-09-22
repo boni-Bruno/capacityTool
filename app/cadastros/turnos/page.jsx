@@ -6,7 +6,7 @@ import { DIAS_CURTO } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Turnos from './turnos';
 import EditorHorario from './editor';
-import { SomenteLeitura, exigeVer } from '../guarda';
+import { exigeVer, soDoEscopo, SomenteLeitura } from '../guarda';
 
 export const metadata = { title: 'Turnos' };
 export const dynamic = 'force-dynamic';
@@ -18,6 +18,8 @@ export default async function Page({ searchParams }) {
   let lista, listaPlantas;
   try {
     [lista, listaPlantas] = await Promise.all([turnosParaCadastro(), plantas()]);
+    lista = await soDoEscopo(lista, 'planta_id', 'planta');
+    listaPlantas = await soDoEscopo(listaPlantas, 'id', 'planta');
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }

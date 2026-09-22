@@ -6,7 +6,7 @@ import Cadastro from '../cadastro';
 import { ordemGuardada } from '../../../lib/ordem-servidor';
 import Definitivo from './definitivo';
 import Planilha from './planilha';
-import { SomenteLeitura, exigeVer, podeEditarTela } from '../guarda';
+import { exigeVer, podeEditarTela, soDoEscopo, SomenteLeitura } from '../guarda';
 
 export const metadata = { title: 'Recursos' };
 export const dynamic = 'force-dynamic';
@@ -24,6 +24,11 @@ export default async function Page() {
   try {
     [recursos, areas, desativados] = await Promise.all([
       recursosCadastro(), areasParaEscolha(), recursosDesativados(),
+    ]);
+    // Só o que o escopo alcança: a lista, o seletor de área e os desativados.
+    [recursos, areas, desativados] = await Promise.all([
+      soDoEscopo(recursos, 'area_id'), soDoEscopo(areas, 'id'),
+      soDoEscopo(desativados, 'area_id'),
     ]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;

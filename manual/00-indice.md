@@ -34,7 +34,7 @@ sempre isso.
 
 | parte | o que tem |
 |---|---|
-| `01-conceitos.md` | instalada, planejada, disponível, OEE, CC-CT, rodada, cenário, unidade |
+| `01-conceitos.md` | instalada, planejada, disponível, OEE, CC-CT, rodada, cenário, unidade, cargo e escopo |
 | `02-telas/` | uma página por tela, na ordem do menu |
 | `03-procedimentos/` | os POPs numerados |
 | `04-perguntas.md` | pegadinhas: sintoma → causa → o que fazer |

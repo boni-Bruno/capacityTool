@@ -2,7 +2,7 @@ import { areasCadastro, plantasParaEscolha } from '../../../lib/estrutura';
 import { ordemGuardada } from '../../../lib/ordem-servidor';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
-import { exigeVer, podeEditarTela } from '../guarda';
+import { exigeVer, plantasEditaveis, podeEditarTela, soDoEscopo } from '../guarda';
 
 export const metadata = { title: 'Áreas' };
 export const dynamic = 'force-dynamic';
@@ -14,6 +14,10 @@ export default async function Page() {
   let areas, plantas;
   try {
     [areas, plantas] = await Promise.all([areasCadastro(), plantasParaEscolha()]);
+    // A lista mostra as áreas do escopo; o seletor de planta do formulário só
+    // oferece as plantas em que a pessoa pode criar área (inteiras).
+    areas = await soDoEscopo(areas, 'id', 'area');
+    plantas = await plantasEditaveis(plantas);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }

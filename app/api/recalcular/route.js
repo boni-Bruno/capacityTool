@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { recalcular, recursosParaExtracao } from '../../../lib/db';
 import { exigeRota } from '../../../lib/sessao';
+import { alcancaArea } from '../../../lib/escopo';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 export const maxDuration = 60;
@@ -33,8 +34,10 @@ export async function POST(req) {
 // trezentas linhas não têm por que viajar em toda abertura do painel.
 export async function GET(req) {
   try {
-    await exigeRota(req);
-    return NextResponse.json({ ok: true, recursos: await recursosParaExtracao() });
+    const s = await exigeRota(req);
+    const lista = (await recursosParaExtracao())
+      .filter((r) => alcancaArea(s.areas, r.area_id));
+    return NextResponse.json({ ok: true, recursos: lista });
   } catch (e) {
     return NextResponse.json(
       { ok: false, erro: e.message ?? 'Falhou' },

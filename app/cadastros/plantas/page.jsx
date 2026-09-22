@@ -2,7 +2,7 @@ import { plantasCadastro } from '../../../lib/estrutura';
 import { ordemGuardada } from '../../../lib/ordem-servidor';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
-import { exigeVer, podeEditarTela } from '../guarda';
+import { exigeVer, podeEditarTela, soDoEscopo } from '../guarda';
 
 export const metadata = { title: 'Plantas' };
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,7 @@ export default async function Page() {
 
   let plantas;
   try {
-    plantas = await plantasCadastro();
+    plantas = await soDoEscopo(await plantasCadastro(), 'id', 'planta');
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }

@@ -96,6 +96,20 @@ material). Metro e UM só existem com um cenário no ar, porque dependem do
 índice. A **instalada não converte** para metro nem UM em lugar nenhum: teto de
 24 h vezes o índice do mix daria um número que parece capacidade e não é.
 
+## Usuário, cargo, escopo e mestre
+
+Cada pessoa entra com **usuário e senha** (ou pelo Hub S&OP, reconhecida pelo
+e-mail). O **cargo** diz *o que* ela pode: por tela, **ver** ou **editar**,
+mais **Recalcular**. O **escopo** diz *onde*: a empresa inteira, plantas
+inteiras ou áreas soltas — sem nada marcado, a pessoa não vê fábrica nenhuma.
+O que é da planta (turno, calendário, feriado) só edita quem tem a planta
+inteira.
+
+A **senha mestre** (sem usuário) é a rede: entra com tudo, em toda parte,
+identificada como "mestre". Fechar o navegador encerra a sessão; o botão
+**Sair** também. Trocar o cargo ou desativar alguém vale na próxima tela que a
+pessoa abrir.
+
 ## Ocupação
 
 `ocupação = demanda ÷ disponível`, em minuto, por CT e mês — e, agregando, por

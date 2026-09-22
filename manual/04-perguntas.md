@@ -24,6 +24,44 @@ olhar número*.
 
 ---
 
+## Não vejo a tela X no menu (ou abre "Sem acesso a esta tela")
+
+**Causa.** O seu cargo não tem `ver` naquela tela. O menu esconde e a página
+nega — mesmo pelo endereço.
+
+**O que fazer.** Peça ao gestor de planejamento que marque a tela no cargo
+(Acesso › Cargos) ou que troque o seu cargo. Vale na próxima tela que abrir.
+
+---
+
+## Salvei e veio "Esta área está fora do seu escopo" / "pede a planta inteira"
+
+**Causa.** O seu escopo (Onde atua, no cadastro de usuário) não cobre a área
+da coisa que você tentou gravar; ou você tentou mexer em turno, calendário ou
+feriado — que são da planta — tendo só uma área solta.
+
+**O que fazer.** O gestor edita o seu usuário e marca a área ou a planta
+inteira.
+
+---
+
+## Entrei pelo Hub S&OP e caí em "Sem acesso"
+
+**Causa.** O e-mail que o Hub mandou não está em nenhum usuário ativo aqui.
+
+**O que fazer.** O gestor cadastra (ou corrige o e-mail de) o seu usuário. A
+página mostra o e-mail que chegou, para não haver dúvida de qual é.
+
+---
+
+## Fechei o navegador e pediu login de novo
+
+**Causa.** É de propósito: a sessão é do navegador aberto, e o token vence em
+12 h de qualquer jeito. Navegador configurado para "continuar de onde parou"
+pode restaurar a sessão — é comportamento dele.
+
+---
+
 ## Cadastrei turnos em lote para vários recursos e não consigo desfazer
 
 **Sintoma.** Apliquei 3 turnos em 12 máquinas com *todos os filtrados*; para

@@ -1660,7 +1660,7 @@ nasce no navegador.
 
 ---
 
-## Usuários, cargos e escopo — EM CONSTRUÇÃO, por partes
+## Usuários, cargos e escopo — PRONTO
 
 Em 21/09/2026 o Bruno decidiu abrir a ferramenta para mais gente e pediu o
 controle de dentro do app: **cargos** com permissão **por tela, ver ou
@@ -1702,8 +1702,23 @@ pelo método, e a rota não precisa saber o próprio nome), e o **somente
 leitura**: o `Cadastro` genérico esconde formulário, Editar, Excluir e Ativo
 sem `editar`, e as telas de matriz e importação mostram a faixa "somente
 leitura" — o servidor recusa de qualquer jeito, a faixa avisa antes do
-clique. **Ainda não**: o escopo por planta/área nos seletores, nas árvores de
-extração e nas rotas — é o próximo commit.
+clique. E o **escopo** em três lugares: os seletores de fábrica dos painéis
+e das telas de planejamento, as listas de estrutura e as árvores de extração
+só trazem o que a pessoa alcança (`app/cadastros/guarda.jsx`: `areasDoEscopo`,
+`soDoEscopo`); as rotas de escrita conferem o escopo pelo corpo, com o mapa
+`ESCOPO_ROTAS` de `lib/permissoes.js` dizendo que campo do corpo identifica a
+área ou a planta e como resolvê-lo (`exigeRota` lê uma cópia do corpo e faz
+a busca — a rota não muda); e as rotas de leitura (extrações, simulador, a
+lista do recalcular) recortam as áreas pedidas pelo escopo.
+
+**O que é da planta pede a planta inteira**: turno, calendário, exceção, a
+própria planta. Quem tem só a Tecelagem lê os turnos da Matriz — são
+compartilhados, e ler ajuda a entender o próprio número — mas não os edita.
+Criar planta é só de quem tem a empresa inteira.
+
+Entrou em cinco commits, cada um deployando sozinho, com a senha mestre
+funcionando do primeiro ao último: modelo e motores; sessão e login; telas
+e menu; guardas; escopo.
 
 ---
 
@@ -1987,7 +2002,8 @@ disponível" deve significar na cadeia.
 
 ## Fora de escopo até alguém precisar
 
-- Usuários com perfil e escopo por área (hoje é senha única via `APP_SENHA`)
 - Multi-empresa com Row Level Security
+- Auditoria por pessoa: `auditoria.usuario_id` existe desde a 01 e a sessão
+  agora sabe quem é — falta as rotas de escrita gravarem
 - As tabelas `escala` e `escala_dia` seguem sem uso de propósito: na empresa
   quem faz rodízio é a pessoa, e isso é calendário, não escala

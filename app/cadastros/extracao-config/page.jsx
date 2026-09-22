@@ -6,7 +6,7 @@ import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { ORIGENS } from '../../../lib/origens';
 import AvisoBanco from '../aviso-banco';
 import Exportar from './exportar';
-import { SomenteLeitura, exigeVer } from '../guarda';
+import { exigeVer, soDoEscopo, SomenteLeitura } from '../guarda';
 
 export const metadata = { title: 'Extração das configurações' };
 export const dynamic = 'force-dynamic';
@@ -44,6 +44,7 @@ export default async function Page({ searchParams }) {
       arvoreDeConfiguracao(), resumoModeloSlide(), anosComRodada(),
       cargas(), cargaCorrente(), faixasDeOcupacao(),
     ]);
+    linhas = await soDoEscopo(linhas, 'area_id');
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }

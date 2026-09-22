@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { sessaoAtual } from '../../lib/sessao';
 import { podeEditar, podeVer } from '../../lib/permissoes';
+import { areas } from '../../lib/db';
+import { alcancaArea, alcancaPlanta } from '../../lib/escopo';
 
 // A GUARDA DAS PÁGINAS.
 //
@@ -25,6 +27,44 @@ export async function exigeVer(tela) {
       </p>
     </div>
   );
+}
+
+/**
+ * As áreas que a sessão alcança, na forma de `areas()` — para os seletores
+ * de fábrica dos painéis e das telas de planejamento. Quem tem tudo recebe a
+ * lista inteira; o resto, só o que o escopo cobre. "Todas as fábricas" nos
+ * painéis é todas as PERMITIDAS.
+ */
+export async function areasDoEscopo() {
+  const [s, lista] = await Promise.all([sessaoAtual(), areas()]);
+  return lista.filter((a) => alcancaArea(s?.areas ?? new Set(), a.id));
+}
+
+/**
+ * Recorta uma lista de cadastro pelo escopo. `campo` é a coluna com o id;
+ * `tipo` 'area' compara com as áreas alcançadas, 'planta' com as plantas
+ * VISÍVEIS — as que a pessoa tem inteiras OU de que alcança alguma área. Quem
+ * tem só a Tecelagem vê os turnos da Matriz (são compartilhados, e ler ajuda a
+ * entender o próprio número); editar é outra conversa, e a rota decide.
+ */
+export async function soDoEscopo(lista, campo, tipo = 'area') {
+  const s = await sessaoAtual();
+  if (!s) return [];
+  if (s.areas === null) return lista;
+  if (tipo === 'area') return lista.filter((l) => alcancaArea(s.areas, l[campo]));
+  const todas = await areas();
+  const visiveis = new Set([
+    ...(s.plantas ?? []),
+    ...todas.filter((a) => s.areas.has(Number(a.id))).map((a) => Number(a.planta_id)),
+  ]);
+  return lista.filter((l) => visiveis.has(Number(l[campo])));
+}
+
+/** As plantas em que a pessoa pode CRIAR coisa da planta: inteiras, ou tudo. */
+export async function plantasEditaveis(lista) {
+  const s = await sessaoAtual();
+  if (!s) return [];
+  return lista.filter((p) => alcancaPlanta(s.plantas, p.id));
 }
 
 /** A sessão pode editar esta tela? Para a página decidir o que oferecer. */

@@ -119,7 +119,8 @@ Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
 `pptx.js`, `documento.js`, `visual.js`, `slide-visual.js`, `faixa-cor.js`,
 `dia-util.js`, `ordem.js`, `anos.js`, `tema.js`, `origens.js`, `dias.js`,
 `grade.js`, `cores.js`, `xlsx.js`, `recursos-formato.js`, `simulador.js`,
-`pivot.js`. Nenhum deles importa `./db`.
+`pivot.js`, `permissoes.js`, `escopo.js`, `senha.js`, `sessao-token.js`.
+Nenhum deles importa `./db`.
 
 **Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
 quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número
@@ -139,6 +140,13 @@ tempo de lá existe para consulta, não para descompactar e recompactar megabyte
 
 **Fronteira cliente/servidor**: nenhum `lib/*.js` que importe `./db` pode ser
 importado por um componente `'use client'`.
+
+**Toda rota de API tem permissão decidida em `ROTAS`** (`lib/permissoes.js`),
+e toda tela nova entra em `TELAS` — é dali que nascem o menu, a home, a grade
+de cargos e a guarda. A rota chama `exigeRota(req)` no topo, a página chama
+`exigeVer('tela')`; rota que escreve em algo de uma área ou planta entra
+também em `ESCOPO_ROTAS`. Um teste (`lib/permissoes.test.js`) recusa rota
+sem entrada: rota esquecida nasceria fechada para todo mundo.
 
 **Estado na URL.** Filtros, recortes, unidade, aba, ordenação — tudo vive em
 `searchParams`. O endereço descreve por inteiro o que está na tela, e recarregar
@@ -163,6 +171,7 @@ lib/demanda.js     carga de demanda, índice, DE/PARA e mix (tudo que toca deman
 lib/regras.js      o motor: classificação, rateio, mix, capacidade por atributo
 lib/cadastro.js    turnos, turnos do recurso
 lib/estrutura.js   plantas, áreas, recursos, máquinas
+lib/acesso.js      cargos, usuários e escopo; lib/sessao.js é quem está na sessão
 app/painel/        Painel da Capacidade — "quanto cabe"
 app/ocupacao/      Painel da Ocupação — "cabe?"
 app/cadastros/     todas as telas de cadastro
@@ -197,6 +206,13 @@ NN_*.sql           migrações, na ordem em que devem rodar
   demanda. Filtrar por um rótulo soma a *fatia* de cada CT que aquele rótulo
   ocupa. As fatias de um CT somam 1, e é essa propriedade que faz a soma dos
   rótulos fechar com o total.
+- **cargo, escopo e mestre**: o cargo diz O QUE a pessoa pode (`tela.ver`,
+  `tela.editar`, `recalcular`; editar implica ver); o escopo diz ONDE
+  (EMPRESA, PLANTA inteira, ou AREA solta — vazio é nada, não é tudo). O que
+  é da planta — turno, calendário, exceção — pede a planta inteira. O cargo
+  protegido (Gestor de Planejamento) e a sessão **mestre** (`APP_SENHA`, sem
+  usuário) têm tudo. A sessão é um JWT só com a identidade; permissão e
+  escopo saem do banco a cada requisição.
 - **uma rodada por (área, ano, origem)**: a nova substitui a anterior. O sistema
   mostra a capacidade atual; rodada velha não é consultada por ninguém. O
   **Recalcular parcial** não cria rodada: regrava só os recursos escolhidos

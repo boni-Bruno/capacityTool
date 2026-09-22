@@ -3,7 +3,7 @@ import { ctsSemQuantidadeAp, resumoRecursosAp } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import Extrator from './extrator';
 import ImportarAp from './importar-ap';
-import { exigeVer } from '../guarda';
+import { exigeVer, soDoEscopo } from '../guarda';
 
 export const metadata = { title: 'Extração para o AP' };
 export const dynamic = 'force-dynamic';
@@ -32,6 +32,7 @@ export default async function Page() {
       recursosParaExtracao(), anosComRodada(),
       resumoRecursosAp(), ctsSemQuantidadeAp(),
     ]);
+    recursos = await soDoEscopo(recursos, 'area_id');
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }
