@@ -1697,11 +1697,57 @@ do React — a mesma lista serve à sessão, ao seletor de fábrica e ao recorte
 das telas de estrutura. De cinco consultas em três ondas para duas numa onda.
 Quem entra pela senha mestre nunca pagou isso; os usuários pagavam.
 
-O que **não** foi mexido, e continua na lista: juntar em `Promise.all` os
-awaits independentes das páginas; trocar os dois `LATERAL` de `porRecurso`
-(que rodam uma vez por recurso — 1,8 s frio, medido) por um `GROUP BY`; e o
-compute do Neon, que suspende no plano free e faz a primeira tela do dia
-pagar o despertar com o cache frio.
+### O que ficou fora, e por quê — medido em 22/09/2026
+
+As três sugestões que sobraram do mesmo estudo foram medidas **depois** do
+`gru1`, e duas delas não se sustentaram. Ficam aqui com o número, para não
+voltarem como boa ideia nova daqui a três meses.
+
+**Consultas independentes em `Promise.all` — vale pouco agora, faça se passar
+por perto.** As páginas executam os `await` em fila: no painel são umas oito
+ondas (`sessão → áreas → cargaCorrente → anosComRodada → calendários →
+diasTrabalhados → pesos → rodada → porRecurso → porMes`), e várias são
+independentes. Juntá-las levaria a umas quatro ondas. A estimativa original
+era 300–600 ms, mas ela valia quando cada ida ao banco custava ~120 ms de
+travessia até a Virgínia; **com a função ao lado do banco, a ida custa 2–5 ms**
+e o que sobra é sobrepor a execução de consultas pequenas: **50 a 100 ms por
+tela**. Positivo, mas não paga sozinho o risco de mexer nos dois arquivos mais
+densos do projeto.
+
+**Trocar os dois `LATERAL` de `porRecurso` por um `GROUP BY` — REPROVADO na
+medição.** A ideia era boa no papel: a tabela do painel monta cada linha com
+duas subconsultas laterais, e com 210 recursos na Tecelagem isso são 420
+varreduras de índice; somar tudo de uma vez seria uma só. Medido no mesmo
+banco, alternando as duas formas:
+
+| | morno | frio (compute recém-acordado) |
+|---|---|---|
+| `LATERAL` — como está hoje | **84 ms** | 1.817 ms, e 3.365 ms numa segunda medição |
+| `GROUP BY` — a proposta | **115 ms** | não medido |
+
+**Morno, a forma de hoje é mais rápida que a proposta.** Duzentos e dez
+acertos de índice em cache custam menos que ler 59.778 linhas e agrupá-las —
+ainda mais porque a instalada é uma view que expande `generate_series`,
+produz 76 mil linhas para uma área-ano e estoura o `work_mem` de 4 MB,
+ordenando em disco.
+
+E o 1,8 s que motivou a sugestão **não era a forma da consulta: era o cache
+frio** — o que leva ao item seguinte. Se um dia isto voltar, só vale junto com
+um conserto da `vw_instalada_dia`, e com medição frio × morno antes de trocar
+a consulta que produz o número do painel.
+
+**O compute do Neon que suspende — decisão de não perseguir.** No plano free o
+compute dorme depois de ~5 minutos parado e o cache local esvazia junto: foi o
+que fez a mesma consulta dar 84 ms e, minutos depois, 3,3 s. Não é "a primeira
+tela do dia", é a primeira depois de cada pausa. O Bruno decidiu não pagar
+plano por isso — o ganho é irregular e o custo é fixo —, e essa decisão
+derruba o item acima junto: a única vantagem clara do `GROUP BY` era
+justamente o caso frio.
+
+**A regra que fica**: daqui para a frente, otimização de desempenho neste
+projeto começa pela **duração real por rota** (Vercel › Observability), com
+gente usando, e não por lista de suspeitos. A proposta do `GROUP BY` nasceu de
+uma lista e morreu na primeira medição.
 
 ---
 
@@ -2021,9 +2067,10 @@ por quê — útil para não redecidir, mas já construído.
 
 ### Limpeza de schema
 
-- **O que ainda pesa depois da 35**: `capacidade_fato` com 708 mil linhas e
-  218 MB, 94 deles em índice — a chave primária `(execucao_id, recurso_id,
-  data, turno_id)` sozinha tem 65 MB. É o grão do cálculo e não tem o que
+- **O que ainda pesa depois da 35** (números de 22/09/2026: `capacidade_fato`
+  com 668 mil linhas e 208 MB; `demanda_linha` com 544 mil e 115 MB; o banco
+  inteiro em 344 MB do limite de 512): a chave primária de `capacidade_fato`
+  `(execucao_id, recurso_id, data, turno_id)`. É o grão do cálculo e não tem o que
   colapsar; o que dá para olhar quando apertar de novo é `ix_cf_recurso_data`
   (15 MB) e as colunas mortas `unidade_medida_id`, `qtd_planejada` e
   `qtd_disponivel`, que nunca receberam valor.
@@ -2034,6 +2081,26 @@ por quê — útil para não redecidir, mas já construído.
 - **Apagar `produto`, `recurso_taxa` e `recurso_taxa.min_setup`.** A base de
   demanda tornou o cadastro de taxa desnecessário, e as três estão no banco
   prometendo uma coisa que não acontece. Vale uma migração.
+
+### Desempenho, o que sobrou do estudo de 22/09/2026
+
+A seção **"A navegação estava lenta, e o motivo era geografia"** tem a medição
+completa. O que continua aberto, em ordem do que eu faria primeiro:
+
+- **Medir antes de otimizar de novo.** A duração real por rota está em Vercel ›
+  Observability. Tela acima de ~800 ms com gente usando é candidata; abaixo
+  disso, é ruído. A proposta do `GROUP BY` nasceu de uma lista de suspeitos e
+  morreu na primeira medição — não repetir o método.
+- **`Promise.all` nos awaits independentes** do painel e da ocupação: 50 a
+  100 ms por tela, depois do `gru1`. Vale como faxina quando esses arquivos
+  forem abertos por outro motivo, não como tarefa própria.
+- **A `vw_instalada_dia` expande `generate_series`**: 76 mil linhas para uma
+  área-ano, e o sort estoura o `work_mem` de 4 MB indo para disco (117 ms só
+  nela, morno). É a peça que faria o `GROUP BY` de `porRecurso` valer a pena —
+  e enquanto ela for assim, aquele item fica reprovado.
+- **Compute do Neon suspendendo** (~5 min de ociosidade, cache local junto):
+  decisão tomada de não pagar plano por isso. Fica como explicação para quando
+  alguém disser que "de manhã está lento", não como tarefa.
 
 ### Dívidas conhecidas do motor
 
