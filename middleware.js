@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { COOKIE_SESSAO, leSessao, segredoDaSessao } from './lib/sessao-token';
+import { enderecoDoHub } from './lib/hub';
 
-// Porteiro: roda antes de qualquer página. Sem sessão válida, manda para /entrar.
+// Porteiro: roda antes de qualquer página. Sem sessão válida, manda para o Hub.
 //
 // Só confere a ASSINATURA e a validade do token — no edge não há banco, e
 // permissão e escopo são conferidos dentro de cada rota (lib/sessao.js). Não
@@ -23,6 +24,16 @@ export async function middleware(req) {
   const quem = await leSessao(bruto, await segredoDaSessao(senha));
   if (quem) return NextResponse.next();
 
+  // A ÚNICA PORTA É O HUB. Quem chega sem sessão vai para lá, levando o caminho
+  // que pediu — um link antigo nos favoritos passa a funcionar, com um desvio
+  // pelo portal. A tela /entrar daqui só existe como escotilha (ver lib/hub.js).
+  const { pathname, search } = req.nextUrl;
+  const hub = enderecoDoHub(pathname + search);
+  if (hub) return NextResponse.redirect(hub);
+
+  // Sem HUB_URL configurada, cai para a porta local. Fail-safe de propósito: um
+  // deploy sem a variável deixaria o app inacessível e sem como entrar para
+  // arrumar, e isso é pior que uma segunda porta existir.
   const url = req.nextUrl.clone();
   url.pathname = '/entrar';
   url.search = '';

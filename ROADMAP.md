@@ -37,9 +37,40 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Simulador de quantidade de recursos, em .xlsx com fórmulas | — | Extração › Simulador de recursos · `lib/simulador.js` |
 | Manual de quem opera: conceitos, telas, POPs e pegadinhas | — | `manual/` · `MANUAL.md` |
 | Tabela dinâmica nos dois painéis, no grão de mês | — | Painel · Ocupação › aba "(Tab. Din.)" · `lib/pivot.js` |
+| A entrada é só pelo Hub; a tela de senha vira escotilha | — | `lib/hub.js` · `middleware.js` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
+
+### A porta é o Hub (22/09/2026)
+
+Quem chega aqui sem sessão é mandado para o Hub S&OP, levando o caminho que
+pediu — um link antigo nos favoritos volta a funcionar, com um desvio pelo
+portal. A tela `/entrar` daqui só aparece com `ENTRADA_LOCAL=1`.
+
+**A pergunta que levou a isso foi outra:** dá para a senha ser a mesma nas duas
+aplicações, sincronizada nos dois sentidos? Dá — e seria a pior das formas de
+conseguir isso. Sincronizar replica o hash em dois bancos, com um webhook em
+cada sentido e um modo de falha silencioso: a chamada falha, as senhas divergem,
+e ninguém descobre até alguém não conseguir entrar.
+
+A senha não precisa ser sincronizada se existir num lugar só. Ela existe no Hub.
+
+**O que NÃO mudou, e é o ponto:** quem é a pessoa aqui dentro continua sendo
+decidido aqui. O Hub responde "pode entrar"; cargo, permissões e escopo saem do
+cadastro local. O que saiu de cena foi só a senha dele.
+
+A coluna de senha continua no cadastro, sem uso no dia a dia — é ela que faz a
+escotilha funcionar para um usuário comum, e não só para o mestre. Removê-la
+seria uma migração destrutiva que não paga o risco agora.
+
+**O buraco herdado fechou.** Bloquear alguém no Hub agora tira o acesso aqui na
+sessão seguinte, porque não há mais uma senha local com que voltar. O que
+sobra é o teto de 12 h do token — e isso é teto, não janela aberta.
+
+`HUB_URL` vazia faz o app cair para a tela de senha. É fail-**safe** de
+propósito, ao contrário do resto: um deploy sem a variável não pode deixar o app
+inacessível e sem como entrar para arrumar.
 
 Sobre a capacidade por dia útil: o divisor sai da mesma contagem que a tela de
 Calendários mostra, com o peso de cada dia da semana e o desconto das paradas de

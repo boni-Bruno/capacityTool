@@ -3,14 +3,22 @@ import { COOKIE_SESSAO, emiteSessao, segredoDaSessao } from '../../../lib/sessao
 import { registraAcesso, usuarioPorLogin } from '../../../lib/acesso';
 import { confereSenha } from '../../../lib/senha';
 import { iguaisEmTempoConstante } from '../../../lib/jwt';
+import { entradaLocalLigada } from '../../../lib/hub';
 
-// A porta pela senha.
+// A ESCOTILHA.
 //
-// Dois caminhos, uma resposta. Sem login e com a senha igual a APP_SENHA,
-// entra a sessão MESTRE: tudo, em toda parte, identificada como "mestre" — a
-// rede para o gestor que esqueceu a senha, e o jeito de criar o primeiro
-// usuário. Com login, é o usuário do banco: ativo, senha conferida em
-// PBKDF2, último acesso gravado.
+// Esta porta fica FECHADA. Desde 22/09/2026 a entrada é pelo Hub S&OP, e a
+// senha de cada pessoa existe num lugar só — é o que torna desnecessário
+// sincronizar senha entre dois bancos.
+//
+// ENTRADA_LOCAL=1 reabre, e serve para uma coisa: o dia em que o Hub estiver
+// fora do ar e alguém precisar entrar aqui assim mesmo. Ligar exige mexer na
+// Vercel e redeployar — a fricção certa para uma segunda porta de emergência.
+//
+// Aberta, ela aceita os dois caminhos de antes. Sem login e com a senha igual a
+// APP_SENHA, entra a sessão MESTRE: tudo, em toda parte, identificada como
+// "mestre". Com login, é o usuário do banco — e a senha dele continua no
+// cadastro, sem uso no dia a dia, justamente para esta escotilha funcionar.
 //
 // A recusa é a mesma frase nos dois caminhos e em qualquer motivo: dizer se
 // foi o login ou a senha é entregar metade da resposta a quem está tentando.
@@ -25,6 +33,13 @@ const ATRIBUTOS = { httpOnly: true, secure: true, sameSite: 'lax', path: '/' };
 export async function POST(req) {
   const correta = process.env.APP_SENHA;
   if (!correta) return NextResponse.json({ ok: false }, { status: 401 });
+
+  // A mesma recusa de senha errada, e não um 404 ou uma mensagem própria: a
+  // porta fechada não precisa anunciar que existe.
+  if (!entradaLocalLigada()) {
+    return NextResponse.json({ ok: false, erro: 'Usuário ou senha incorretos.' },
+                             { status: 401 });
+  }
 
   let corpo;
   try { corpo = await req.json(); } catch { corpo = {}; }

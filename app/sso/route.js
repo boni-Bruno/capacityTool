@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { verifica } from '../../lib/jwt';
 import { queimaJti } from '../../lib/sso-jti';
 import { caminhoInterno, escapaHtml } from '../../lib/sso';
+import { enderecoDoHub } from '../../lib/hub';
 import { COOKIE_SESSAO, emiteSessao, segredoDaSessao } from '../../lib/sessao-token';
 import { registraAcesso, usuarioPorEmail } from '../../lib/acesso';
 
@@ -89,9 +90,10 @@ export async function POST(req) {
 
   // O destino sai do token ASSINADO, nunca do formulario — do formulario seria um
   // redirecionamento aberto controlado por quem monta a requisicao.
-  const destino = !cadastrado ? '/sem-acesso'
-    : u.trocar_senha ? '/trocar-senha'
-    : caminhoInterno(r.claims.dest);
+  // trocar_senha deixou de desviar para /trocar-senha: desde 22/09/2026 a senha
+  // que a pessoa usa e a do Hub, e a daqui so serve a escotilha. Mandar alguem
+  // trocar uma senha que ela nao usa seria pedir trabalho por nada.
+  const destino = !cadastrado ? '/sem-acesso' : caminhoInterno(r.claims.dest);
   const res = paginaDeSalto(destino);
 
   const senha = process.env.APP_SENHA;
@@ -151,7 +153,10 @@ function recusa(mensagem) {
     + '<title>Acesso negado</title></head>'
     + '<body style="font-family:system-ui;padding:2rem">'
     + '<p>' + escapaHtml(mensagem) + '</p>'
-    + '<p><a href="/entrar">Entrar com a senha</a></p>'
+    // O caminho de volta e o portal, nao a tela de senha daqui: ela so existe
+    // com a escotilha ligada, e mandar alguem para uma porta fechada e pior que
+    // nao oferecer caminho nenhum.
+    + '<p><a href="' + escapaHtml(enderecoDoHub('/') ?? '/entrar') + '">Voltar ao Hub S&amp;OP</a></p>'
     + '</body></html>';
 
   return new NextResponse(html, {

@@ -1,68 +1,28 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { enderecoDoHub, entradaLocalLigada } from '../../lib/hub';
+import Formulario from './formulario';
 
-// A tela de entrada: usuário e senha.
+// A tela de entrada existe, mas normalmente ninguém a vê.
 //
-// Sem usuário, a senha é conferida contra a mestre (APP_SENHA) — é a rede para
-// o gestor que esqueceu a própria senha, e o caminho para criar o primeiro
-// usuário. A tela diz isso numa linha, e não esconde: quem tem a mestre já
-// sabe que tem.
-export default function Entrar() {
-  const [login, setLogin] = useState('');
-  const [senha, setSenha] = useState('');
-  const [erro, setErro] = useState(null);
-  const [indo, setIndo] = useState(false);
-  const router = useRouter();
+// Desde 22/09/2026 a porta é o Hub S&OP: quem chega aqui sem sessão é mandado
+// para lá pelo middleware, e quem digita /entrar na barra cai na mesma coisa.
+// O formulário só aparece com ENTRADA_LOCAL=1 — a escotilha para o dia em que
+// o Hub estiver fora do ar (ver lib/hub.js).
+//
+// A casca é server component porque a decisão lê variável de ambiente. O
+// formulário continua cliente, em formulario.jsx.
 
-  async function enviar(e) {
-    e.preventDefault();
-    setIndo(true);
-    setErro(null);
-    const r = await fetch('/api/entrar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login, senha }),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (r.ok && j.ok) {
-      router.push(j.trocarSenha ? '/trocar-senha' : '/');
-      router.refresh();
-    } else {
-      setErro(j.erro ?? 'Usuário ou senha incorretos.');
-      setIndo(false);
-    }
+export const dynamic = 'force-dynamic';
+
+export default function Page() {
+  if (!entradaLocalLigada()) {
+    const hub = enderecoDoHub('/');
+    // Sem HUB_URL não há para onde mandar, e aí o formulário é a única saída —
+    // mesmo fail-safe do middleware, pelo mesmo motivo: um deploy sem a
+    // variável não pode deixar o app inacessível.
+    if (hub) redirect(hub);
   }
 
-  return (
-    <div className="entrar-tela">
-      <form className="entrar-caixa" onSubmit={enviar}>
-        <h1>Capacidade</h1>
-        <p className="entrar-sub">Entre com o seu usuário</p>
-        <input
-          type="text"
-          value={login}
-          autoFocus
-          autoComplete="username"
-          onChange={(e) => setLogin(e.target.value)}
-          placeholder="Usuário"
-        />
-        <input
-          type="password"
-          value={senha}
-          autoComplete="current-password"
-          onChange={(e) => setSenha(e.target.value)}
-          placeholder="Senha"
-        />
-        {erro && <p className="entrar-erro">{erro}</p>}
-        <button type="submit" disabled={indo || !senha}>
-          {indo ? 'Entrando…' : 'Entrar'}
-        </button>
-        <p className="entrar-sub" style={{ marginTop: 14, fontSize: 12 }}>
-          Sem usuário, a senha mestre entra. Fechar o navegador encerra a sessão.
-        </p>
-      </form>
-    </div>
-  );
+  return <Formulario />;
 }
