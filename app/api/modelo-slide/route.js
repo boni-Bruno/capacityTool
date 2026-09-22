@@ -4,7 +4,7 @@ import {
   iniciarModeloSlide, modeloSlideBase64,
 } from '../../../lib/db';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 // O modelo .pptx da extração.
@@ -20,7 +20,7 @@ import { revalidarCadastros } from '../../../lib/revalidar';
 // `iniciarModeloSlide` em lib/db.js.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     if (b.acao === 'abrir') {
@@ -55,9 +55,9 @@ export async function POST(req) {
 }
 
 // Os bytes só saem quando alguém vai exportar — a tela lista pelo resumo.
-export async function GET() {
+export async function GET(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const m = await modeloSlideBase64();
     if (!m) throw new Error('Nenhum modelo importado.');
     return NextResponse.json({ ok: true, ...m });
@@ -67,9 +67,9 @@ export async function GET() {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     await apagarModeloSlide();
     revalidarCadastros();
     return NextResponse.json({ ok: true });

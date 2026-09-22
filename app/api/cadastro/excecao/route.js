@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { criarExcecao, alterarExcecao, excluirExcecao } from '../../../../lib/excecao';
 import { mensagemDeErro } from '../../../../lib/erros';
-import { exigeSessao } from '../../../../lib/sessao';
+import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
 const falha = (e, onde) => {
@@ -12,7 +12,7 @@ const falha = (e, onde) => {
 
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const id = await criarExcecao(await req.json());
     revalidarCadastros();
     return NextResponse.json({ ok: true, id });
@@ -21,7 +21,7 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id, ...campos } = await req.json();
     await alterarExcecao(id, campos);
     revalidarCadastros();
@@ -31,7 +31,7 @@ export async function PATCH(req) {
 
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id } = await req.json();
     await excluirExcecao(id);
     revalidarCadastros();

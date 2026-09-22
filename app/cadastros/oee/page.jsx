@@ -10,6 +10,7 @@ import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorOee from './editor';
 import Ciente from '../ciente';
+import { SomenteLeitura, exigeVer } from '../guarda';
 
 export const metadata = { title: 'OEE' };
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,9 @@ const paraTela = (v) =>
   String(Number((Number(v) * 100).toFixed(3))).replace('.', ',');
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('oee');
+  if (negado) return negado;
+
   let listaAreas;
   try {
     listaAreas = await areas();
@@ -190,6 +194,7 @@ export default async function Page({ searchParams }) {
 
   return (
     <>
+      <SomenteLeitura tela="oee" />
       <div className="topo">
         <h1 className="titulo">OEE</h1>
         <Suspense><Seletor campos={campos} /></Suspense>

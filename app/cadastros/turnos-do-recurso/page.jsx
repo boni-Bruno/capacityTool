@@ -11,6 +11,7 @@ import Matriz from './matriz';
 import Calendario from './calendario';
 import Ciente from '../ciente';
 import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
+import { SomenteLeitura, exigeVer } from '../guarda';
 
 export const metadata = { title: 'Turnos do recurso' };
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,9 @@ const porCodigo = (lista) =>
   [...lista].sort((a, b) => String(a.codigo).localeCompare(String(b.codigo), 'pt-BR'));
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('turnos_recurso');
+  if (negado) return negado;
+
   let listaAreas;
   try {
     listaAreas = await areas();
@@ -270,6 +274,7 @@ export default async function Page({ searchParams }) {
 
   return (
     <>
+      <SomenteLeitura tela="turnos_recurso" />
       <div className="topo">
         <h1 className="titulo">Turnos do recurso</h1>
         <Suspense><Seletor campos={campos} /></Suspense>

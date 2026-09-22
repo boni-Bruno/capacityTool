@@ -39,6 +39,7 @@ import TabelaAtributo from './tabela-atributo';
 import FiltroColuna from './filtro-coluna';
 import Pivot from './pivot';
 import Shell from '../shell';
+import { exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Capacidade' };
 export const dynamic = 'force-dynamic';
@@ -62,6 +63,9 @@ function serieDeMeses(linhas, meses, campo = '') {
 const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).toFixed(1) + '%');
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('painel');
+  if (negado) return <Shell>{negado}</Shell>;
+
   const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
   let listaAreas;
 

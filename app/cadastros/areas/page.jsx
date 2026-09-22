@@ -2,11 +2,15 @@ import { areasCadastro, plantasParaEscolha } from '../../../lib/estrutura';
 import { ordemGuardada } from '../../../lib/ordem-servidor';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
+import { exigeVer, podeEditarTela } from '../guarda';
 
 export const metadata = { title: 'Áreas' };
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
+  const negado = await exigeVer('areas');
+  if (negado) return negado;
+
   let areas, plantas;
   try {
     [areas, plantas] = await Promise.all([areasCadastro(), plantasParaEscolha()]);
@@ -35,7 +39,7 @@ export default async function Page() {
       </div>
 
       <div className="painel">
-        <Cadastro
+        <Cadastro somenteLeitura={!(await podeEditarTela('areas'))}
           rota="/api/cadastro/area"
           itens={areas}
           podeAtivar

@@ -6,6 +6,7 @@ import Cadastro from '../cadastro';
 import { ordemGuardada } from '../../../lib/ordem-servidor';
 import Definitivo from './definitivo';
 import Planilha from './planilha';
+import { SomenteLeitura, exigeVer, podeEditarTela } from '../guarda';
 
 export const metadata = { title: 'Recursos' };
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,9 @@ const TIPOS = [
 ];
 
 export default async function Page() {
+  const negado = await exigeVer('recursos');
+  if (negado) return negado;
+
   let recursos, areas, desativados;
   try {
     [recursos, areas, desativados] = await Promise.all([
@@ -43,6 +47,7 @@ export default async function Page() {
 
   return (
     <>
+      <SomenteLeitura tela="recursos" />
       <div className="topo">
         <h1 className="titulo">Recursos</h1>
       </div>
@@ -53,7 +58,7 @@ export default async function Page() {
             quarenta para cadastrar, e um a um é o de quem tem um. */}
         <Planilha itens={recursos} areas={areas} />
 
-        <Cadastro
+        <Cadastro somenteLeitura={!(await podeEditarTela('recursos'))}
           rota="/api/cadastro/recurso"
           itens={recursos}
           rotuloNovo="Adicionar recurso"

@@ -41,6 +41,10 @@ export default function Cadastro({
   // planta e área do resto do app.
   entidade = null,
   ordemInicial = null,
+  // Sem editar no cargo a tela vira leitura: sem formulário, sem Editar,
+  // sem Excluir, sem a caixa de Ativo. O servidor recusa de qualquer jeito;
+  // esconder é para a pessoa não descobrir isso no clique.
+  somenteLeitura = false,
 }) {
   const router = useRouter();
 
@@ -286,9 +290,9 @@ export default function Cadastro({
 
   return (
     <>
-      {formularioSobDemanda && formulario}
+      {!somenteLeitura && formularioSobDemanda && formulario}
 
-      {selecaoMultipla && escolhidos.size > 0 && (
+      {!somenteLeitura && selecaoMultipla && escolhidos.size > 0 && (
         <div className="acoes barra-lote">
           <strong>{escolhidos.size} selecionado(s)</strong>
           <button className="btn btn-mini btn-perigo" disabled={ocupado}
@@ -330,7 +334,7 @@ export default function Cadastro({
           <table>
             <thead>
               <tr>
-                {selecaoMultipla && (
+                {selecaoMultipla && !somenteLeitura && (
                   <th className="col-marca">
                     <input type="checkbox" checked={todosVisiveis}
                            onChange={marcaTodos}
@@ -359,7 +363,7 @@ export default function Cadastro({
               </tr>
               {filtrarColunas && (
                 <tr className="linha-filtro">
-                  {selecaoMultipla && <th className="col-marca" />}
+                  {selecaoMultipla && !somenteLeitura && <th className="col-marca" />}
                   {campos.map((c) => (
                     <th key={c.nome}>
                       {c.tipo === 'select' ? (
@@ -407,7 +411,7 @@ export default function Cadastro({
 
                 return (
                   <tr key={it.id} className={inativo ? 'linha-vazia' : ''}>
-                    {selecaoMultipla && (
+                    {selecaoMultipla && !somenteLeitura && (
                       <td className="col-marca">
                         <input type="checkbox" checked={escolhidos.has(it.id)}
                                onChange={() => marca(it.id)} />
@@ -433,7 +437,7 @@ export default function Cadastro({
                         <input
                           type="checkbox"
                           checked={!inativo}
-                          disabled={ocupado}
+                          disabled={ocupado || somenteLeitura}
                           title={inativo ? 'Inativo — clique para ativar'
                                          : 'Ativo — clique para inativar'}
                           onChange={() =>
@@ -443,7 +447,7 @@ export default function Cadastro({
                     )}
 
                     <td className="acoes">
-                      {edit ? (
+                      {somenteLeitura ? null : edit ? (
                         <>
                           <button className="btn btn-primario btn-mini" disabled={ocupado}
                                   onClick={() => salvar(it.id)}>
@@ -495,7 +499,7 @@ export default function Cadastro({
         </div>
       )}
 
-      {!formularioSobDemanda && formulario}
+      {!somenteLeitura && !formularioSobDemanda && formulario}
 
       {erro && <p className="erro">{erro}</p>}
       {aviso && <div className="aviso" style={{ marginTop: 12 }}>{aviso}</div>}

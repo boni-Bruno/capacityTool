@@ -3,14 +3,14 @@ import {
   criarTurno, renomearTurno, excluirTurno, reativarTurno,
 } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
-import { exigeSessao } from '../../../../lib/sessao';
+import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
 // Criar turno. Nasce sem nenhum horário: os 7 dias da semana ficam zerados
 // para o usuário cadastrar. Turno sem linha num dia = não roda nesse dia.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const id = await criarTurno(await req.json());
     revalidarCadastros();
     return NextResponse.json({ ok: true, id });
@@ -23,7 +23,7 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id, codigo, nome } = await req.json();
     await renomearTurno(id, { codigo, nome });
     revalidarCadastros();
@@ -38,7 +38,7 @@ export async function PATCH(req) {
 // Volta a ativar um turno desativado.
 export async function PUT(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id } = await req.json();
     await reativarTurno(id);
     revalidarCadastros();
@@ -57,7 +57,7 @@ export async function PUT(req) {
 // tela adivinhar qual delas mostrar.
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id, migrar_para: migrarPara } = await req.json();
     const r = await excluirTurno(id, { migrarPara });
     revalidarCadastros();

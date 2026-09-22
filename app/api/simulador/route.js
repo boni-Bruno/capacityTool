@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { simuladorPorCtMes } from '../../../lib/db';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 
 // Os números do simulador de quantidade de recursos: por CT e mês, demanda,
 // disponível e o que uma unidade entrega. O servidor só entrega números; a
@@ -12,7 +12,7 @@ import { exigeSessao } from '../../../lib/sessao';
 // zerada diria "precisa de zero máquinas" com toda a convicção.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     const areas = (b.areas ?? []).map(Number).filter(Number.isInteger);

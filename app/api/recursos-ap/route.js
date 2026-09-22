@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { salvarRecursosAp } from '../../../lib/demanda';
 import { montarRecursosAp } from '../../../lib/ap';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 // A quantidade de recurso do AP, importada do parquet de lá.
@@ -16,7 +16,7 @@ import { revalidarCadastros } from '../../../lib/revalidar';
 // que a conferência nunca viu.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { linhas, extraido_em } = await req.json();
 
     const { problemas, itens } = montarRecursosAp(linhas);

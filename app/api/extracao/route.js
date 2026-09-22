@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { extracaoAp } from '../../../lib/db';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 
 // A extração para o AP. Só lê — o arquivo nasce no navegador, desta resposta.
 //
@@ -10,7 +10,7 @@ import { exigeSessao } from '../../../lib/sessao';
 // reimplementá-la.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     const medida = ['DISPONIVEL', 'PLANEJADA', 'INSTALADA'].includes(b.medida)

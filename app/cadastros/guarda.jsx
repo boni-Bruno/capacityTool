@@ -32,3 +32,18 @@ export async function podeEditarTela(tela) {
   const s = await sessaoAtual();
   return Boolean(s && podeEditar(s.perms, tela));
 }
+
+/**
+ * O aviso de "somente leitura", para as telas de matriz e importação, que
+ * têm botões demais para esconder um a um: o servidor recusa a gravação de
+ * qualquer jeito, e a faixa avisa antes do clique.
+ */
+export async function SomenteLeitura({ tela }) {
+  if (await podeEditarTela(tela)) return null;
+  return (
+    <p className="rodape somente-leitura">
+      <strong>Somente leitura.</strong> Seu cargo vê esta tela, mas não grava
+      nela — o que for salvo aqui será recusado.
+    </p>
+  );
+}

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { recalcular, recursosParaExtracao } from '../../../lib/db';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 export const maxDuration = 60;
@@ -9,7 +9,7 @@ export const maxDuration = 60;
 // corpo é o Recalcular parcial: só aqueles, dentro da rodada que existe.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { areaId, ano, origem, recursos } = await req.json();
     const r = await recalcular(Number(areaId), Number(ano), origem ?? 'META',
                                Array.isArray(recursos) ? recursos : null);
@@ -31,9 +31,9 @@ export async function POST(req) {
 
 // A lista de recursos para o pop-up do parcial. Lida só quando ele abre:
 // trezentas linhas não têm por que viajar em toda abertura do painel.
-export async function GET() {
+export async function GET(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     return NextResponse.json({ ok: true, recursos: await recursosParaExtracao() });
   } catch (e) {
     return NextResponse.json(

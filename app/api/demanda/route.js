@@ -3,7 +3,7 @@ import {
   anotarCarga, concluirCarga, criarCarga, definirCorrente, excluirCarga, gravarLote,
 } from '../../../lib/demanda';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 // A carga entra em três atos, e não numa requisição só.
@@ -23,7 +23,7 @@ const falha = (e, onde) => {
 
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     if (b.acao === 'abrir') {
@@ -55,7 +55,7 @@ export async function POST(req) {
 // invalidar o cache do painel por causa de uma frase seria pagar caro por nada.
 export async function PUT(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     if (b.acao === 'observacao') {
@@ -71,7 +71,7 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id } = await req.json();
     await excluirCarga(id);
     revalidarCadastros();

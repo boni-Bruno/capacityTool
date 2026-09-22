@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { definirTurnosDoAno } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
-import { exigeSessao } from '../../../../lib/sessao';
+import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
 // Salva a matriz mês x turno de um recurso, um ano por vez.
@@ -17,7 +17,7 @@ import { revalidarCadastros } from '../../../../lib/revalidar';
 // preservado pelo recomporFaixasComValor().
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     const recursoId = Number(b.recurso_id);

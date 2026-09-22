@@ -34,6 +34,7 @@ import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
 import Pivot from '../painel/pivot';
 import Shell from '../shell';
+import { exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Ocupação' };
 export const dynamic = 'force-dynamic';
@@ -80,6 +81,9 @@ const classePct = (v) => (v === null ? 'muted'
     : v >= 85 ? 'ocup-aperta' : '');
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('ocupacao');
+  if (negado) return <Shell>{negado}</Shell>;
+
   const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
   let listaAreas;
   let listaCargas;

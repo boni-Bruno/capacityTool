@@ -6,11 +6,15 @@ import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorParadas from './editor';
+import { SomenteLeitura, exigeVer } from '../guarda';
 
 export const metadata = { title: 'Paradas' };
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('paradas');
+  if (negado) return negado;
+
   let listaAreas;
   try {
     listaAreas = await areas();
@@ -94,6 +98,7 @@ export default async function Page({ searchParams }) {
 
   return (
     <>
+      <SomenteLeitura tela="paradas" />
       <div className="topo">
         <h1 className="titulo">Paradas planejadas</h1>
         <Suspense>

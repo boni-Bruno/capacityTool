@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { excluirAtributo, excluirRegra, salvarDePara } from '../../../lib/demanda';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 // O DE/PARA: atributos derivados e as regras que os produzem.
@@ -17,7 +17,7 @@ const falha = (e, onde) => {
 
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     // Uma chamada só: a regra e, se ainda não existir, o atributo em que ela
@@ -30,7 +30,7 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     if (b.acao === 'atributo') await excluirAtributo(b.codigo);

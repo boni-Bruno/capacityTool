@@ -3,7 +3,7 @@ import {
   criarPlanta, alterarPlanta, excluirPlanta, definirAtivoPlanta,
 } from '../../../../lib/estrutura';
 import { mensagemDeErro } from '../../../../lib/erros';
-import { exigeSessao } from '../../../../lib/sessao';
+import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
 const falha = (e, onde) => {
@@ -14,7 +14,7 @@ const falha = (e, onde) => {
 
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const id = await criarPlanta(await req.json());
     revalidarCadastros();
     return NextResponse.json({ ok: true, id });
@@ -23,7 +23,7 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id, ...campos } = await req.json();
     await alterarPlanta(id, campos);
     revalidarCadastros();
@@ -33,7 +33,7 @@ export async function PATCH(req) {
 
 export async function PUT(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     // Recebe o estado, não "reativa": a tela tem um interruptor, e mandar o
     // valor desejado evita os dois lados discordarem sobre o que era antes.
     const { id, ativo } = await req.json();
@@ -45,7 +45,7 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id } = await req.json();
     const r = await excluirPlanta(id);
     revalidarCadastros();

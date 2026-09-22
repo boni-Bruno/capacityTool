@@ -6,11 +6,15 @@ import { DIAS_CURTO } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Turnos from './turnos';
 import EditorHorario from './editor';
+import { SomenteLeitura, exigeVer } from '../guarda';
 
 export const metadata = { title: 'Turnos' };
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('turnos');
+  if (negado) return negado;
+
   let lista, listaPlantas;
   try {
     [lista, listaPlantas] = await Promise.all([turnosParaCadastro(), plantas()]);
@@ -38,6 +42,7 @@ export default async function Page({ searchParams }) {
 
   return (
     <>
+      <SomenteLeitura tela="turnos" />
       <div className="topo">
         <h1 className="titulo">Turnos</h1>
       </div>

@@ -3,6 +3,7 @@ import { ctsSemQuantidadeAp, resumoRecursosAp } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import Extrator from './extrator';
 import ImportarAp from './importar-ap';
+import { exigeVer } from '../guarda';
 
 export const metadata = { title: 'Extração para o AP' };
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,9 @@ export const dynamic = 'force-dynamic';
 // =============================================================================
 
 export default async function Page() {
+  const negado = await exigeVer('extracao_ap');
+  if (negado) return negado;
+
   let recursos;
   let anos;
   let resumoAp;

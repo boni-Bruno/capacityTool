@@ -17,6 +17,7 @@ import DiasUteis from './dias-uteis';
 import Importar from './importar';
 import Ano from './ano';
 import EditorExcecao from './excecao';
+import { exigeVer, podeEditarTela } from '../guarda';
 
 export const metadata = { title: 'Calendários' };
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,9 @@ function descreveDias(dias) {
 }
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('calendarios');
+  if (negado) return negado;
+
   let lista, plantas;
   try {
     [lista, plantas] = await Promise.all([
@@ -236,7 +240,7 @@ export default async function Page({ searchParams }) {
 
       <div className="painel">
         <h2>Todos os calendários</h2>
-        <Cadastro
+        <Cadastro somenteLeitura={!(await podeEditarTela('calendarios'))}
           rota="/api/cadastro/calendario"
           itens={itens}
           rotuloNovo="Criar calendário"

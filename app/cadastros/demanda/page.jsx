@@ -8,6 +8,7 @@ import AvisoBanco from '../aviso-banco';
 import EnviarDemanda from './enviar';
 import Cargas from './cargas';
 import Explorar from './explorar';
+import { SomenteLeitura, exigeVer } from '../guarda';
 
 export const metadata = { title: 'Demanda' };
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,9 @@ async function ctsCadastrados() {
 }
 
 export default async function Page() {
+  const negado = await exigeVer('demanda');
+  if (negado) return negado;
+
   let lista;
   let corrente;
   let cts;
@@ -60,6 +64,7 @@ export default async function Page() {
 
   return (
     <>
+      <SomenteLeitura tela="demanda" />
       <div className="topo">
         <h1 className="titulo">Demanda</h1>
       </div>

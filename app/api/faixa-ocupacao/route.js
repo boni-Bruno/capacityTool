@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { faixasDeOcupacao, salvarFaixasDeOcupacao } from '../../../lib/db';
 import { validaFaixas } from '../../../lib/faixa-cor';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 // As faixas de cor da ocupação no documento. Ver 29_faixa_ocupacao.sql.
@@ -11,9 +11,9 @@ import { revalidarCadastros } from '../../../lib/revalidar';
 // dela: tela é conveniência, quem garante é quem grava. O banco também recusa
 // sobreposição, mas descobrir por lá entrega ao usuário uma frase em inglês
 // sobre um índice gist.
-export async function GET() {
+export async function GET(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     return NextResponse.json({ ok: true, faixas: await faixasDeOcupacao() });
   } catch (e) {
     return NextResponse.json({ ok: false, erro: mensagemDeErro(e) },
@@ -23,7 +23,7 @@ export async function GET() {
 
 export async function PUT(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     const { faixas, erro } = validaFaixas(b.faixas);

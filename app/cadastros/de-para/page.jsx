@@ -4,6 +4,7 @@ import {
 } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import Editor from './editor';
+import { SomenteLeitura, exigeVer } from '../guarda';
 
 export const metadata = { title: 'DE/PARA' };
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,9 @@ export const dynamic = 'force-dynamic';
 // =============================================================================
 
 export default async function Page() {
+  const negado = await exigeVer('de_para');
+  if (negado) return negado;
+
   let corrente;
   let attrs;
   let regras;
@@ -43,6 +47,7 @@ export default async function Page() {
 
   return (
     <>
+      <SomenteLeitura tela="de_para" />
       <div className="topo">
         <h1 className="titulo">DE/PARA da demanda</h1>
       </div>

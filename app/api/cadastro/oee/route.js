@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { aplicarOeeEmLote, definirOeeDoAno } from '../../../../lib/oee';
 import { mensagemDeErro } from '../../../../lib/erros';
-import { exigeSessao } from '../../../../lib/sessao';
+import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
 // Salva o OEE de um ano e uma origem.
@@ -16,7 +16,7 @@ import { revalidarCadastros } from '../../../../lib/revalidar';
 // mexendo num mês.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     const ano = Number(b.ano);

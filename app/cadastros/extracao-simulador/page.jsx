@@ -4,6 +4,7 @@ import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { ORIGENS } from '../../../lib/origens';
 import AvisoBanco from '../aviso-banco';
 import Simulador from './simulador';
+import { exigeVer } from '../guarda';
 
 export const metadata = { title: 'Simulador de recursos' };
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,9 @@ export const dynamic = 'force-dynamic';
 // =============================================================================
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('simulador');
+  if (negado) return negado;
+
   let linhas;
   let anos;
   let listaCargas;

@@ -1694,11 +1694,16 @@ de senha (`/trocar-senha`, obrigatória no primeiro acesso), o SSO casando pelo
 e-mail, a página `/sem-acesso`, as telas **Cargos** e **Usuários** (grupo
 Acesso), o **menu e a home filtrados pelo cargo** (a lista de telas de
 `lib/permissoes.js` é a única — o menu lateral e os cartões da home leem
-dela), o rodapé do menu com quem está na sessão, e a guarda de página
-(`app/cadastros/guarda.jsx`: `exigeVer`) nas duas telas novas. **Ainda não**:
-`exigeVer` nas outras telas, as guardas de permissão nas rotas de API, o
-`somenteLeitura` nas telas, e o escopo nos seletores e nas rotas — entram nos
-commits seguintes, nesta ordem.
+dela), o rodapé do menu com quem está na sessão, **a guarda de página em
+toda tela** (`app/cadastros/guarda.jsx`: `exigeVer` no topo de cada
+`page.jsx` — o menu esconde, a página nega), **a guarda de rota em toda API**
+(`exigeRota(req)` em `lib/sessao.js`: a permissão sai de `ROTAS` pela URL e
+pelo método, e a rota não precisa saber o próprio nome), e o **somente
+leitura**: o `Cadastro` genérico esconde formulário, Editar, Excluir e Ativo
+sem `editar`, e as telas de matriz e importação mostram a faixa "somente
+leitura" — o servidor recusa de qualquer jeito, a faixa avisa antes do
+clique. **Ainda não**: o escopo por planta/área nos seletores, nas árvores de
+extração e nas rotas — é o próximo commit.
 
 ---
 

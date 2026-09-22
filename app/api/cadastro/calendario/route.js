@@ -3,7 +3,7 @@ import {
   criarCalendario, alterarCalendario, excluirCalendario,
 } from '../../../../lib/calendario';
 import { mensagemDeErro } from '../../../../lib/erros';
-import { exigeSessao } from '../../../../lib/sessao';
+import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
 const falha = (e, onde) => {
@@ -14,7 +14,7 @@ const falha = (e, onde) => {
 
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const id = await criarCalendario(await req.json());
     revalidarCadastros();
     return NextResponse.json({ ok: true, id });
@@ -23,7 +23,7 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id, ...campos } = await req.json();
     await alterarCalendario(id, campos);
     revalidarCadastros();
@@ -33,7 +33,7 @@ export async function PATCH(req) {
 
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id } = await req.json();
     const r = await excluirCalendario(id);
     revalidarCadastros();

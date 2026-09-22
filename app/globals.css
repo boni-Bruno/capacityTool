@@ -814,6 +814,12 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 
 /* ---- acesso: cargos e usuarios ---- */
 
+/* A faixa de "somente leitura" no alto das telas de matriz. */
+.somente-leitura {
+  margin: 0 0 12px; padding: 8px 12px; border-radius: 8px;
+  background: var(--hover); border: 1px solid var(--border);
+}
+
 /* Cargos: a lista a esquerda e o editor a direita; empilha no celular. */
 .cargos { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
 @media (max-width: 800px) { .cargos { grid-template-columns: 1fr; } }

@@ -6,6 +6,7 @@ import {
 import { CAMPOS_BASE, camposUsados } from '../../../lib/regras';
 import AvisoBanco from '../aviso-banco';
 import AjusteMix from './ajuste';
+import { SomenteLeitura, exigeVer } from '../guarda';
 
 export const metadata = { title: 'Ajuste de mix' };
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,9 @@ export const dynamic = 'force-dynamic';
 // =============================================================================
 
 export default async function Page({ searchParams }) {
+  const negado = await exigeVer('mix');
+  if (negado) return negado;
+
   let corrente;
   let attrs;
   let regras;
@@ -87,6 +91,7 @@ export default async function Page({ searchParams }) {
 
   return (
     <>
+      <SomenteLeitura tela="mix" />
       <div className="topo">
         <h1 className="titulo">
           Ajuste de mix

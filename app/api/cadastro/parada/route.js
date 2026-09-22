@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { criarParada, apagarParada } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
-import { exigeSessao } from '../../../../lib/sessao';
+import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 
 // Parada é evento, não parâmetro versionado — por isso insert/delete direto.
@@ -9,7 +9,7 @@ import { revalidarCadastros } from '../../../../lib/revalidar';
 // a mesma perda duas vezes.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const id = await criarParada(await req.json());
     revalidarCadastros();
     return NextResponse.json({ ok: true, id });
@@ -22,7 +22,7 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const { id } = await req.json();
     await apagarParada(Number(id));
     revalidarCadastros();

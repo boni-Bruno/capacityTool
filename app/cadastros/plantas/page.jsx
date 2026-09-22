@@ -2,11 +2,15 @@ import { plantasCadastro } from '../../../lib/estrutura';
 import { ordemGuardada } from '../../../lib/ordem-servidor';
 import AvisoBanco from '../aviso-banco';
 import Cadastro from '../cadastro';
+import { exigeVer, podeEditarTela } from '../guarda';
 
 export const metadata = { title: 'Plantas' };
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
+  const negado = await exigeVer('plantas');
+  if (negado) return negado;
+
   let plantas;
   try {
     plantas = await plantasCadastro();
@@ -21,7 +25,7 @@ export default async function Page() {
       </div>
 
       <div className="painel">
-        <Cadastro
+        <Cadastro somenteLeitura={!(await podeEditarTela('plantas'))}
           rota="/api/cadastro/planta"
           itens={plantas}
           podeAtivar

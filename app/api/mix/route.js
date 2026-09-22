@@ -3,7 +3,7 @@ import {
   apontarTaxaMix, limparMixCt, limparTaxaMix, salvarMixCt,
 } from '../../../lib/demanda';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 import { revalidarCadastros } from '../../../lib/revalidar';
 
 // O ajuste manual de mix e o apontamento de taxa.
@@ -19,7 +19,7 @@ const falha = (e, onde) => {
 
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     if (b.acao === 'taxa') {
@@ -36,7 +36,7 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     if (b.acao === 'taxa') await limparTaxaMix(b.ct, b.atributo);

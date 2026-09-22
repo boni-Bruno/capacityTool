@@ -5,7 +5,7 @@ import {
 import { turnos as turnosCadastrados } from '../../../lib/cadastro';
 import { resolvePeriodo } from '../../../lib/periodo';
 import { mensagemDeErro } from '../../../lib/erros';
-import { exigeSessao } from '../../../lib/sessao';
+import { exigeRota } from '../../../lib/sessao';
 
 // Os números do recorte escolhido, para o .pptx e para a página de impressão.
 //
@@ -24,7 +24,7 @@ import { exigeSessao } from '../../../lib/sessao';
 // grupo seria o jeito de um slide de CC mostrar o gráfico de outro.
 export async function POST(req) {
   try {
-    await exigeSessao();
+    await exigeRota(req);
     const b = await req.json();
 
     const areas = (b.areas ?? []).map(Number).filter(Number.isInteger);
