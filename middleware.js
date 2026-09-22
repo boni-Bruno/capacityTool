@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
-import { token } from './lib/token';
+import { COOKIE_SESSAO, leSessao, segredoDaSessao } from './lib/sessao-token';
 
-// Porteiro: roda antes de qualquer página. Sem o cookie certo, manda para /entrar.
+// Porteiro: roda antes de qualquer página. Sem sessão válida, manda para /entrar.
 //
-// Não é a única tranca: as rotas que gravam chamam exigeSessao() por conta
-// própria (lib/sessao.js), porque esta versão do Next tem bypass de middleware
+// Só confere a ASSINATURA e a validade do token — no edge não há banco, e
+// permissão e escopo são conferidos dentro de cada rota (lib/sessao.js). Não
+// é a única tranca: as rotas que gravam chamam exigeSessao()/exigePermissao()
+// por conta própria, porque esta versão do Next tem bypass de middleware
 // conhecido (GHSA-f82v-jwr5-mffw).
+//
+// Quem veio do Hub sem cadastro aqui tem sessão do tipo 'nenhum': ela passa
+// pelo porteiro só para chegar a /sem-acesso, que diz o que fazer — e a
+// qualquer outra página, onde a Nav mostra o mesmo aviso e nada mais.
 
 export async function middleware(req) {
   const senha = process.env.APP_SENHA;
@@ -13,8 +19,9 @@ export async function middleware(req) {
   // Sem senha configurada, o app fica aberto — mas avisa na tela.
   if (!senha) return NextResponse.next();
 
-  const cookie = req.cookies.get('cap_sessao')?.value;
-  if (cookie && cookie === (await token(senha))) return NextResponse.next();
+  const bruto = req.cookies.get(COOKIE_SESSAO)?.value;
+  const quem = await leSessao(bruto, await segredoDaSessao(senha));
+  if (quem) return NextResponse.next();
 
   const url = req.nextUrl.clone();
   url.pathname = '/entrar';

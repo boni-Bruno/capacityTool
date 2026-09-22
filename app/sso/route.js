@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
-import { token } from '../../lib/token';
-import { assina, verifica } from '../../lib/jwt';
+import { verifica } from '../../lib/jwt';
 import { queimaJti } from '../../lib/sso-jti';
 import { caminhoInterno, escapaHtml } from '../../lib/sso';
+import { COOKIE_SESSAO, emiteSessao, segredoDaSessao } from '../../lib/sessao-token';
+import { registraAcesso, usuarioPorEmail } from '../../lib/acesso';
 
 // PORTA DE ENTRADA VINDA DO HUB S&OP.
 //
@@ -13,30 +14,24 @@ import { caminhoInterno, escapaHtml } from '../../lib/sso';
 // vazia — aquilo e conveniencia de maquina local, e aqui seria porta escancarada.
 //
 // O que esta rota NAO faz: inventar modelo de sessao. Ela confere o token do Hub
-// e emite exatamente o mesmo cookie cap_sessao que /api/entrar emite. Do
-// middleware e do exigeSessao() para baixo, nada muda e nada sabe que o Hub
-// existe. E essa propriedade que mantem a mudanca pequena.
+// e emite o mesmo cookie cap_sessao que /api/entrar emite (lib/sessao-token.js).
+// Do middleware e do exigeSessao() para baixo, nada sabe que o Hub existe.
+//
+// QUEM E A PESSOA vem do e-mail do token, casado com o cadastro de usuarios
+// daqui (migracao 38). O Hub responde uma pergunta so — esta pessoa pode abrir
+// esta ferramenta? — e o cargo e o escopo sao decididos AQUI. Sem cadastro, a
+// sessao e do tipo 'nenhum': ela leva a /sem-acesso, que diz para pedir ao
+// gestor, e a nada mais. Decisao do Bruno em 21/09/2026.
 //
 // A CONTRAPARTIDA, dita sem maquiagem: passa a haver DUAS credenciais de topo.
-// Quem tem a APP_SENHA entra; quem tem o SSO_SEGREDO entra. Nao ha como fazer SSO
-// sem criar essa equivalencia. O que ela nao faz e enfraquecer o que ja existe: o
-// cookie e o mesmo, com os mesmos atributos, e as rotas de escrita mantem a mesma
-// tranca.
+// Quem tem a APP_SENHA entra; quem tem o SSO_SEGREDO entra como qualquer usuario
+// cadastrado. Nao ha como fazer SSO sem criar essa equivalencia.
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const AUDIENCIA = 'capacidade';
 const EMISSOR = 'hub-snop';
-
-// 24 h, e nao os 30 dias de /api/entrar.
-//
-// Quem entra pelo Hub tem uma conta que pode ser bloqueada la; o cookie daqui e o
-// mesmo valor para todo mundo e nao sabe de quem e, entao bloquear alguem so tem
-// efeito de verdade quando o cookie vence. Trinta dias fariam a revogacao ser
-// teorica. Quem entra pela senha continua com os 30 dias de sempre — la nao ha
-// conta para revogar.
-const VIDA_COOKIE = 60 * 60 * 24;
 
 // Em GET o token viajaria na URL: historico do navegador, Referer same-origin e
 // log de requisicao da Vercel, que guarda o path COM query. Recusar tambem impede
@@ -82,50 +77,39 @@ export async function POST(req) {
     return recusa('Este link ja foi usado. Volte ao portal e abra de novo.');
   }
 
+  // Quem e: o usuario daqui com este e-mail. Sem cadastro, ou desativado, a
+  // sessao e 'nenhum' e o destino vira /sem-acesso — a pessoa ve o proprio
+  // e-mail na tela e sabe o que pedir ao gestor.
+  const u = await usuarioPorEmail(r.claims.email);
+  const cadastrado = Boolean(u && u.ativo);
+  const quem = cadastrado
+    ? { tipo: 'usuario', id: u.id, nome: u.nome, email: u.email }
+    : { tipo: 'nenhum', nome: r.claims.nome ?? null, email: r.claims.email ?? null };
+  if (cadastrado) await registraAcesso(u.id);
+
   // O destino sai do token ASSINADO, nunca do formulario — do formulario seria um
   // redirecionamento aberto controlado por quem monta a requisicao.
-  const res = paginaDeSalto(caminhoInterno(r.claims.dest));
+  const destino = !cadastrado ? '/sem-acesso'
+    : u.trocar_senha ? '/trocar-senha'
+    : caminhoInterno(r.claims.dest);
+  const res = paginaDeSalto(destino);
 
   const senha = process.env.APP_SENHA;
   if (senha) {
-    // Identico ao /api/entrar, com uma unica diferenca deliberada no maxAge.
+    // O mesmo cookie do /api/entrar: de sessao do navegador, sem maxAge.
     // Nada de SameSite=None: Lax e a unica defesa de CSRF que as rotas de escrita
     // tem hoje, e afrouxa-lo aqui abriria todas elas de uma vez.
-    res.cookies.set('cap_sessao', await token(senha), {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: VIDA_COOKIE,
+    res.cookies.set(COOKIE_SESSAO, await emiteSessao(quem, await segredoDaSessao(senha)), {
+      httpOnly: true, secure: true, sameSite: 'lax', path: '/',
     });
-
-    // Cookie separado que NAO autentica: quem decide acesso continua sendo o
-    // cap_sessao. Este so carimba QUEM e a pessoa, para a tela poder dizer o nome
-    // dela e, mais adiante, para a auditoria por pessoa nascer sem migrar o
-    // schema do dominio.
-    //
-    // Ele nao carrega papel. O Hub responde uma pergunta so — esta pessoa pode
-    // abrir esta ferramenta? — e o papel DENTRO da Capacidade, quando existir, sai
-    // do banco daqui e nao de um token assinado la fora. Papel vindo de fora seria
-    // um vocabulario que o Hub teria de conhecer e manter sincronizado com cada
-    // ferramenta, e nenhuma tela chegou a ler o valor que ele mandava.
-    const agora = Math.floor(Date.now() / 1000);
-    res.cookies.set('cap_usuario', await assina({
-      iss: EMISSOR,
-      aud: 'capacidade-identidade',
-      sub: r.claims.sub,
-      email: r.claims.email,
-      nome: r.claims.nome,
-      jti: r.claims.jti,
-      iat: agora,
-      exp: agora + VIDA_COOKIE,
-    }, segredo), {
-      httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: VIDA_COOKIE,
+    // O cap_usuario de antes da migracao 38 nao e mais emitido; quem ainda o
+    // tiver no navegador perde-o aqui.
+    res.cookies.set('cap_usuario', '', {
+      httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 0,
     });
   }
   // Sem APP_SENHA o app e aberto de proposito (mesma regra do middleware). Nao da
-  // para derivar cookie de senha que nao existe, e token(undefined) criaria um
-  // valor que so esta rota reconheceria.
+  // para derivar cookie de senha que nao existe.
 
   return res;
 }

@@ -224,6 +224,14 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 .entrar-caixa input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .entrar-erro { font-size: 13px; color: #a32d2d; margin: -4px 0 12px; }
+/* A regra da senha, riscando conforme a senha cumpre. */
+.entrar-regras {
+  list-style: none; padding: 0; margin: 0 0 12px; font-size: 12px;
+  color: var(--muted); text-align: left;
+}
+.entrar-regras li::before { content: '○ '; }
+.entrar-regras li.ok { color: var(--teal-fg); text-decoration: line-through; }
+.entrar-regras li.ok::before { content: '● '; }
 .entrar-caixa button {
   width: 100%; height: 40px; font-size: 15px; font-weight: 500;
   border: none; border-radius: 8px; background: var(--accent); color: #fff;

@@ -1660,6 +1660,43 @@ nasce no navegador.
 
 ---
 
+## Usuários, cargos e escopo — EM CONSTRUÇÃO, por partes
+
+Em 21/09/2026 o Bruno decidiu abrir a ferramenta para mais gente e pediu o
+controle de dentro do app: **cargos** com permissão **por tela, ver ou
+editar**; **usuários** convidados com login, senha inicial, cargo e
+**escopo** (quais plantas e áreas a pessoa enxerga e mexe); ele como **Gestor
+de Planejamento**, cargo com tudo; a senha `APP_SENHA` continua como **acesso
+mestre**; quem vem pelo **Hub (SSO)** entra casado pelo **e-mail**, e sem
+cadastro vê "peça acesso ao gestor". Regra de senha: mínimo 8, maiúscula,
+minúscula e caractere especial. **Logoff**: botão Sair e cookie de sessão do
+navegador — fechou, entra de novo; o token tem teto de 12 h.
+
+**O modelo** (migração `38_usuarios_e_cargos.sql`): as cinco tabelas de
+usuário da migração 01 — nunca usadas — saíram; entraram `cargo`,
+`cargo_permissao`, `usuario` e `usuario_escopo`. A lista de telas é **código**
+(`lib/permissoes.js`), não tabela: tela nova aparece na grade de cargos
+sozinha. O cargo protegido (Gestor) tem tudo sem guardar lista. **Editar
+implica ver** no motor. **Escopo vazio é escopo, não é "tudo"**; PLANTA
+expande para as áreas dela na leitura, então área criada depois entra
+sozinha. Senha em PBKDF2-SHA256 pelo Web Crypto; sessão em JWT HS256 com
+segredo derivado de `APP_SENHA` — variável nova a menos para esquecer no
+Vercel. O cookie carrega só a identidade; permissões e escopo saem do banco a
+cada requisição, para trocar o cargo de alguém valer na próxima tela.
+
+**Um teste guarda que toda pasta de `app/api` tem permissão decidida em
+`ROTAS`** — rota esquecida nasceria fechada para todo mundo, e o teste faz o
+esquecimento aparecer antes do commit.
+
+**No ar até aqui**: o modelo, os motores (`permissoes`, `escopo`, `senha`,
+`sessao-token`, `acesso`), o login por usuário ou pela mestre, Sair, a troca
+de senha (`/trocar-senha`, obrigatória no primeiro acesso), o SSO casando pelo
+e-mail e a página `/sem-acesso`. **Ainda não**: as telas de Cargos e
+Usuários, o menu por permissão, as guardas nas rotas e o escopo nos
+seletores — entram nos commits seguintes, nesta ordem.
+
+---
+
 ## Os painéis abrem sem fábrica, e somam todas — PRONTO
 
 Pedido do Bruno em 15/09/2026, duas coisas de uma vez. **Todas as fábricas
