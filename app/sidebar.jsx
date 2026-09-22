@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import BotaoTema from './tema';
+import Sair from './sair';
 
 // Menu lateral com grupos expansíveis.
 //
@@ -11,65 +12,17 @@ import BotaoTema from './tema';
 // Na lateral cabe agrupado, e o grupo da tela aberta já vem expandido — quem
 // está em Áreas quase sempre vai para Recursos em seguida.
 
-const GRUPOS = [
-  {
-    // Os dois paineis respondem perguntas diferentes: "quanto cabe" e "cabe?".
-    nome: 'Consultar',
-    itens: [
-      { href: '/painel',   rotulo: 'Painel da Capacidade' },
-      { href: '/ocupacao', rotulo: 'Painel da Ocupação' },
-    ],
-  },
-  {
-    nome: 'Estrutura da empresa',
-    itens: [
-      { href: '/cadastros/plantas',     rotulo: 'Plantas' },
-      { href: '/cadastros/areas',       rotulo: 'Áreas' },
-      { href: '/cadastros/recursos',    rotulo: 'Recursos' },
-      // Turno e calendário são da estrutura: descrevem como a empresa
-      // trabalha, não o que se planeja para um ano. Quem escolhe turno para
-      // um recurso está do outro lado, em Planejamento.
-      { href: '/cadastros/turnos',      rotulo: 'Turnos' },
-      { href: '/cadastros/calendarios', rotulo: 'Calendários' },
-    ],
-  },
-  {
-    nome: 'Planejamento da capacidade',
-    itens: [
-      { href: '/cadastros/turnos-do-recurso', rotulo: 'Turnos do recurso' },
-      { href: '/cadastros/oee',               rotulo: 'OEE' },
-      { href: '/cadastros/paradas',           rotulo: 'Paradas' },
-    ],
-  },
-  {
-    // A conversão é outra natureza de trabalho: não muda a capacidade em
-    // minutos, muda em que língua ela é lida — demanda dá o índice, DE/PARA
-    // dá os rótulos.
-    nome: 'Conversão da capacidade',
-    itens: [
-      { href: '/cadastros/demanda', rotulo: 'Demanda' },
-      { href: '/cadastros/de-para', rotulo: 'DE/PARA' },
-      { href: '/cadastros/mix',     rotulo: 'Ajuste de mix' },
-    ],
-  },
-  {
-    // A saída: o resultado do cálculo no formato que o sistema de lá entende.
-    nome: 'Extração',
-    itens: [
-      { href: '/cadastros/extracao-ap',     rotulo: 'Extração para o AP' },
-      { href: '/cadastros/extracao-config', rotulo: 'Extração das configurações' },
-      { href: '/cadastros/extracao-simulador', rotulo: 'Simulador de recursos' },
-    ],
-  },
-];
+// Os grupos e as telas vêm de lib/permissoes.js, filtrados pelo que a pessoa
+// pode ver: menu e permissão nascem da mesma lista, e não de duas cópias que
+// divergiriam na primeira tela nova. A home (app/page.jsx) lê a mesma lista.
 
-export default function Sidebar({ versao, tema }) {
+export default function Sidebar({ versao, tema, grupos = [], quem = null }) {
   const caminho = usePathname();
 
   // Todos os grupos nascem abertos: com dois grupos e oito telas, tudo cabe
   // na altura da janela, e esconder metade só acrescentava um clique para
   // chegar em qualquer lugar.
-  const [abertos, setAbertos] = useState(() => new Set(GRUPOS.map((g) => g.nome)));
+  const [abertos, setAbertos] = useState(() => new Set(grupos.map((g) => g.nome)));
   const [aberto, setAberto] = useState(false);   // gaveta no celular
 
   // Retraído x expandido.
@@ -137,7 +90,7 @@ export default function Sidebar({ versao, tema }) {
           {expandido ? '☰ Iniciar' : '☰'}
         </Link>
 
-        {expandido && GRUPOS.map((g) => {
+        {expandido && grupos.map((g) => {
           // Nome próprio: `expandido` acima é a largura do menu, este é o
           // grupo. Reaproveitar o nome escondia um do outro.
           const grupoAberto = abertos.has(g.nome);
@@ -169,6 +122,21 @@ export default function Sidebar({ versao, tema }) {
             </div>
           );
         })}
+
+        {/* Quem está na sessão, com o cargo, e a saída. Fica acima do tema:
+            é o que se olha para saber se entrou com o usuário certo. */}
+        {quem && expandido && (
+          <div className="lado-quem" onClick={(e) => e.stopPropagation()}>
+            <span className="lado-nome" title={quem.login ?? ''}>{quem.nome}</span>
+            <span className="lado-cargo">{quem.cargo}</span>
+            <span className="lado-acoes">
+              {quem.tipo === 'usuario' && (
+                <Link href="/trocar-senha" className="lado-mini">senha</Link>
+              )}
+              <Sair className="lado-mini lado-sair" />
+            </span>
+          </div>
+        )}
 
         {/* O tema fica no rodapé do menu, longe do que se clica todo dia:
             é uma escolha que se faz uma vez. */}

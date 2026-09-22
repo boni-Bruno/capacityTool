@@ -1691,9 +1691,14 @@ esquecimento aparecer antes do commit.
 **No ar até aqui**: o modelo, os motores (`permissoes`, `escopo`, `senha`,
 `sessao-token`, `acesso`), o login por usuário ou pela mestre, Sair, a troca
 de senha (`/trocar-senha`, obrigatória no primeiro acesso), o SSO casando pelo
-e-mail e a página `/sem-acesso`. **Ainda não**: as telas de Cargos e
-Usuários, o menu por permissão, as guardas nas rotas e o escopo nos
-seletores — entram nos commits seguintes, nesta ordem.
+e-mail, a página `/sem-acesso`, as telas **Cargos** e **Usuários** (grupo
+Acesso), o **menu e a home filtrados pelo cargo** (a lista de telas de
+`lib/permissoes.js` é a única — o menu lateral e os cartões da home leem
+dela), o rodapé do menu com quem está na sessão, e a guarda de página
+(`app/cadastros/guarda.jsx`: `exigeVer`) nas duas telas novas. **Ainda não**:
+`exigeVer` nas outras telas, as guardas de permissão nas rotas de API, o
+`somenteLeitura` nas telas, e o escopo nos seletores e nas rotas — entram nos
+commits seguintes, nesta ordem.
 
 ---
 

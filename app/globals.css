@@ -812,6 +812,21 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 .ocup-estoura { color: var(--erro); font-weight: 600; }
 .ocup-aperta  { color: #8a4b0d; font-weight: 600; }
 
+/* ---- acesso: cargos e usuarios ---- */
+
+/* Cargos: a lista a esquerda e o editor a direita; empilha no celular. */
+.cargos { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 800px) { .cargos { grid-template-columns: 1fr; } }
+.tabela-cargo td.num input, .tabela-cargo th.num { text-align: center; }
+.tabela-cargo td.num { text-align: center; }
+
+/* O escopo: empresa no alto, cada planta com as areas dela recuadas. */
+.escopo { display: flex; flex-direction: column; gap: 6px; }
+.escopo-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.escopo-empresa { padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.escopo-planta { display: flex; flex-direction: column; gap: 4px; }
+.escopo-areas { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-left: 24px; }
+
 /* ---- a tabela dinamica dos dois paineis ---- */
 
 /* Tres blocos em linha: niveis, agregacao, abrir/fechar. Envolve no celular. */
@@ -947,6 +962,22 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 }
 
 /* ---- claro e escuro ---- */
+
+/* Quem está na sessão: nome, cargo, e os dois links miúdos (senha, sair).
+   Empurra o rodapé para baixo — é o margin-top: auto dele que vale. */
+.lado-quem {
+  margin-top: auto; display: flex; flex-direction: column; gap: 2px;
+  padding: 10px .6rem 0; border-top: 1px solid var(--border); font-size: 12px;
+}
+.lado-nome { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lado-cargo { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lado-acoes { display: flex; gap: 10px; margin-top: 4px; }
+.lado-mini {
+  border: none; background: none; padding: 0; font: inherit; font-size: 12px;
+  color: var(--accent); cursor: pointer; text-decoration: none;
+}
+.lado-mini:hover { text-decoration: underline; }
+.lado-quem + .lado-rodape { margin-top: 0; }
 
 .lado-rodape {
   margin-top: auto; display: flex; flex-direction: column; gap: 4px;
