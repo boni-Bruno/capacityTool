@@ -1756,6 +1756,16 @@ só trazem o que a pessoa alcança (`app/cadastros/guarda.jsx`: `areasDoEscopo`,
 a busca — a rota não muda); e as rotas de leitura (extrações, simulador, a
 lista do recalcular) recortam as áreas pedidas pelo escopo.
 
+**`null` é TUDO, e foi onde se errou** (22/09/2026): `areasPermitidas`
+devolve `null` para quem enxerga a empresa inteira e um `Set` para o resto. O
+seletor de fábrica escreveu `s.areas ?? new Set()` — e o `??` dispara no
+null. "Tudo" virou "nada", e o painel, a ocupação e as telas de planejamento
+passaram a dizer **"Nenhuma área cadastrada"** para quem vê a empresa
+inteira, inclusive para a senha mestre. O conserto não foi só trocar a
+linha: nasceu `filtraPeloEscopo` em `lib/escopo.js`, com teste, para que o
+recorte de lista tenha **um lugar só** e ninguém reescreva o `??` em outra
+tela.
+
 **O que é da planta pede a planta inteira**: turno, calendário, exceção, a
 própria planta. Quem tem só a Tecelagem lê os turnos da Matriz — são
 compartilhados, e ler ajuda a entender o próprio número — mas não os edita.

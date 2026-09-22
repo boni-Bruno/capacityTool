@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { sessaoAtual } from '../../lib/sessao';
 import { podeEditar, podeVer } from '../../lib/permissoes';
 import { areas } from '../../lib/db';
-import { alcancaArea, alcancaPlanta } from '../../lib/escopo';
+import { alcancaPlanta, filtraPeloEscopo } from '../../lib/escopo';
 
 // A GUARDA DAS PÁGINAS.
 //
@@ -37,7 +37,8 @@ export async function exigeVer(tela) {
  */
 export async function areasDoEscopo() {
   const [s, lista] = await Promise.all([sessaoAtual(), areas()]);
-  return lista.filter((a) => alcancaArea(s?.areas ?? new Set(), a.id));
+  if (!s) return [];
+  return filtraPeloEscopo(s.areas, lista);
 }
 
 /**
@@ -50,14 +51,16 @@ export async function areasDoEscopo() {
 export async function soDoEscopo(lista, campo, tipo = 'area') {
   const s = await sessaoAtual();
   if (!s) return [];
-  if (s.areas === null) return lista;
-  if (tipo === 'area') return lista.filter((l) => alcancaArea(s.areas, l[campo]));
+  if (s.areas === null) return lista;          // empresa inteira: passa tudo
+  if (tipo === 'area') return filtraPeloEscopo(s.areas, lista, campo);
+  // Daqui para baixo o escopo NÃO é a empresa inteira, então `s.plantas`
+  // também é um Set — os dois vêm juntos de sessaoAtual.
   const todas = await areas();
   const visiveis = new Set([
-    ...(s.plantas ?? []),
+    ...s.plantas,
     ...todas.filter((a) => s.areas.has(Number(a.id))).map((a) => Number(a.planta_id)),
   ]);
-  return lista.filter((l) => visiveis.has(Number(l[campo])));
+  return filtraPeloEscopo(visiveis, lista, campo);
 }
 
 /** As plantas em que a pessoa pode CRIAR coisa da planta: inteiras, ou tudo. */
