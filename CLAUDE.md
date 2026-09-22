@@ -141,6 +141,21 @@ tempo de lá existe para consulta, não para descompactar e recompactar megabyte
 **Fronteira cliente/servidor**: nenhum `lib/*.js` que importe `./db` pode ser
 importado por um componente `'use client'`.
 
+**A função roda em `gru1`, ao lado do banco** (`vercel.json`). O Neon deste
+projeto é `sa-east-1`, e o driver HTTP faz uma requisição por instrução: com
+a função no padrão `iad1`, cada consulta cruzava o equador duas vezes e uma
+tela de quinze consultas em série pagava dois segundos só de latência. Pela
+mesma razão, **consulta em série custa round trip**: o que é independente vai
+em `Promise.all`, e o que se repete na mesma requisição vai em `cache` do
+React (é o caso de `areas()`).
+
+**Tela que consulta o banco tem `loading.jsx`** no segmento, com esqueleto de
+markup puro — sem sessão, sem banco. O Router Cache está desligado
+(`staleTimes: { dynamic: 0 }`), então toda navegação refaz a consulta; sem o
+esqueleto, a tela anterior fica parada e a espera parece travamento. Para o
+esqueleto aparecer com o menu, a casca `<Shell>` mora no `layout.jsx` do
+segmento, nunca dentro da página.
+
 **Toda rota de API tem permissão decidida em `ROTAS`** (`lib/permissoes.js`),
 e toda tela nova entra em `TELAS` — é dali que nascem o menu, a home, a grade
 de cargos e a guarda. A rota chama `exigeRota(req)` no topo, a página chama

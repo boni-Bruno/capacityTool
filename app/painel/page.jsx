@@ -38,7 +38,6 @@ import TabelaMes from './tabela-mes';
 import TabelaAtributo from './tabela-atributo';
 import FiltroColuna from './filtro-coluna';
 import Pivot from './pivot';
-import Shell from '../shell';
 import { areasDoEscopo, exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Capacidade' };
@@ -64,7 +63,7 @@ const pct = (a, b) => (Number(b) === 0 ? '—' : (Number(a) * 100 / Number(b)).t
 
 export default async function Page({ searchParams }) {
   const negado = await exigeVer('painel');
-  if (negado) return <Shell>{negado}</Shell>;
+  if (negado) return negado;
 
   const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
   let listaAreas;
@@ -73,7 +72,7 @@ export default async function Page({ searchParams }) {
     listaAreas = await areasDoEscopo();
   } catch (e) {
     return (
-      <Shell>
+      <>
         <h1 className="titulo">Painel da Capacidade</h1>
         <div className="aviso">
           <strong>Não consegui falar com o banco.</strong>
@@ -82,7 +81,7 @@ export default async function Page({ searchParams }) {
             com a connection string do Neon.
           </p>
         </div>
-      </Shell>
+      </>
     );
   }
 
@@ -129,7 +128,7 @@ export default async function Page({ searchParams }) {
 
   if (!areasEscolhidas.length) {
     return (
-      <Shell>
+      <>
         <div className="topo">
           <h1 className="titulo">Painel da Capacidade</h1>
           <Suspense>
@@ -142,7 +141,7 @@ export default async function Page({ searchParams }) {
           fábricas</strong>, que soma a rodada de cada área e leva mais tempo
           para abrir.
         </p>
-      </Shell>
+      </>
     );
   }
 
@@ -231,7 +230,7 @@ export default async function Page({ searchParams }) {
   // não havia botão para criar o primeiro, o que é um beco sem saída.
   if (!exec) {
     return (
-      <Shell>
+      <>
         <div className="topo">
           <h1 className="titulo">
             Painel da Capacidade
@@ -259,7 +258,7 @@ export default async function Page({ searchParams }) {
             <SeletorAno ano={ano} anos={anos} />
           </Suspense>
         </div>
-      </Shell>
+      </>
     );
   }
 
@@ -754,7 +753,7 @@ export default async function Page({ searchParams }) {
     : (tot.disponivel * 100 / tot.planejada).toFixed(0);
 
   return (
-    <Shell>
+    <>
       <div className="topo">
         <h1 className="titulo">
           Painel da Capacidade
@@ -1294,6 +1293,6 @@ export default async function Page({ searchParams }) {
           recursos, anos e origens.
         </p>
       </div>
-    </Shell>
+    </>
   );
 }

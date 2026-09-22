@@ -33,7 +33,6 @@ import FiltroColuna from '../painel/filtro-coluna';
 import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
 import Pivot from '../painel/pivot';
-import Shell from '../shell';
 import { areasDoEscopo, exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Ocupação' };
@@ -82,7 +81,7 @@ const classePct = (v) => (v === null ? 'muted'
 
 export default async function Page({ searchParams }) {
   const negado = await exigeVer('ocupacao');
-  if (negado) return <Shell>{negado}</Shell>;
+  if (negado) return negado;
 
   const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
   let listaAreas;
@@ -91,20 +90,20 @@ export default async function Page({ searchParams }) {
     [listaAreas, listaCargas] = await Promise.all([areasDoEscopo(), cargas()]);
   } catch (e) {
     return (
-      <Shell>
+      <>
         <div className="aviso">
           <strong>Não consegui falar com o banco.</strong>
           <p style={{ margin: '8px 0 0' }}>{e.message}</p>
         </div>
-      </Shell>
+      </>
     );
   }
 
   if (!listaAreas.length) {
     return (
-      <Shell>
+      <>
         <div className="aviso"><strong>Nenhuma área cadastrada.</strong></div>
-      </Shell>
+      </>
     );
   }
 
@@ -153,14 +152,14 @@ export default async function Page({ searchParams }) {
 
   if (!areasEscolhidas.length) {
     return (
-      <Shell>
+      <>
         {topo}
         <p className="vazio">
           Escolha uma fábrica no seletor acima — ou <strong>todas as
           fábricas</strong>, que soma a rodada de cada área e leva mais tempo
           para abrir.
         </p>
-      </Shell>
+      </>
     );
   }
 
@@ -181,7 +180,7 @@ export default async function Page({ searchParams }) {
 
   if (!exec) {
     return (
-      <Shell>
+      <>
         {topo}
         <div className="aviso">
           <strong>
@@ -194,13 +193,13 @@ export default async function Page({ searchParams }) {
             <strong>Recalcular tudo</strong> aí em cima.
           </p>
         </div>
-      </Shell>
+      </>
     );
   }
 
   if (!carga) {
     return (
-      <Shell>
+      <>
         {topo}
         <div className="aviso">
           <strong>Nenhuma base de demanda importada.</strong>
@@ -212,7 +211,7 @@ export default async function Page({ searchParams }) {
             nenhum no meio.
           </p>
         </div>
-      </Shell>
+      </>
     );
   }
 
@@ -488,7 +487,7 @@ export default async function Page({ searchParams }) {
   const semDemanda = comOcup.filter((r) => r.recursos && r.demanda === 0);
 
   return (
-    <Shell>
+    <>
       {topo}
 
       <div className="kpis-linha">
@@ -811,6 +810,6 @@ export default async function Page({ searchParams }) {
           <strong>Recalcular</strong> — tudo, ou parcial.
         </p>
       </div>
-    </Shell>
+    </>
   );
 }

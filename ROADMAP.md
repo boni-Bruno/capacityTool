@@ -1660,6 +1660,51 @@ nasce no navegador.
 
 ---
 
+## A navegação estava lenta, e o motivo era geografia — PRONTO
+
+Em 22/09/2026 o Bruno disse que passear de uma tela para outra estava lento.
+O estudo achou três coisas, nesta ordem de tamanho:
+
+**1. A função rodava nos Estados Unidos e o banco está em São Paulo.** O
+deploy saía em `iad1` (Virgínia, o padrão do Vercel) e o Neon deste projeto é
+`aws-sa-east-1`. Cada consulta saía de Santa Catarina, subia para a Virgínia,
+**descia para São Paulo** e voltava — e o driver HTTP do Neon faz uma
+requisição por instrução, sem pipeline. O painel faz de 14 a 20 consultas em
+série: só de latência, 1,5 a 2,5 segundos por tela. `vercel.json` com
+`"regions": ["gru1"]` põe a função em São Paulo, ao lado do banco. É
+configuração, não código, e é o maior ganho isolado que existia aqui.
+
+**2. Clicar no menu não dava sinal de vida.** Não havia `loading.jsx` em
+lugar nenhum, e o Router Cache está desligado de propósito
+(`staleTimes: { dynamic: 0 }`, para cadastro gravado não sumir da tela).
+Somados: a tela ANTERIOR ficava parada até o servidor terminar. Dois segundos
+sem nada acontecendo se leem como travamento, não como espera. Entraram
+esqueletos em `/cadastros`, `/painel` e `/ocupacao` — markup puro, sem
+sessão e sem banco, porque fallback que consulta o banco é mais uma espera
+antes da espera.
+
+Para o esqueleto aparecer **com o menu**, a casca (`<Shell>`) saiu das
+páginas do painel e da ocupação e virou `layout.jsx`, como já era em
+`/cadastros`. O layout fica montado entre uma navegação e outra; só o miolo
+pisca.
+
+**3. A sessão custava três idas ao banco antes de a tela começar.** Eram
+quatro consultas em duas ondas (usuário → cargo + escopo + áreas) mais uma
+quarta, porque `areas()` era chamada de novo pelo recorte de escopo.
+`sessaoDoUsuario` traz usuário, cargo, permissões e escopo **numa consulta
+só** (sem o hash da senha, que a sessão não usa), e `areas()` ganhou `cache`
+do React — a mesma lista serve à sessão, ao seletor de fábrica e ao recorte
+das telas de estrutura. De cinco consultas em três ondas para duas numa onda.
+Quem entra pela senha mestre nunca pagou isso; os usuários pagavam.
+
+O que **não** foi mexido, e continua na lista: juntar em `Promise.all` os
+awaits independentes das páginas; trocar os dois `LATERAL` de `porRecurso`
+(que rodam uma vez por recurso — 1,8 s frio, medido) por um `GROUP BY`; e o
+compute do Neon, que suspende no plano free e faz a primeira tela do dia
+pagar o despertar com o cache frio.
+
+---
+
 ## Usuários, cargos e escopo — PRONTO
 
 Em 21/09/2026 o Bruno decidiu abrir a ferramenta para mais gente e pediu o

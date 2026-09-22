@@ -812,6 +812,30 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 .ocup-estoura { color: var(--erro); font-weight: 600; }
 .ocup-aperta  { color: #8a4b0d; font-weight: 600; }
 
+/* ---- o esqueleto enquanto a tela carrega ---- */
+
+/* Pulsa devagar: rapido demais parece erro piscando. `prefers-reduced-motion`
+   desliga a animacao e deixa a forma — quem pediu menos movimento continua
+   vendo que algo esta vindo. */
+.esqueleto { display: flex; flex-direction: column; gap: 14px; }
+.esqueleto > *, .esq-bloco > * { animation: esq-pulso 1.4s ease-in-out infinite; }
+.esq-linha, .esq-kpi, .esq-grafico, .esq-barra {
+  background: var(--hover); border: 1px solid var(--border); border-radius: 8px;
+}
+.esq-linha { height: 14px; width: 100%; }
+.esq-titulo { height: 26px; width: 260px; border-radius: 6px; }
+.esq-barra { height: 38px; width: 100%; }
+.esq-kpis { display: flex; gap: 12px; flex-wrap: wrap; }
+.esq-kpi { height: 84px; flex: 1 1 180px; }
+.esq-grafico { height: 220px; width: 100%; }
+.esq-bloco { display: flex; flex-direction: column; gap: 10px; }
+.esq-aviso { font-size: 12px; color: var(--muted); animation: none; }
+
+@keyframes esq-pulso { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto > *, .esq-bloco > * { animation: none; }
+}
+
 /* ---- acesso: cargos e usuarios ---- */
 
 /* A faixa de "somente leitura" no alto das telas de matriz. */
