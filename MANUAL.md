@@ -912,10 +912,26 @@ coluna a mais dizendo quem abriu.
 - Quem responde muda o estado e escreve a resposta ali mesmo; ela aparece na
   hora para quem abriu.
 
+### Corrigir o que você escreveu
+
+Abra o seu chamado e clique em **Editar o chamado**: dá para trocar produto,
+tipo, resumo e descrição. Isso vale **enquanto ninguém respondeu** — depois da
+resposta o botão some, porque editar a pergunta deixaria a resposta sem sentido
+para quem ler depois. Se precisar acrescentar algo a um chamado já respondido,
+abra outro ou fale com quem respondeu.
+
+### Apagar (só quem cuida da fila)
+
+O Gestor de Planejamento pode **apagar** um chamado, com confirmação. É para o
+**chamado repetido** e para o **aberto por engano**.
+
+O que não vai ser feito **se responde**, com "Não vamos fazer" e o porquê —
+apagar a reclamação em vez de respondê-la é o jeito mais rápido de a fila ficar
+vazia e ninguém mais abrir chamado nenhum.
+
 ### Cuidados
 
-- Chamado não se apaga. "Não vamos fazer" **com o porquê escrito** é resposta;
-  sumir com o chamado não é.
+- Apagado é apagado: não há lixeira.
 - Quem abriu continua vendo o chamado mesmo depois de fechado — é o registro de
   que foi respondido.
 - Quem entra pela senha mestre abre chamados como "mestre"; todos os chamados

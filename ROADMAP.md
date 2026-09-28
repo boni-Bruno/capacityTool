@@ -1731,6 +1731,31 @@ usuário ali, por isso a tabela guarda o **nome em texto** junto do id. O nome
 também congela quem a pessoa era no dia — renomear no cadastro não reescreve a
 história do chamado.
 
+**No mesmo dia, depois do primeiro uso** (28/09/2026): o dono passou a
+**editar** o próprio chamado e quem cuida da fila a **apagar**.
+
+- **Editar é do dono, e só até a resposta chegar.** Errar o resumo ou esquecer
+  metade do passo a passo é o normal de quem escreve com pressa, e obrigar a
+  abrir um segundo chamado para corrigir o primeiro suja a fila. Depois da
+  resposta o botão some: editar a pergunta faria a resposta parecer sem sentido
+  para quem ler depois. A regra é pura (`podeEditarTicket`) e conferida no
+  **servidor**, com o ticket lido do banco — esconder o botão não impede um PUT
+  direto. Na rota, o PUT pede `ticket_novo.editar`: quem pode abrir pode
+  corrigir o que abriu; de quem é o chamado é pergunta do domínio, não da
+  permissão.
+- **Apagar é de quem cuida da fila**, com confirmação, e serve ao chamado
+  repetido e ao aberto por engano. O que não vai ser feito se responde com "Não
+  vamos fazer" e o porquê — apagar a reclamação em vez de respondê-la é o jeito
+  mais rápido de a fila ficar vazia e ninguém mais abrir chamado.
+
+E um defeito de tema que a tela nova revelou, mas que era antigo:
+`.linha-edit td` tinha um azul-claro **fixo** (`#f4f8fd`), escrito antes de o
+tema escuro existir. No escuro dava texto claro sobre fundo quase branco —
+invisível até o cursor passar por cima. Virou o token `--linha-foco`, com valor
+por tema; `.linha-aberta` (ajuste de mix) tinha o mesmo defeito e foi junto. A
+tabela de cadastro convivia com isso desde que o tema escuro entrou: ninguém
+tinha aberto uma linha de edição no escuro tempo bastante para reparar.
+
 ---
 
 ## A navegação estava lenta, e o motivo era geografia — PRONTO

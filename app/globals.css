@@ -14,6 +14,7 @@
      nome, o modo escuro precisaria cacar cada um — e o que escapasse ficaria
      como uma faixa clara no meio da tela escura. */
   --hover: #f7f6f3;          /* linha da tabela sob o cursor */
+  --linha-foco: #f4f8fd;     /* linha em edição, ou o chamado expandido */
   --suave: #fcfcfb;          /* painel dentro de painel, cartao sob o cursor */
   --btn-hover: #f5f3ef;
   --aviso-bg: #fef6e7;
@@ -42,6 +43,7 @@
   --gray-bg: #292b31;
   --gray-fg: #d8d7d3;
   --hover: #24262b;
+  --linha-foco: #1b2735;     /* o mesmo azul, escuro */
   --suave: #202227;
   --btn-hover: #2a2d33;
   --aviso-bg: #33290f;
@@ -394,7 +396,11 @@ a.trilha-atual { color: var(--text); }
 .acoes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 td.acoes { white-space: nowrap; }
 
-.linha-edit td { background: #f4f8fd; }
+/* A linha aberta (em edição, ou o ticket expandido). Era um azul-claro fixo
+   (#f4f8fd), escrito antes de o tema escuro existir: no escuro dava texto
+   claro sobre fundo quase branco, ilegível até o cursor passar por cima.
+   Vem do token, e o tema decide. */
+.linha-edit td { background: var(--linha-foco); }
 .linha-vazia td { color: var(--muted); }
 
 .muted { color: var(--muted); }
@@ -756,7 +762,8 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
    mao, porque ele ganha da base e isso nao pode passar despercebido. */
 .mix-cel { font-size: 12px; white-space: nowrap; }
 .mix-manual { color: var(--teal-fg); font-weight: 600; background: var(--teal-bg); }
-.linha-aberta td { background: #f2f6fc; }
+/* Mesmo defeito, mesma correção: esta era #f2f6fc fixo. */
+.linha-aberta td { background: var(--linha-foco); }
 
 .mix-input {
   width: 52px; height: 28px; padding: 0 6px; font-size: 13px; text-align: right;
@@ -830,6 +837,7 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
   border-top: 1px solid var(--border); padding-top: 12px;
 }
 .ticket-acoes .campo { flex: 1 1 260px; }
+.ticket-edicao { display: flex; flex-direction: column; gap: 10px; max-width: 760px; }
 
 /* ---- o esqueleto enquanto a tela carrega ---- */
 

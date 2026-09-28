@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { tickets } from '../../../lib/tickets';
+import { produtos } from '../../../lib/ticket-formato';
 import { sessaoAtual } from '../../../lib/sessao';
 import { podeEditar } from '../../../lib/permissoes';
 import { exigeVer } from '../guarda';
@@ -70,7 +71,8 @@ export default async function Page() {
           respondido_em: t.respondido_em,
           respondido_por_nome: t.respondido_por_nome ?? null,
         }))}
-        vejoTodos={vejoTodos} />
+        vejoTodos={vejoTodos}
+        produtos={produtos()} />
     </>
   );
 }

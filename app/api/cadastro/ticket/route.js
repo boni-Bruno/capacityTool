@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-import { criarTicket, responderTicket } from '../../../../lib/tickets';
+import {
+  criarTicket, editarTicket, excluirTicket, responderTicket,
+} from '../../../../lib/tickets';
 import { STATUS } from '../../../../lib/ticket-formato';
+import { pode } from '../../../../lib/permissoes';
 import { exigeRota } from '../../../../lib/sessao';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { revalidarCadastros } from '../../../../lib/revalidar';
@@ -21,6 +24,34 @@ export async function POST(req) {
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) { return falha(e, 'POST'); }
+}
+
+// Corrigir o que foi escrito. A rota pede só `ticket_novo.editar` — a
+// pergunta "este chamado é seu, e ainda dá tempo?" é do domínio e mora em
+// lib/tickets.js, com o ticket lido do banco. Esconder o botão na tela não
+// impediria um PUT direto.
+export async function PUT(req) {
+  try {
+    const s = await exigeRota(req);
+    const b = await req.json();
+    const r = await editarTicket(b.id, b, {
+      usuarioId: s.tipo === 'usuario' ? s.id : null,
+      cuidoDaFila: pode(s.perms, 'tickets.editar'),
+    });
+    revalidarCadastros();
+    return NextResponse.json({ ok: true, ...r });
+  } catch (e) { return falha(e, 'PUT'); }
+}
+
+// Apagar — só quem cuida da fila, e a rota já conferiu isso.
+export async function DELETE(req) {
+  try {
+    await exigeRota(req);
+    const { id } = await req.json();
+    const r = await excluirTicket(id);
+    revalidarCadastros();
+    return NextResponse.json({ ok: true, ...r });
+  } catch (e) { return falha(e, 'DELETE'); }
 }
 
 // Responder e mudar o estado — só quem tem `tickets.editar`, e a rota já

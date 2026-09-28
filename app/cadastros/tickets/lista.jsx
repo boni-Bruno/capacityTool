@@ -3,7 +3,8 @@
 import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  STATUS, rotuloDoProduto, rotuloDoTipo, statusDe,
+  STATUS, TIPOS, TUDO, motivoParaNaoEditar, podeEditarTicket, rotuloDoProduto,
+  rotuloDoTipo, statusDe, tipo as tipoDe, validaTicket,
 } from '../../../lib/ticket-formato';
 
 // A fila de chamados.
@@ -12,45 +13,72 @@ import {
 // descrição inteira em toda linha faria uma parede de texto em que o chamado
 // de hoje não se acha — e o resumo existe justamente para essa lista.
 //
-// Quem responde (vejoTodos) tem, dentro da linha aberta, o estado e o campo de
-// resposta. Quem abriu vê a resposta e o estado, que é o que ele veio saber.
+// DENTRO DA LINHA ABERTA, cada um vê o que pode fazer: o dono corrige o que
+// escreveu enquanto ninguém respondeu, e quem cuida da fila responde, muda o
+// estado e apaga. Quem decide isso é `podeEditarTicket`, o mesmo motor que o
+// servidor usa — a tela esconde o botão, o servidor recusa o atalho.
 
 const fmtData = (d) => (d ? new Date(d).toLocaleString('pt-BR', {
   day: '2-digit', month: '2-digit', year: '2-digit',
   hour: '2-digit', minute: '2-digit',
 }) : '—');
 
-export default function Lista({ tickets, vejoTodos }) {
+export default function Lista({ tickets, vejoTodos, produtos }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(null);
   const [filtro, setFiltro] = useState('ATIVOS');
-  const [rascunho, setRascunho] = useState({});
+  const [rascunho, setRascunho] = useState({});     // resposta, por ticket
+  const [edicao, setEdicao] = useState(null);       // { id, produto, tipo, resumo, descricao }
+  const [confirma, setConfirma] = useState(null);   // id à espera de confirmação
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // "Ativos" é o padrão: a fila é para trabalhar, e o que já foi fechado
-  // enterraria o que está em aberto depois de algumas semanas.
+  // "Em aberto" é o padrão: a fila é para trabalhar, e o que já foi fechado
+  // enterraria o que está esperando depois de algumas semanas.
   const visiveis = tickets.filter((t) => (
     filtro === 'TODOS' ? true
       : filtro === 'ATIVOS' ? (t.status === 'ABERTO' || t.status === 'ANALISE')
       : t.status === filtro));
 
-  async function salva(t, mudanca) {
+  const grupos = [...new Set((produtos ?? []).filter((p) => p.grupo).map((p) => p.grupo))];
+
+  async function chama(metodo, corpo) {
     setOcupado(true);
     setErro(null);
     try {
       const r = await fetch('/api/cadastro/ticket', {
-        method: 'PATCH',
+        method: metodo,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: t.id, ...mudanca }),
+        body: JSON.stringify(corpo),
       });
       const j = await r.json().catch(() => ({}));
       if (!j.ok) throw new Error(j.erro ?? `O servidor respondeu ${r.status}.`);
       router.refresh();
+      return true;
     } catch (e) {
       setErro(e.message);
+      return false;
     } finally {
       setOcupado(false);
+    }
+  }
+
+  function abreEdicao(t) {
+    setEdicao({
+      id: t.id, produto: t.produto, tipo: t.tipo,
+      resumo: t.resumo, descricao: t.descricao,
+    });
+    setErro(null);
+  }
+
+  async function salvaEdicao() {
+    if (await chama('PUT', edicao)) setEdicao(null);
+  }
+
+  async function apaga(t) {
+    if (await chama('DELETE', { id: t.id })) {
+      setConfirma(null);
+      if (aberto === t.id) setAberto(null);
     }
   }
 
@@ -95,10 +123,14 @@ export default function Lista({ tickets, vejoTodos }) {
             {visiveis.map((t) => {
               const st = statusDe(t.status);
               const abertoAqui = aberto === t.id;
+              const editando = edicao?.id === t.id;
+              const posso = podeEditarTicket(t, { souDono: t.meu, cuidoDaFila: vejoTodos });
+              const colunas = vejoTodos ? 7 : 6;
+
               return (
                 <Fragment key={t.id}>
                   <tr className={abertoAqui ? 'linha-edit' : ''}
-                      onClick={() => setAberto(abertoAqui ? null : t.id)}
+                      onClick={() => { if (!editando) setAberto(abertoAqui ? null : t.id); }}
                       style={{ cursor: 'pointer' }}>
                     <td><code>{t.id}</code></td>
                     <td>{fmtData(t.criado_em)}</td>
@@ -113,30 +145,56 @@ export default function Lista({ tickets, vejoTodos }) {
 
                   {abertoAqui && (
                     <tr className="linha-edit">
-                      <td colSpan={vejoTodos ? 7 : 6}>
+                      <td colSpan={colunas}>
                         <div className="ticket-corpo">
-                          <p className="ticket-texto">{t.descricao}</p>
+                          {editando ? (
+                            <Edicao edicao={edicao} setEdicao={setEdicao} grupos={grupos}
+                                    produtos={produtos} ocupado={ocupado}
+                                    onSalvar={salvaEdicao} onCancelar={() => setEdicao(null)} />
+                          ) : (
+                            <>
+                              <p className="ticket-texto">{t.descricao}</p>
 
-                          {t.resposta && (
-                            <div className="ticket-resposta">
-                              <strong>Resposta</strong>
-                              <span className="muted">
-                                {' '}· {t.respondido_por_nome ?? 'mestre'} ·{' '}
-                                {fmtData(t.respondido_em)}
-                              </span>
-                              <p className="ticket-texto">{t.resposta}</p>
-                            </div>
-                          )}
-                          {!t.resposta && !vejoTodos && (
-                            <p className="muted">Ainda sem resposta.</p>
+                              {t.resposta && (
+                                <div className="ticket-resposta">
+                                  <strong>Resposta</strong>
+                                  <span className="muted">
+                                    {' '}· {t.respondido_por_nome ?? 'mestre'} ·{' '}
+                                    {fmtData(t.respondido_em)}
+                                  </span>
+                                  <p className="ticket-texto">{t.resposta}</p>
+                                </div>
+                              )}
+                              {!t.resposta && !vejoTodos && (
+                                <p className="muted">Ainda sem resposta.</p>
+                              )}
+
+                              {/* O dono corrige o que escreveu. O aviso de por
+                                  que não dá mais é melhor que o botão sumir
+                                  sem explicação. */}
+                              {t.meu && (
+                                <div className="acoes">
+                                  {posso ? (
+                                    <button type="button" className="btn btn-mini"
+                                            disabled={ocupado} onClick={() => abreEdicao(t)}>
+                                      Editar o chamado
+                                    </button>
+                                  ) : (
+                                    <span className="muted">
+                                      {motivoParaNaoEditar(t, { souDono: true, cuidoDaFila: false })}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </>
                           )}
 
-                          {vejoTodos && (
+                          {vejoTodos && !editando && (
                             <div className="ticket-acoes">
                               <label className="campo" style={{ maxWidth: 220 }}>
                                 <span className="campo-rot">Estado</span>
                                 <select value={t.status} disabled={ocupado}
-                                        onChange={(e) => salva(t, { status: e.target.value })}>
+                                        onChange={(e) => chama('PATCH', { id: t.id, status: e.target.value })}>
                                   {STATUS.map((s) => (
                                     <option key={s.codigo} value={s.codigo}>{s.rotulo}</option>
                                   ))}
@@ -153,9 +211,34 @@ export default function Lista({ tickets, vejoTodos }) {
                               <button type="button" className="btn btn-primario"
                                       disabled={ocupado
                                         || (rascunho[t.id] ?? t.resposta ?? '') === (t.resposta ?? '')}
-                                      onClick={() => salva(t, { resposta: rascunho[t.id] ?? '' })}>
+                                      onClick={() => chama('PATCH',
+                                        { id: t.id, resposta: rascunho[t.id] ?? '' })}>
                                 {ocupado ? 'Salvando…' : 'Responder'}
                               </button>
+
+                              {!t.meu && (
+                                <button type="button" className="btn btn-mini"
+                                        disabled={ocupado} onClick={() => abreEdicao(t)}>
+                                  Editar
+                                </button>
+                              )}
+
+                              {confirma === t.id ? (
+                                <>
+                                  <span className="erro" style={{ margin: 0 }}>Apagar de vez?</span>
+                                  <button type="button" className="btn btn-mini btn-perigo"
+                                          disabled={ocupado} onClick={() => apaga(t)}>
+                                    {ocupado ? '…' : 'Apagar'}
+                                  </button>
+                                  <button type="button" className="btn btn-mini" disabled={ocupado}
+                                          onClick={() => setConfirma(null)}>Cancelar</button>
+                                </>
+                              ) : (
+                                <button type="button" className="btn btn-mini" disabled={ocupado}
+                                        onClick={() => setConfirma(t.id)}>
+                                  Apagar
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -175,12 +258,76 @@ export default function Lista({ tickets, vejoTodos }) {
       </div>
 
       <p className="rodape">
-        Clique numa linha para ler o chamado inteiro e a resposta.
+        Clique numa linha para ler o chamado inteiro e a resposta. Você corrige
+        o que escreveu <strong>enquanto ninguém respondeu</strong> — depois da
+        resposta, editar a pergunta deixaria a resposta sem sentido para quem
+        ler depois.
         {vejoTodos
-          ? ' Você vê os chamados de todo mundo porque o seu cargo responde por eles;'
-            + ' mudar o estado vale na hora, e a resposta aparece para quem abriu.'
-          : ' Você vê os seus chamados. Quem cuida do roadmap responde por aqui mesmo.'}
+          ? ' Você vê os chamados de todo mundo porque o seu cargo responde por eles:'
+            + ' mudar o estado vale na hora, a resposta aparece para quem abriu, e'
+            + ' apagar é para o chamado repetido ou aberto por engano — o que não vai'
+            + ' ser feito se responde com "Não vamos fazer" e o porquê.'
+          : ' Quem cuida do roadmap responde por aqui mesmo.'}
       </p>
     </>
+  );
+}
+
+// O formulário de correção, com os mesmos campos e as mesmas regras do de
+// abrir — inclusive a pergunta que muda com o tipo.
+function Edicao({ edicao, setEdicao, grupos, produtos, ocupado, onSalvar, onCancelar }) {
+  const t = tipoDe(edicao.tipo);
+  const faltas = validaTicket(edicao);
+  const set = (campo, valor) => setEdicao({ ...edicao, [campo]: valor });
+
+  return (
+    <div className="ticket-edicao">
+      <div className="linha-opcao" style={{ paddingTop: 0 }}>
+        <span className="rotulo-opcao">Produto</span>
+        <select value={edicao.produto} onChange={(e) => set('produto', e.target.value)}>
+          <option value={TUDO}>Ferramenta toda</option>
+          {grupos.map((g) => (
+            <optgroup key={g} label={g}>
+              {produtos.filter((p) => p.grupo === g).map((p) => (
+                <option key={p.codigo} value={p.codigo}>{p.rotulo}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <nav className="modo">
+          {TIPOS.map((x) => (
+            <button key={x.codigo} type="button"
+                    className={x.codigo === edicao.tipo ? 'modo-on' : ''}
+                    onClick={() => set('tipo', x.codigo)}>
+              {x.rotulo}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <label className="campo">
+        <span className="campo-rot">Resumo em uma linha</span>
+        <input type="text" value={edicao.resumo} maxLength={160}
+               placeholder={t.dicaResumo}
+               onChange={(e) => set('resumo', e.target.value)} />
+      </label>
+
+      <label className="campo">
+        <span className="campo-rot">{t.pergunta}</span>
+        <textarea rows={7} value={edicao.descricao} placeholder={t.dicaDescricao}
+                  onChange={(e) => set('descricao', e.target.value)} />
+      </label>
+
+      <div className="acoes">
+        <button type="button" className="btn btn-primario"
+                disabled={ocupado || faltas.length > 0} onClick={onSalvar}>
+          {ocupado ? 'Salvando…' : 'Salvar'}
+        </button>
+        <button type="button" className="btn" disabled={ocupado} onClick={onCancelar}>
+          Cancelar
+        </button>
+        {faltas.length > 0 && <span className="muted">falta: {faltas.join('; ')}</span>}
+      </div>
+    </div>
   );
 }
