@@ -64,6 +64,12 @@ const TEXTOS = {
     'Convidar, redefinir senha, desativar.',
   '/cadastros/cargos':
     'O que cada cargo pode: ver ou editar, tela a tela, e recalcular.',
+  '/cadastros/tickets/novo':
+    'Dúvida, sugestão ou algo que não funcionou: abra um chamado sobre a ' +
+    'tela em que você está, ou sobre a ferramenta toda.',
+  '/cadastros/tickets':
+    'Os chamados abertos, o estado de cada um e a resposta de quem cuida ' +
+    'do roadmap.',
 };
 function Cartao({ href, titulo, texto }) {
   return (

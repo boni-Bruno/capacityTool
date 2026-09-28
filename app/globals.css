@@ -193,6 +193,10 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 .selo.rodizio { background: var(--teal-bg); color: var(--teal-fg); }
 .selo.padrao  { background: var(--gray-bg); color: var(--gray-fg); }
+/* O estado de um chamado. Sem cor, "aberto" e "feito" se leem igual de
+   longe, e a fila existe para se achar o que ainda nao foi respondido. */
+.selo.ok  { background: var(--teal-bg); color: var(--teal-fg); }
+.selo.nao { background: var(--gray-bg); color: var(--gray-fg); text-decoration: line-through; }
 
 .rodape { font-size: 12px; color: var(--muted); margin-top: 1rem; }
 
@@ -811,6 +815,21 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 
 .ocup-estoura { color: var(--erro); font-weight: 600; }
 .ocup-aperta  { color: #8a4b0d; font-weight: 600; }
+
+/* ---- tickets: o chamado aberto dentro da linha ---- */
+
+.ticket-corpo { display: flex; flex-direction: column; gap: 12px; padding: 4px 0 8px; }
+/* `pre-wrap`: o texto foi escrito com quebras de linha, e juntar tudo num
+   paragrafo so transforma um passo a passo numa frase longa. */
+.ticket-texto { margin: 4px 0 0; white-space: pre-wrap; font-size: 13px; max-width: 70ch; }
+.ticket-resposta {
+  border-left: 3px solid var(--accent); padding-left: 12px; font-size: 13px;
+}
+.ticket-acoes {
+  display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+  border-top: 1px solid var(--border); padding-top: 12px;
+}
+.ticket-acoes .campo { flex: 1 1 260px; }
 
 /* ---- o esqueleto enquanto a tela carrega ---- */
 

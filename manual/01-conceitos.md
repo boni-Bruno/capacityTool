@@ -110,6 +110,14 @@ identificada como "mestre". Fechar o navegador encerra a sessão; o botão
 **Sair** também. Trocar o cargo ou desativar alguém vale na próxima tela que a
 pessoa abrir.
 
+## Ticket
+
+O chamado que quem usa a ferramenta abre de dentro dela: dúvida, sugestão ou
+defeito, sobre uma tela ou sobre a ferramenta toda (grupo **Roadmap** no menu).
+Cada um tem um número, um estado — **Aberto**, **Em análise**, **Feito**, **Não
+vamos fazer** — e a resposta de quem cuida do roadmap. Você vê os seus; o
+Gestor de Planejamento vê os de todos.
+
 ## Ocupação
 
 `ocupação = demanda ÷ disponível`, em minuto, por CT e mês — e, agregando, por

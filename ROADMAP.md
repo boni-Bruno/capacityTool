@@ -1691,6 +1691,48 @@ nasce no navegador.
 
 ---
 
+## Roadmap: a ferramenta passa a receber chamado por dentro — PRONTO
+
+Pedido do Bruno em 28/09/2026, e ele nasce do sucesso do anterior: com a
+ferramenta aberta para mais gente, dúvida, sugestão e defeito passaram a chegar
+por corredor, mensagem e e-mail — cada um num lugar, nenhum com resposta
+rastreável. Um grupo novo no menu, **Roadmap**, com duas telas: **Criar
+ticket** e **Meus tickets** (migração `39_tickets.sql`).
+
+**O que o chamado pede**: o **produto** (a ferramenta toda — o padrão —, um
+grupo do menu inteiro, ou uma tela), o **tipo** (dúvida, sugestão, bug/erro),
+um **resumo de uma linha** e a descrição. A pergunta da descrição **muda com o
+tipo**: "qual é a sua sugestão?" embaixo de um defeito faria a pessoa descrever
+a solução em vez do que aconteceu, e o que conserta defeito é o passo a passo.
+
+**A lista de produtos sai de `TELAS`** (`lib/permissoes.js`) — a mesma que monta
+o menu, a home e a grade de cargos. Tela nova aparece no seletor sozinha; uma
+lista própria seria o segundo lugar a manter em dia. Em troca, o produto é
+guardado como **código em texto**, e um código que não existe mais aparece cru
+na lista em vez de sumir: ticket escondido é pior que rótulo feio.
+
+**Quem vê o que**: quem responde vê todos, o resto vê os seus — e isso é
+decidido na **consulta**, não na tela, porque filtrar na tela mandaria a fila
+inteira para o navegador de quem não pode lê-la. "Quem responde" é ter
+`tickets.editar`, que o Gestor de Planejamento tem por ser cargo protegido.
+
+**Duas telas e não uma** porque são dois atos: abrir chamado é do dia a dia de
+todo mundo, acompanhar a fila é outra coisa — e assim `tickets.editar` ganha um
+significado próprio, que é responder.
+
+**O estado e a resposta** (Aberto → Em análise → Feito ou Não vamos fazer)
+entraram junto, e não como "fase 2": uma caixa de entrada sem resposta visível
+é um lugar para onde as coisas vão morrer, e ninguém abre o segundo chamado
+depois que o primeiro não teve resposta. Chamado não se apaga — "não vamos
+fazer", com o porquê escrito, é resposta.
+
+**Quem entra pela senha mestre** abre chamado como "mestre": não há id de
+usuário ali, por isso a tabela guarda o **nome em texto** junto do id. O nome
+também congela quem a pessoa era no dia — renomear no cadastro não reescreve a
+história do chamado.
+
+---
+
 ## A navegação estava lenta, e o motivo era geografia — PRONTO
 
 Em 22/09/2026 o Bruno disse que passear de uma tela para outra estava lento.
