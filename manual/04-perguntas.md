@@ -124,6 +124,33 @@ regime, e Recalcular parcial para ele.
 
 ---
 
+## O recurso aparece em alguns meses e some em outros
+
+**Sintoma.** No painel, a linha do recurso tem número de janeiro a junho e de
+julho em diante ele não está lá — nem com zero.
+
+**Causa.** Aqueles meses estão **sem regime de dias**. Zero é resposta; sumir é
+o que acontece quando não há regime nenhum, porque o motor casa cada dia com o
+calendário e, sem calendário, o dia não existe para aquele recurso.
+
+**O que fazer.** Turnos do recurso, o ano em questão: os meses sem regime estão
+com a borda amarela na primeira coluna, e há um aviso embaixo da tabela.
+Escolha o regime, salve e **Recalcular parcial** para o recurso.
+
+---
+
+## Troquei o recurso para rodízio em julho e a capacidade de janeiro mudou também
+
+**Causa.** Não deveria — o cadastro é por mês. Se o ano inteiro mudou, o
+seletor usado foi o do **cabeçalho** da coluna, que aplica aos doze meses de
+uma vez.
+
+**O que fazer.** Cadastre mês a mês nas linhas, ou aplique no cabeçalho e
+depois corrija os meses que continuam no regime antigo. O ano seguinte nunca é
+afetado: o cadastro vale só para o ano escolhido.
+
+---
+
 ## Importei a demanda e a ocupação não mudou
 
 **Causa.** Importar cria uma carga nova, mas **não a põe no ar**. O Painel da

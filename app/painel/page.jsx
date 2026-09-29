@@ -193,7 +193,8 @@ export default async function Page({ searchParams }) {
   // Em "todas as fábricas" a leitura por dia útil não existe: o divisor é de
   // um calendário e das exceções de UMA área, e oito áreas com feriados
   // diferentes não têm um dia útil comum para dividir.
-  const calendarios = area ? await calendariosDaArea(area.id, `${ano}-12-31`) : [];
+  const calendarios = area
+    ? await calendariosDaArea(area.id, `${ano}-01-01`, `${ano}-12-31`) : [];
   const calPedido = Number(searchParams?.cal);
   const cal = calendarios.find((c) => c.id === calPedido) ?? calendarios[0] ?? null;
 
@@ -514,11 +515,19 @@ export default async function Page({ searchParams }) {
       celula: (r) => (r.sub_area
         ? r.sub_area : <span className="muted">—</span>) },
     { chave: 'calendario', rot: 'Calendário',
-      celula: (r) => (
-        <span className={'selo ' + (r.calendario === 'RODIZIO' ? 'rodizio' : 'padrao')}>
-          {r.calendario ? r.calendario.toLowerCase() : '—'}
-        </span>
-      ) },
+      celula: (r) => {
+        // MAIS DE UM REGIME NO PERÍODO sai sem cor. Desde que o regime é por
+        // mês, existe recurso padrão até junho e rodízio de julho em diante, e
+        // a coluna mostra os dois ("PADRAO › RODIZIO"); pintar de padrão diria
+        // que o rodízio não existiu.
+        const misto = String(r.calendario ?? '').includes('›');
+        const cor = misto ? '' : (r.calendario === 'RODIZIO' ? ' rodizio' : ' padrao');
+        return (
+          <span className={'selo' + cor}>
+            {r.calendario ? r.calendario.toLowerCase() : '—'}
+          </span>
+        );
+      } },
     // Instalada é teto em tempo: não existe em metro nem em peça.
     ...(fisica ? [] : [{
       chave: 'instalada', num: true,

@@ -17,7 +17,8 @@ pessoa **nunca dividem a mesma matriz**.
 
 ## A matriz
 
-Linhas = meses, colunas = turnos.
+Linhas = meses; a **primeira coluna é o regime de dias** e as seguintes são os
+turnos.
 
 - **Máquina com Qtd 1**: a célula é uma marca — roda / não roda.
 - **Máquina com Qtd > 1**: a célula pede um **número** — quantas rodam naquele
@@ -38,17 +39,34 @@ Linhas = meses, colunas = turnos.
   apaga os turnos do ano escolhido nos recursos da lista, com confirmação. Os
   outros anos não mudam. É o caminho para desfazer um lote aplicado errado.
 
-## Regime
+## Regime de dias (a primeira coluna)
 
-Escolha do calendário que o recurso segue. Sem regime, o motor não gera
-capacidade para ele.
+Em que **dias** o recurso pode rodar: **Padrão** (segunda a sábado) ou
+**Rodízio** (todos os dias) — a legenda embaixo da tabela diz o que cada nome
+cobre naquela planta. Os turnos marcados só produzem capacidade nos dias que o
+regime permite.
+
+**Ele é por mês**, como os turnos. É assim que se cadastra a máquina que roda em
+três turnos até junho e passa para rodízio full time em julho: o rodízio tem
+outros feriados, e o ano inteiro num regime só erraria metade do ano.
+
+- O seletor no **cabeçalho da coluna** aplica o mesmo regime aos doze meses —
+  é o caso comum; o mês a mês existe para a exceção.
+- O regime é salvo pelo **mesmo botão Salvar** da matriz.
+- **Vale só para o ano escolhido.** Trocar julho de 2027 para rodízio não mexe
+  em 2028: lá continua o que já estava.
+- **Limpar turnos do ano não mexe no regime** — turno se apaga, regime não.
+
+No **lote** a coluna começa em branco, e mês em branco **não mexe** no que cada
+recurso já tem: dá para trocar só julho a dezembro dos 40 recursos sem tocar no
+primeiro semestre de nenhum.
 
 ## Como conferir
 
 Marcar o turno é necessário, mas não basta. Para o recurso produzir num dia:
 **o turno tem horário naquele dia da semana** (tela de Turnos) **e o regime
-trabalha naquele dia** (Calendários). Descendo até o dia no Painel da
-Capacidade dá para ver qual dos dois fechou.
+daquele mês trabalha naquele dia** (Calendários). Descendo até o dia no Painel
+da Capacidade dá para ver qual dos dois fechou.
 
 ## Cuidados
 
@@ -56,5 +74,8 @@ Capacidade dá para ver qual dos dois fechou.
   turnos marcados somam mais de 24 h (costuma ser o turno de 24 h marcado junto
   com os que ele já cobre). O motor soma, e a planejada passa da instalada.
 - O ano é sempre um só; para o ano seguinte, troque o Ano e cadastre de novo
-  (a vigência é por mês).
+  (a vigência é por mês). Vale para os turnos **e** para o regime.
+- **Mês sem regime** aparece com a borda amarela e um aviso embaixo da tabela.
+  Não é capacidade zero: é o recurso **sumindo** do cálculo naquele mês, sem
+  zerar nada e sem erro em lugar nenhum. Escolha o regime e salve.
 - **Recalcular** depois.

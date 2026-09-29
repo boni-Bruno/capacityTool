@@ -48,10 +48,12 @@ CC-CT certo, a demanda daquele CT passa a ter capacidade.
 - **Calendário** (regime) é o conjunto de dias que uma linha trabalha —
   *padrão* (segunda a sábado, por exemplo) ou *rodízio* (24/7) — mais os
   feriados e exceções da área.
-- Cada recurso segue **um calendário** e roda **os turnos marcados** para ele.
-  Para o recurso produzir num dia, os dois portões precisam estar abertos: o
-  turno tem horário naquele dia da semana **e** o calendário trabalha naquele
-  dia.
+- Cada recurso segue **um calendário por mês** e roda **os turnos marcados**
+  para aquele mês. Para o recurso produzir num dia, os dois portões precisam
+  estar abertos: o turno tem horário naquele dia da semana **e** o calendário
+  daquele mês trabalha naquele dia.
+- O calendário é **por mês** porque a mesma máquina pode rodar em turnos até
+  junho e em rodízio de julho em diante — e o rodízio tem outros feriados.
 - **Dia útil** do motor: dia em que o calendário trabalha e não há exceção que
   o zere. Os *pesos* de dia útil da tela de Calendários (sábado = 0,5, por
   exemplo) são indicador de leitura; a capacidade continua em minutos.

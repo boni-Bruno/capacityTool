@@ -2,10 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { MESES } from '../../../lib/dias';
+import { MESES, descreveDias } from '../../../lib/dias';
 import Alvos from '../alvos';
 
 // Matriz de turnos: uma linha por mês, uma coluna por turno.
+//
+// A PRIMEIRA COLUNA É O REGIME DE DIAS, e ele também é por mês. Antes eram dois
+// botões acima da tabela, valendo para sempre — o que quebrou quando apareceu a
+// máquina que roda em três turnos até junho e em rodízio full time de julho em
+// diante: o rodízio tem outros feriados, e o ano inteiro num regime só dava a
+// capacidade errada na metade do ano.
+//
+// Ele é coluna e não uma tabela à parte porque a pergunta é a mesma — "o que
+// vale em julho?" —, e a resposta tem que caber numa linha só de leitura.
 //
 // A célula guarda TEXTO — '' é "não trabalha", e um número é quantas máquinas
 // ou pessoas rodam ali. Três modos, e a diferença é o que a célula pergunta:
@@ -33,10 +42,12 @@ const TODAS = 'todas';
 
 export default function Matriz({
   recursoId, ano, turnos, inicial, parciais, qtRecurso = 1, alvos = null,
-  pessoa = false,
+  pessoa = false, calendarios = [], calInicial = {},
 }) {
   const router = useRouter();
   const [celulas, setCelulas] = useState(inicial);
+  const [cal, setCal] = useState(calInicial);      // { mes: calendario_id }
+  const [calAno, setCalAno] = useState('');        // o regime para os 12 meses
   const [anoTodo, setAnoTodo] = useState({});      // o número por turno, para os 12 meses
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -68,10 +79,45 @@ export default function Matriz({
     return [...chaves].some((k) => (celulas[k] ?? '') !== (inicial[k] ?? ''));
   }, [celulas, inicial]);
 
+  // O QUE MUDOU NO REGIME, mês a mês. Só o que tem valor entra: deixar um mês
+  // em branco NÃO é pedir para apagar o regime dele — não existe recurso sem
+  // regime, e o motor some com o mês que ficar descoberto. Em branco é "não
+  // mexer", e é isso que faz o lote poder mandar só o segundo semestre.
+  const calPorMes = useMemo(() => {
+    const saida = {};
+    for (let mes = 1; mes <= 12; mes += 1) {
+      const v = String(cal[mes] ?? '');
+      if (v !== '' && v !== String(calInicial[mes] ?? '')) saida[mes] = Number(v);
+    }
+    return saida;
+  }, [cal, calInicial]);
+
+  const calSujo = Object.keys(calPorMes).length > 0;
+  // Fora do lote, mês sem regime é anomalia e a tela diz — é capacidade zero
+  // esperando para acontecer. No lote, branco é o normal: o molde só mexe no
+  // que foi escolhido.
+  const semRegime = lote ? [] : MESES.slice(1)
+    .map((_, i) => i + 1).filter((mes) => !cal[mes]);
+
   const ligada = (k) => (celulas[k] ?? '') !== '';
 
   function poe(turnoId, mes, valor) {
     setCelulas((c) => ({ ...c, [chave(turnoId, mes)]: valor }));
+    setOk(null);
+  }
+
+  function poeCal(mes, valor) {
+    setCal((c) => ({ ...c, [mes]: valor }));
+    setOk(null);
+  }
+
+  // O regime dos doze meses de uma vez. É o caso comum — o ano inteiro em
+  // padrão —, e o mês a mês existe para a exceção.
+  function aplicaCalAno(valor) {
+    setCalAno(valor);
+    if (valor === '') return;
+    setCal(Object.fromEntries(
+      Array.from({ length: 12 }, (_, i) => [i + 1, valor])));
     setOk(null);
   }
 
@@ -159,7 +205,7 @@ export default function Matriz({
         marcados[t.turno_id] = porMes;
       }
 
-      await gravaEm(marcados);
+      await gravaEm(marcados, calPorMes);
     } catch (e) {
       setErro(e.message ?? 'Falhou');
     } finally {
@@ -169,8 +215,25 @@ export default function Matriz({
   }
 
   // Grava o mesmo desenho de turnos no recurso ou em cada recurso do lote.
-  async function gravaEm(marcados) {
+  //
+  // O REGIME VAI JUNTO, na mesma volta e só quando mudou: são duas tabelas e
+  // duas rotas, mas uma decisão só para quem cadastra — separar em dois botões
+  // seria o jeito de alguém salvar a matriz e ir embora com o regime pela
+  // metade.
+  async function gravaEm(marcados, porMesCal) {
+    const mexeNoRegime = porMesCal && Object.keys(porMesCal).length > 0;
+
     const grava = async (id) => {
+      if (mexeNoRegime) {
+        const c = await fetch('/api/cadastro/recurso-calendario', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recurso_id: id, ano, por_mes: porMesCal }),
+        });
+        const jc = await c.json();
+        if (!jc.ok) throw new Error(jc.erro);
+      }
+
       const r = await fetch('/api/cadastro/recurso-turno', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,8 +251,11 @@ export default function Matriz({
 
     if (!lote) {
       const n = await grava(recursoId);
-      setOk(n === 0 ? 'Nada mudou.'
-        : `${n} turno${n > 1 ? 's' : ''} atualizado${n > 1 ? 's' : ''}.`);
+      const dizTurnos = n === 0 ? null
+        : `${n} turno${n > 1 ? 's' : ''} atualizado${n > 1 ? 's' : ''}.`;
+      const dizRegime = mexeNoRegime
+        ? `Regime atualizado em ${Object.keys(porMesCal).length} mês(es).` : null;
+      setOk([dizTurnos, dizRegime].filter(Boolean).join(' ') || 'Nada mudou.');
     } else {
       // UM RECURSO POR REQUISIÇÃO, com o laço aqui no navegador — é o mesmo
       // caminho do Recalcular tudo e da importação, pela mesma razão: cada
@@ -204,7 +270,10 @@ export default function Matriz({
       }
       setAndamento(null);
       setOk(`${dentro.length} recurso(s) percorrido(s), `
-        + `${mexidos} com mudança de turno.`);
+        + `${mexidos} com mudança de turno.`
+        + (mexeNoRegime
+          ? ` Regime aplicado em ${Object.keys(porMesCal).length} mês(es) de cada um.`
+          : ''));
     }
     router.refresh();
   }
@@ -224,8 +293,12 @@ export default function Matriz({
     setErro(null);
     setOk(null);
     try {
+      // O REGIME NÃO VAI JUNTO. "Limpar turnos" apaga jornada, e recurso sem
+      // regime nenhum não existe: o motor casa o dia com o calendário por INNER
+      // JOIN, então limpar o regime não zeraria a capacidade — faria o recurso
+      // sumir do cálculo sem deixar rastro.
       const vazio = Object.fromEntries(turnos.map((t) => [t.turno_id, {}]));
-      await gravaEm(vazio);
+      await gravaEm(vazio, null);
       setCelulas({});
       setAnoTodo({});
     } catch (e) {
@@ -236,7 +309,17 @@ export default function Matriz({
     }
   }
 
-  if (!turnos.length) return <p className="muted">Nenhum turno ativo na planta.</p>;
+  // Sem turno não há matriz — e o regime de dias mora nela, então ele também
+  // fica inalcançável. Dizer isso aqui evita a procura no lugar errado: o
+  // conserto é cadastrar turno na planta, não mexer no recurso.
+  if (!turnos.length) {
+    return (
+      <p className="muted">
+        Nenhum turno ativo na planta — sem turno não há o que cadastrar aqui,
+        nem o regime de dias.
+      </p>
+    );
+  }
 
   const unidade = pessoa ? 'pessoas' : 'máquinas';
 
@@ -263,6 +346,26 @@ export default function Matriz({
           <thead>
             <tr>
               <th>Mês</th>
+              {calendarios.length > 0 && (
+                <th className="matriz-turno matriz-regime">
+                  <span className="matriz-nome" title="Em que dias o recurso pode rodar">
+                    Regime de dias
+                  </span>
+                  <span className="matriz-ano">
+                    <select
+                      className="matriz-cal"
+                      value={calAno}
+                      title="Aplicar este regime aos 12 meses"
+                      onChange={(e) => aplicaCalAno(e.target.value)}
+                    >
+                      <option value="">→ ano todo…</option>
+                      {calendarios.map((c) => (
+                        <option key={c.id} value={String(c.id)}>{c.nome}</option>
+                      ))}
+                    </select>
+                  </span>
+                </th>
+              )}
               {turnos.map((t) => (
                 <th key={t.turno_id} className="matriz-turno">
                   <span className="matriz-nome" title={`Código ${t.codigo}`}>
@@ -328,6 +431,23 @@ export default function Matriz({
                       {rotulo}
                     </button>
                   </td>
+                  {calendarios.length > 0 && (
+                    <td className="matriz-cel matriz-regime">
+                      <select
+                        className={'matriz-cal' + (!cal[mes] ? ' matriz-cal-vazia' : '')}
+                        value={String(cal[mes] ?? '')}
+                        onChange={(e) => poeCal(mes, e.target.value)}
+                        title={lote
+                          ? 'Regime deste mês nos recursos do lote. Em branco não mexe no que cada um tem.'
+                          : 'Em que dias o recurso pode rodar neste mês'}
+                      >
+                        <option value="">{lote ? '— não mexer —' : '— sem regime —'}</option>
+                        {calendarios.map((c) => (
+                          <option key={c.id} value={String(c.id)}>{c.nome}</option>
+                        ))}
+                      </select>
+                    </td>
+                  )}
                   {turnos.map((t) => {
                     const k = chave(t.turno_id, mes);
                     return (
@@ -371,9 +491,37 @@ export default function Matriz({
         </table>
       </div>
 
+      {/* A LEGENDA DOS REGIMES. A coluna oferece o nome, que é como a fábrica
+          fala; a diferença entre eles é o domingo, e ela precisa estar escrita
+          em algum lugar da tela. */}
+      {calendarios.length > 0 && (
+        <p className="rodape" style={{ marginTop: 10 }}>
+          {calendarios.map((c, i) => (
+            <span key={c.id}>
+              {i > 0 && ' · '}
+              <strong>{c.nome}</strong>: {descreveDias(c.dias)}
+            </span>
+          ))}
+        </p>
+      )}
+
+      {semRegime.length > 0 && (
+        <div className="aviso" style={{ marginTop: 12 }}>
+          <strong>
+            Sem regime de dias em {semRegime.map((m) => MESES[m]).join(', ')}.
+          </strong>
+          <p style={{ margin: '6px 0 0' }}>
+            Mês sem regime não produz capacidade nenhuma — o recurso some do
+            cálculo naquele mês, sem zerar e sem avisar. Escolha o regime desses
+            meses e salve.
+          </p>
+        </div>
+      )}
+
       <div className="acoes" style={{ marginTop: 16 }}>
         <button className="btn btn-primario" onClick={salvar}
-                disabled={!sujo || salvando || (lote && dentro.length === 0)}>
+                disabled={(!sujo && !calSujo) || salvando
+                          || (lote && dentro.length === 0)}>
           {salvando
             ? (lote ? 'Aplicando…' : 'Salvando…')
             : (lote ? `Aplicar em ${dentro.length} recurso(s)` : 'Salvar')}
@@ -386,7 +534,9 @@ export default function Matriz({
         {lote && dentro.length === 0 && (
           <span className="muted">nenhum recurso no lote</span>
         )}
-        {sujo && !salvando && <span className="muted">alterações não salvas</span>}
+        {(sujo || calSujo) && !salvando && (
+          <span className="muted">alterações não salvas</span>
+        )}
         {/* O nome de quem está sendo gravado, e não só a barra: quarenta
             recursos levam quarenta requisições, e "Aplicando…" parado por meio
             minuto parece travado. */}
@@ -419,6 +569,20 @@ export default function Matriz({
         linha. Salvar aplica o ano de {ano} — o que estiver configurado em outros
         anos não é afetado.
       </p>
+
+      {calendarios.length > 0 && (
+        <p className="rodape">
+          O <strong>regime de dias</strong> diz em que dias o recurso pode rodar,
+          e vale <strong>por mês</strong>: dá para trabalhar em turnos até junho
+          e passar para rodízio em julho, que é quando o calendário muda de
+          feriados. Ele é salvo pelo mesmo botão da matriz, e{' '}
+          {lote
+            ? 'mês deixado em branco não mexe no que cada recurso do lote já tem.'
+            : `também só vale para ${ano} — em ${ano + 1} continua o que estava lá.`}
+          {' '}Os turnos marcados acima só produzem capacidade nos dias que o
+          regime permite.
+        </p>
+      )}
     </>
   );
 }

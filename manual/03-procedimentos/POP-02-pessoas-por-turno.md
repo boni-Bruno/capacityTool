@@ -18,7 +18,8 @@ capacidade é gente escalada, não máquina existente.
 2. Em cada turno, digite **quantas pessoas** trabalham em cada mês. Sem teto:
    12 no 1º e 20 no 3º é legítimo. A caixa *→ ano todo* preenche os doze
    meses. Vazio = ninguém naquele turno.
-3. Regime (calendário). Salvar.
+3. Regime de dias, na primeira coluna — por mês, ou os doze de uma vez pelo
+   seletor do cabeçalho. Salvar (ele vai junto com os turnos).
 4. OEE, se diferente de 100%.
 5. **Recalcular parcial** para o recurso.
 

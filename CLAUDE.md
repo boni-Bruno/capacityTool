@@ -228,6 +228,13 @@ NN_*.sql           migrações, na ordem em que devem rodar
   protegido (Gestor de Planejamento) e a sessão **mestre** (`APP_SENHA`, sem
   usuário) têm tudo. A sessão é um JWT só com a identidade; permissão e
   escopo saem do banco a cada requisição.
+- **regime de dias (calendário) é POR MÊS**, e o cadastro vale para o ano
+  escolhido — a máquina que trabalha em turnos até junho e vira rodízio full
+  time em julho existe, e o rodízio tem outros feriados. E **mês sem regime não
+  é zero, é sumiço**: o motor casa o dia com o calendário por INNER JOIN, então
+  o recurso desaparece do cálculo daquele mês sem zerar nada e sem erro. Por
+  isso, ali, mês em branco quer dizer "não mexer" — nunca "apagar" —, recurso
+  novo nasce com o `PADRAO` da planta, e a gravação recusa buraco.
 - **uma rodada por (área, ano, origem)**: a nova substitui a anterior. O sistema
   mostra a capacidade atual; rodada velha não é consultada por ninguém. O
   **Recalcular parcial** não cria rodada: regrava só os recursos escolhidos

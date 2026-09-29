@@ -1,6 +1,6 @@
 # capacityTool - Manual completo
 
-Gerado em 2026-09-28 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
+Gerado em 2026-09-29 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
 
 ---
 
@@ -104,10 +104,12 @@ CC-CT certo, a demanda daquele CT passa a ter capacidade.
 - **Calendário** (regime) é o conjunto de dias que uma linha trabalha —
   *padrão* (segunda a sábado, por exemplo) ou *rodízio* (24/7) — mais os
   feriados e exceções da área.
-- Cada recurso segue **um calendário** e roda **os turnos marcados** para ele.
-  Para o recurso produzir num dia, os dois portões precisam estar abertos: o
-  turno tem horário naquele dia da semana **e** o calendário trabalha naquele
-  dia.
+- Cada recurso segue **um calendário por mês** e roda **os turnos marcados**
+  para aquele mês. Para o recurso produzir num dia, os dois portões precisam
+  estar abertos: o turno tem horário naquele dia da semana **e** o calendário
+  daquele mês trabalha naquele dia.
+- O calendário é **por mês** porque a mesma máquina pode rodar em turnos até
+  junho e em rodízio de julho em diante — e o rodízio tem outros feriados.
 - **Dia útil** do motor: dia em que o calendário trabalha e não há exceção que
   o zere. Os *pesos* de dia útil da tela de Calendários (sábado = 0,5, por
   exemplo) são indicador de leitura; a capacidade continua em minutos.
@@ -470,7 +472,8 @@ pessoa **nunca dividem a mesma matriz**.
 
 ### A matriz
 
-Linhas = meses, colunas = turnos.
+Linhas = meses; a **primeira coluna é o regime de dias** e as seguintes são os
+turnos.
 
 - **Máquina com Qtd 1**: a célula é uma marca — roda / não roda.
 - **Máquina com Qtd > 1**: a célula pede um **número** — quantas rodam naquele
@@ -491,17 +494,34 @@ Linhas = meses, colunas = turnos.
   apaga os turnos do ano escolhido nos recursos da lista, com confirmação. Os
   outros anos não mudam. É o caminho para desfazer um lote aplicado errado.
 
-### Regime
+### Regime de dias (a primeira coluna)
 
-Escolha do calendário que o recurso segue. Sem regime, o motor não gera
-capacidade para ele.
+Em que **dias** o recurso pode rodar: **Padrão** (segunda a sábado) ou
+**Rodízio** (todos os dias) — a legenda embaixo da tabela diz o que cada nome
+cobre naquela planta. Os turnos marcados só produzem capacidade nos dias que o
+regime permite.
+
+**Ele é por mês**, como os turnos. É assim que se cadastra a máquina que roda em
+três turnos até junho e passa para rodízio full time em julho: o rodízio tem
+outros feriados, e o ano inteiro num regime só erraria metade do ano.
+
+- O seletor no **cabeçalho da coluna** aplica o mesmo regime aos doze meses —
+  é o caso comum; o mês a mês existe para a exceção.
+- O regime é salvo pelo **mesmo botão Salvar** da matriz.
+- **Vale só para o ano escolhido.** Trocar julho de 2027 para rodízio não mexe
+  em 2028: lá continua o que já estava.
+- **Limpar turnos do ano não mexe no regime** — turno se apaga, regime não.
+
+No **lote** a coluna começa em branco, e mês em branco **não mexe** no que cada
+recurso já tem: dá para trocar só julho a dezembro dos 40 recursos sem tocar no
+primeiro semestre de nenhum.
 
 ### Como conferir
 
 Marcar o turno é necessário, mas não basta. Para o recurso produzir num dia:
 **o turno tem horário naquele dia da semana** (tela de Turnos) **e o regime
-trabalha naquele dia** (Calendários). Descendo até o dia no Painel da
-Capacidade dá para ver qual dos dois fechou.
+daquele mês trabalha naquele dia** (Calendários). Descendo até o dia no Painel
+da Capacidade dá para ver qual dos dois fechou.
 
 ### Cuidados
 
@@ -509,7 +529,10 @@ Capacidade dá para ver qual dos dois fechou.
   turnos marcados somam mais de 24 h (costuma ser o turno de 24 h marcado junto
   com os que ele já cobre). O motor soma, e a planejada passa da instalada.
 - O ano é sempre um só; para o ano seguinte, troque o Ano e cadastre de novo
-  (a vigência é por mês).
+  (a vigência é por mês). Vale para os turnos **e** para o regime.
+- **Mês sem regime** aparece com a borda amarela e um aviso embaixo da tabela.
+  Não é capacidade zero: é o recurso **sumindo** do cálculo naquele mês, sem
+  zerar nada e sem erro em lugar nenhum. Escolha o regime e salve.
 - **Recalcular** depois.
 
 ---
@@ -962,7 +985,9 @@ Chegou uma máquina, abriu um posto, ou a tela de Demanda mostra um CT em
    não existe o ano inteiro. Salvar.
 2. **Turnos do recurso**: selecione a área, o **Tipo** certo, o recurso e o
    ano. Marque os turnos (ou digite quantas máquinas/pessoas por turno) mês a
-   mês — a caixa *→ ano todo* ajuda. Escolha o **regime**. Salvar.
+   mês — a caixa *→ ano todo* ajuda. Confira o **regime de dias** na primeira
+   coluna: o recurso nasce em *Padrão*, e quem é rodízio troca ali (o seletor
+   do cabeçalho aplica aos doze meses). Salvar.
 3. **OEE**: o recurso já nasce com 100% nas duas origens. Ajuste se souber o
    OEE real; a caixa *→ ano todo* repete.
 4. **Paradas**: só se já houver parada planejada conhecida.
@@ -982,7 +1007,10 @@ Chegou uma máquina, abriu um posto, ou a tela de Demanda mostra um CT em
 
 - **Não recalculou** → o recurso não aparece em lugar nenhum. Passo 5.
 - **Planejada zero** com turno marcado → o turno não tem horário naquele dia
-  da semana (Turnos) **ou** o regime não trabalha naquele dia (Calendários).
+  da semana (Turnos) **ou** o regime daquele mês não trabalha naquele dia
+  (Calendários).
+- **O recurso some de alguns meses** (nem aparece na tabela) → aqueles meses
+  estão **sem regime de dias**. A tela de Turnos do recurso marca em amarelo.
 - **Pessoa não aparece em Turnos do recurso** → o seletor Tipo está em
   máquina; troque para pessoa.
 - **Demanda continua sem capacidade** → CC ou CT digitado diferente da base
@@ -1012,7 +1040,8 @@ capacidade é gente escalada, não máquina existente.
 2. Em cada turno, digite **quantas pessoas** trabalham em cada mês. Sem teto:
    12 no 1º e 20 no 3º é legítimo. A caixa *→ ano todo* preenche os doze
    meses. Vazio = ninguém naquele turno.
-3. Regime (calendário). Salvar.
+3. Regime de dias, na primeira coluna — por mês, ou os doze de uma vez pelo
+   seletor do cabeçalho. Salvar (ele vai junto com os turnos).
 4. OEE, se diferente de 100%.
 5. **Recalcular parcial** para o recurso.
 
@@ -1428,6 +1457,33 @@ não gera nenhuma linha para ele. Ou tem, e não foi recalculado.
 
 **O que fazer.** Turnos do recurso (com o Tipo certo — pessoa ou máquina),
 regime, e Recalcular parcial para ele.
+
+---
+
+### O recurso aparece em alguns meses e some em outros
+
+**Sintoma.** No painel, a linha do recurso tem número de janeiro a junho e de
+julho em diante ele não está lá — nem com zero.
+
+**Causa.** Aqueles meses estão **sem regime de dias**. Zero é resposta; sumir é
+o que acontece quando não há regime nenhum, porque o motor casa cada dia com o
+calendário e, sem calendário, o dia não existe para aquele recurso.
+
+**O que fazer.** Turnos do recurso, o ano em questão: os meses sem regime estão
+com a borda amarela na primeira coluna, e há um aviso embaixo da tabela.
+Escolha o regime, salve e **Recalcular parcial** para o recurso.
+
+---
+
+### Troquei o recurso para rodízio em julho e a capacidade de janeiro mudou também
+
+**Causa.** Não deveria — o cadastro é por mês. Se o ano inteiro mudou, o
+seletor usado foi o do **cabeçalho** da coluna, que aplica aos doze meses de
+uma vez.
+
+**O que fazer.** Cadastre mês a mês nas linhas, ou aplique no cabeçalho e
+depois corrija os meses que continuam no regime antigo. O ano seguinte nunca é
+afetado: o cadastro vale só para o ano escolhido.
 
 ---
 

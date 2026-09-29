@@ -553,6 +553,22 @@ input.invalido { border-color: var(--erro); }
 .matriz-qt:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .matriz-qt::placeholder { color: var(--muted); opacity: .5; }
 
+/* Regime de dias: a primeira coluna da matriz de turnos. Borda à direita
+   separando do bloco dos turnos — são duas perguntas diferentes na mesma
+   linha, e sem a divisa a coluna parecia mais um turno. */
+.matriz-regime { border-right: 2px solid var(--border); }
+.matriz-cal {
+  width: 118px; height: 30px; padding: 0 4px;
+  font: inherit; font-size: 13px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); color: var(--text); cursor: pointer;
+}
+.matriz-cal:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+/* Mês sem regime é anomalia, não estado normal: o recurso some do cálculo
+   naquele mês sem zerar nada. A cor é o mesmo aviso que o texto embaixo dá. */
+.matriz-cal-vazia { border-color: #c9820d; color: var(--muted); }
+th.matriz-regime .matriz-cal { height: 26px; font-size: 12px; }
+
 /* Minutos de intervalo na grade de horário do turno. */
 .intervalo-min {
   width: 64px; height: 32px; padding: 0 6px; text-align: right;

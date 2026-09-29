@@ -570,9 +570,9 @@ sobra uma linha com o que continua valendo: aviso que fica na tela depois de
 lido vira ruído, e ruído treina a pessoa a não ler o próximo. A porta reabre
 quando o alcance muda — passar de 48 recursos para 12 é outra decisão.
 
-**O regime de dias também é aplicado em lote**, no mesmo bloco. Ali nenhum
-regime aparece marcado, de propósito: os recursos do lote podem estar em regimes
-diferentes, e destacar o de um deles diria que todos estão nele.
+**O regime de dias também é aplicado em lote**, hoje como primeira coluna da
+matriz (ver *Regime de dias por mês*, abaixo). No lote ele nasce em branco, e
+mês em branco **não mexe** no que cada recurso já tem.
 
 A matriz do lote **nasce em branco**: herdar a de um recurso faria a
 tela propor, sem avisar, a configuração de uma máquina para as outras. E a
@@ -607,6 +607,64 @@ aplicado errado: vazia, não há alteração para salvar. Entrou **Limpar turnos
 em N recurso(s)** (e *Limpar turnos do ano* no recurso só), que manda a
 matriz vazia direto, com confirmação, e apaga os turnos daquele ano nos
 recursos da lista — os outros anos não mudam.
+
+### Regime de dias por mês (29/09/2026)
+
+Durante o cadastro do orçamento de 2027 apareceu o caso que o modelo antigo não
+sabia escrever: recurso em três turnos até um mês X, por demanda baixa, e em
+**rodízio full time** do mês Y em diante. Rodízio é outro calendário — inclui
+domingo e tem outros feriados —, então o ano inteiro num regime só dava a
+capacidade errada em metade do ano, e a única saída era escolher qual metade
+errar.
+
+**O regime passou a ser por mês, e vale para o ano escolhido.** É a mesma regra
+dos turnos e do OEE: o ano editado é reescrito, e o que está antes e depois é
+recortado na virada e preservado com o calendário que já tinha. Configurar 2027
+não emenda em 2028 — ano de orçamento não pode virar decisão permanente tomada
+sem querer.
+
+**Sem migração**: `recurso_calendario` já era `daterange` com exclude constraint
+desde a 01, e o motor já casava `rc.vigencia @> d.data`. O que existia era um
+cadastro que só sabia gravar `daterange(null, null)` — as 393 linhas do banco
+eram todas assim. O modelo estava pronto havia um ano; faltava a tela.
+
+**A tela virou coluna.** Os dois botões de regime acima da matriz saíram
+(`calendario.jsx` deixou de existir) e viraram a **primeira coluna** da matriz
+de turnos, com um seletor por mês e um "→ ano todo" no cabeçalho. Mês é linha
+lá, e a pergunta é a mesma — *o que vale em julho?*: dois lugares mostrando o
+ano em recortes diferentes era pedir para alguém ler um e cadastrar no outro. O
+regime é salvo pelo **mesmo botão** da matriz, e só quando mudou.
+
+**Mês em branco é "não mexer", nunca "apagar"** — e é o contrário do turno e do
+OEE, onde o branco é escolha legítima. A diferença é o motor: OEE ausente ele lê
+como 0% (número errado, mas visível), calendário ausente é INNER JOIN que não
+casa, e o recurso **some** do cálculo daquele mês sem zerar nada e sem erro
+nenhum. Como não existe "sem regime", o branco só pode ser silêncio — e é isso
+que deixa o lote trocar só julho a dezembro sem tocar no primeiro semestre de
+cada recurso. Se ainda assim sobrar mês descoberto, a gravação é recusada com os
+meses na mensagem, e a tela avisa em amarelo antes disso.
+
+**Recurso novo nasce com regime**, no `PADRAO` da planta, pela mesma razão que
+nasce com OEE 100%: o que não pode existir é recurso sem linha nenhuma. Antes a
+criação não gravava calendário nenhum, e o recurso ficava invisível no painel
+até alguém clicar no regime — zero calado, sem nada na tela dizendo o porquê.
+
+**`lib/faixas.js` não sabia ler início nulo** (`lib/faixas.test.js`). Em
+JavaScript `null < '2027-01-01'` é **falso** — os dois viram número e a data
+vira `NaN` —, então faixa aberta à esquerda era ignorada nas duas pontas:
+`mesesDoAno` devolvia o ano inteiro em branco, e `recomporFaixas` **perdia o
+pedaço anterior** ao ano editado. Valia para o calendário (as 393 linhas) e
+também para o OEE de nascença (119 linhas) e `recurso_parametro` (391): salvar
+2027 num recurso recém-criado deixava 2026 para trás descoberto. Corrigido com
+`desdeSempre()`/`antesDe()` e testes.
+
+**As leituras que mostravam "o calendário" passaram a mostrar o do mês.** Na
+extração por recurso e mês, o join virou `rc.vigencia @> m.mes` — a linha é de um
+mês só, e mostrar o de dezembro em todas seria mentir justamente onde dá para
+acertar. Na tabela por recurso, que resume o período, a coluna virou a lista dos
+regimes que ele teve (`PADRAO › RODIZIO`). E a escolha de calendário do painel
+(`calendariosDaArea`) passou a olhar o **ano inteiro** em vez de 31/12: senão o
+rodízio de julho a dezembro sumia da lista de opções de quem abre o painel.
 
 ### Pessoa não tem quantidade; tem gente por turno (migração 36)
 

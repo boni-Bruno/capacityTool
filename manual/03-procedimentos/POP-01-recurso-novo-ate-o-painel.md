@@ -21,7 +21,9 @@ Chegou uma máquina, abriu um posto, ou a tela de Demanda mostra um CT em
    não existe o ano inteiro. Salvar.
 2. **Turnos do recurso**: selecione a área, o **Tipo** certo, o recurso e o
    ano. Marque os turnos (ou digite quantas máquinas/pessoas por turno) mês a
-   mês — a caixa *→ ano todo* ajuda. Escolha o **regime**. Salvar.
+   mês — a caixa *→ ano todo* ajuda. Confira o **regime de dias** na primeira
+   coluna: o recurso nasce em *Padrão*, e quem é rodízio troca ali (o seletor
+   do cabeçalho aplica aos doze meses). Salvar.
 3. **OEE**: o recurso já nasce com 100% nas duas origens. Ajuste se souber o
    OEE real; a caixa *→ ano todo* repete.
 4. **Paradas**: só se já houver parada planejada conhecida.
@@ -41,7 +43,10 @@ Chegou uma máquina, abriu um posto, ou a tela de Demanda mostra um CT em
 
 - **Não recalculou** → o recurso não aparece em lugar nenhum. Passo 5.
 - **Planejada zero** com turno marcado → o turno não tem horário naquele dia
-  da semana (Turnos) **ou** o regime não trabalha naquele dia (Calendários).
+  da semana (Turnos) **ou** o regime daquele mês não trabalha naquele dia
+  (Calendários).
+- **O recurso some de alguns meses** (nem aparece na tabela) → aqueles meses
+  estão **sem regime de dias**. A tela de Turnos do recurso marca em amarelo.
 - **Pessoa não aparece em Turnos do recurso** → o seletor Tipo está em
   máquina; troque para pessoa.
 - **Demanda continua sem capacidade** → CC ou CT digitado diferente da base

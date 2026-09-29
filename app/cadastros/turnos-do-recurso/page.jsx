@@ -2,13 +2,12 @@ import { Fragment, Suspense } from 'react';
 import { areas, anosComRodada } from '../../../lib/db';
 import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import {
-  recursos, matrizTurnosDoAno, calendariosDoRecurso, turnosSobrepostos,
-  turnosOferecidos,
+  recursos, matrizTurnosDoAno, calendariosDaPlanta, calendarioDoAno,
+  turnosSobrepostos, turnosOferecidos,
 } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import Matriz from './matriz';
-import Calendario from './calendario';
 import Ciente from '../ciente';
 import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
 import { SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
@@ -161,12 +160,17 @@ export default async function Page({ searchParams }) {
   // planta", que é falso e manda procurar o defeito no cadastro de turnos. Em
   // lote as colunas são os turnos ATIVOS, que é a lista certa: o molde precisa
   // oferecer todos os turnos possíveis, e não os que uma máquina já usa.
-  const [celulas, regimes, sobrepostos, ativos] = emLote
-    ? [[], await calendariosDoRecurso(recurso.id), [],
+  // EM LOTE O REGIME TAMBÉM NASCE EM BRANCO, pela mesma razão da matriz: ler o
+  // do primeiro recurso proporia, sem avisar, o regime de uma máquina para as
+  // outras — e aqui isso é pior, porque regime errado não zera nada, só muda o
+  // número em silêncio.
+  const [celulas, regimes, calAtual, sobrepostos, ativos] = emLote
+    ? [[], await calendariosDaPlanta(recurso.id), {}, [],
        await turnosOferecidos(listaRecursos.map((r) => r.id))]
     : [...await Promise.all([
       matrizTurnosDoAno(recurso.id, ano),
-      calendariosDoRecurso(recurso.id),
+      calendariosDaPlanta(recurso.id),
+      calendarioDoAno(recurso.id, ano),
       turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso),
     ]), []];
 
@@ -264,8 +268,10 @@ export default async function Page({ searchParams }) {
           )}
         </p>
         <p style={{ margin: '6px 0 0' }}>
-          O <strong>regime de dias</strong> também é aplicado em lote, e ali
-          basta clicar: não há segunda confirmação.
+          O <strong>regime de dias</strong> é a primeira coluna da matriz e vai
+          junto no mesmo Aplicar. Ele começa em branco, e mês em branco{' '}
+          <strong>não mexe</strong> no que cada recurso já tem — dá para trocar
+          só julho a dezembro para rodízio sem tocar no primeiro semestre.
         </p>
         <p style={{ margin: '6px 0 0' }}>
           Estreite antes por CC, CT ou patrimônio: o alcance é o filtro de cima,
@@ -289,42 +295,27 @@ export default async function Page({ searchParams }) {
       <Porta key={`${emLote ? 'lote' : 'um'}:${listaRecursos.length}:${ano}`}
              {...porta}>
 
-      {/* Fora do lote, o regime é do recurso escolhido. */}
-      {!emLote && (
-        <div className="painel">
-          <h2>
-            {recurso.codigo}
-            <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
-              {recurso.nome}
-            </span>
-            <span className="selo padrao" style={{ marginLeft: 8 }}>
-              {recurso.tipo_recurso.toLowerCase()}
-            </span>
-          </h2>
-          <Calendario key={recurso.id} recursoId={recurso.id} opcoes={regimes} />
-        </div>
-      )}
-
-      {/* Em lote o regime vale para todos os filtrados, e clicar já aplica. */}
-      {emLote && (
-        <div className="painel">
-          <h2>Regime de dias · nos {listaRecursos.length} recursos</h2>
-          <Calendario
-            key={`lote:${listaRecursos.length}`}
-            recursoId={null}
-            opcoes={regimes}
-            alvos={listaRecursos.map((r) => ({ id: r.id, nome: r.nome }))}
-          />
-        </div>
-      )}
-
+      {/* O REGIME DE DIAS NÃO TEM MAIS BLOCO PRÓPRIO: ele passou a ser por mês,
+          e mês é linha da matriz, então virou a primeira coluna dela. Dois
+          lugares mostrando o mesmo ano em recortes diferentes era pedir para
+          alguém ler um e cadastrar no outro. Sobrou a identidade do recurso,
+          que agora é o subtítulo da própria matriz. */}
       <div className="painel">
         <h2>
-          Turnos em {ano}
-          {emLote && (
+          Turnos e regime de dias em {ano}
+          {emLote ? (
             <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
               · {listaRecursos.length} recursos do filtro
             </span>
+          ) : (
+            <>
+              <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
+                · {recurso.codigo} {recurso.nome}
+              </span>
+              <span className="selo padrao" style={{ marginLeft: 8 }}>
+                {recurso.tipo_recurso.toLowerCase()}
+              </span>
+            </>
           )}
         </h2>
 
@@ -377,6 +368,8 @@ export default async function Page({ searchParams }) {
           turnos={turnos}
           inicial={inicial}
           parciais={parciais}
+          calendarios={regimes}
+          calInicial={calAtual}
           alvos={emLote
             ? listaRecursos.map((r) => (
               { id: r.id, codigo: r.codigo, nome: r.nome }))
@@ -413,8 +406,8 @@ export default async function Page({ searchParams }) {
           produzir num dia, dois portões precisam estar abertos:{' '}
           <strong>o turno tem horário naquele dia da semana</strong> (na tela de
           Turnos — sem horário, o dia nem gera linha) e{' '}
-          <strong>o regime acima trabalha naquele dia</strong> (sem isso, a
-          linha sai com planejada zero). Descendo até o dia no painel dá para
+          <strong>o regime daquele mês trabalha naquele dia</strong> (sem isso,
+          a linha sai com planejada zero). Descendo até o dia no painel dá para
           ver qual dos dois fechou.
         </p>
       </div>
