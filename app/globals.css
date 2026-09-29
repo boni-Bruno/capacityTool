@@ -254,6 +254,10 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 .btn:hover:not(:disabled) { background: var(--btn-hover); }
 .btn:disabled { opacity: .55; cursor: default; }
+/* Mesmo apagado do :disabled, para o <label> que embrulha um input de arquivo:
+   label não aceita disabled, e sem isto o botão de escolher arquivo continuava
+   aceso com o campo já bloqueado. */
+.btn-desligado { opacity: .55; }
 
 .btn-primario {
   background: var(--accent); border-color: var(--accent); color: #fff;

@@ -151,6 +151,22 @@ afetado: o cadastro vale só para o ano escolhido.
 
 ---
 
+## Não consigo importar: "já há 4 cenários, que é o máximo"
+
+**Causa.** A ferramenta guarda no máximo **4 cargas de demanda**. Cada uma
+ocupa uns 30 MB permanentes do banco e nenhuma sai sozinha — importar nunca
+apagou nada.
+
+**O que fazer.** Demanda › lista de Cargas: apague a que não serve mais (a que
+está **no ar** não se apaga — ponha outra no ar antes, se for ela que deve
+sair). Aí o botão de importar volta.
+
+O que você perde ao apagar: a possibilidade de comparar com aquele ciclo no
+Painel da Ocupação, na Extração das configurações e no Simulador. O `.parquet`
+original é que seria a volta — guarde-o.
+
+---
+
 ## Importei a demanda e a ocupação não mudou
 
 **Causa.** Importar cria uma carga nova, mas **não a põe no ar**. O Painel da

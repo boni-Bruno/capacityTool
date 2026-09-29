@@ -2,7 +2,7 @@ import { sql } from '../../../lib/db';
 import {
   atributos, cargas, cargaCorrente, combinacoesDaCarga, ctsCadastro,
   ctsComDemanda, ctsDoadores, ctsOrfaos, capacidadeSemDemanda,
-  demandaSemCapacidade, indicePorCt, resumoCarga, todasAsRegras,
+  demandaSemCapacidade, indicePorCt, resumoCarga, todasAsRegras, MAX_CARGAS,
 } from '../../../lib/demanda';
 import AvisoBanco from '../aviso-banco';
 import EnviarDemanda from './enviar';
@@ -69,9 +69,13 @@ export default async function Page() {
         <h1 className="titulo">Demanda</h1>
       </div>
 
-      <EnviarDemanda recursosCadastrados={cts} />
+      {/* O limite vem do servidor como número, e não escrito na tela: ele é
+          decidido em lib/demanda.js e conferido lá também. Dois lugares com o
+          mesmo 4 escrito à mão divergiriam no dia em que ele mudasse. */}
+      <EnviarDemanda recursosCadastrados={cts}
+                     cargas={lista.length} maximo={MAX_CARGAS} />
 
-      <Cargas itens={lista} />
+      <Cargas itens={lista} maximo={MAX_CARGAS} />
 
       {!corrente && lista.length > 0 && (
         <div className="aviso">

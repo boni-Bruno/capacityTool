@@ -17,7 +17,7 @@ import { dataDeMicros, montarCarga } from '../../../lib/demanda-formato';
 const LOTE = 2000;
 const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 
-export default function EnviarDemanda({ recursosCadastrados }) {
+export default function EnviarDemanda({ recursosCadastrados, cargas = 0, maximo = 0 }) {
   const router = useRouter();
   const [lido, setLido] = useState(null);      // { nome, resumo, linhas, meta }
   const [lendo, setLendo] = useState(false);
@@ -111,20 +111,49 @@ export default function EnviarDemanda({ recursosCadastrados }) {
   const horasSemRecurso = semRecurso.reduce((s, ct) => s + r.cts.get(ct), 0) / 60;
   const horas = r ? r.minutos / 60 : 0;
 
+  // A PORTA ESTÁ FECHADA quando já há o máximo de cenários. Ler o arquivo aqui
+  // é grátis (nada sobe), mas deixar ler para recusar na hora de gravar seria
+  // pedir para conferir uma base que não vai entrar.
+  const lotado = maximo > 0 && cargas >= maximo;
+
   return (
     <div className="painel">
       <h2>Importar base de demanda</h2>
 
+      {lotado && (
+        <div className="aviso" style={{ marginBottom: 14 }}>
+          <strong>
+            Já há {cargas} cenários, que é o máximo. Apague um abaixo para
+            importar outro.
+          </strong>
+          <p style={{ margin: '6px 0 0' }}>
+            Cada cenário ocupa espaço permanente no banco — uns 30 MB — e nenhum
+            sai sozinho: importar nunca apagou nada. O limite existe para a
+            escolha de qual não serve mais ser feita agora, e não meses depois,
+            quando faltar espaço para o ano de orçamento e ninguém relacionar
+            uma coisa com a outra.
+          </p>
+          <p style={{ margin: '6px 0 0' }}>
+            A que está <strong>no ar</strong> não se apaga — ponha outra no ar
+            antes, se for ela que deve sair.
+          </p>
+        </div>
+      )}
+
       <div className="acoes">
-        <label className="btn btn-primario" style={{ cursor: 'pointer' }}>
+        <label className={'btn btn-primario' + (lotado ? ' btn-desligado' : '')}
+               style={{ cursor: lotado ? 'not-allowed' : 'pointer' }}>
           {lendo ? 'Lendo…' : 'Escolher arquivo .parquet'}
           <input type="file" accept=".parquet" onChange={escolher}
-                 disabled={lendo || enviando} style={{ display: 'none' }} />
+                 disabled={lendo || enviando || lotado} style={{ display: 'none' }} />
         </label>
         {lido && !enviando && (
           <button className="btn btn-mini" onClick={() => setLido(null)}>
             Descartar
           </button>
+        )}
+        {!lotado && maximo > 0 && (
+          <span className="muted">{cargas} de {maximo} cenários</span>
         )}
       </div>
 

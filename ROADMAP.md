@@ -697,6 +697,63 @@ que aparece sozinha é ignorada por reflexo na terceira vez.
 A regra mora em `lib/regime-sugerido.js`, puro e testado: é ela que decide o que
 a tela propõe, e propor a troca errada muda número sem ninguém perceber.
 
+### O tamanho do banco, e o limite de 4 cenários (29/09/2026)
+
+Medição feita antes de abrir frente nova, para saber se o teto estava perto. O
+banco é Neon Free: **512 MB por branch**, uma branch só, e passar disso deixa a
+base **sem aceitar escrita**.
+
+**Estava em 369 MB — 72%.** Duas tabelas eram 94%: `capacidade_fato` (232 MB,
+676 mil linhas) e `demanda_linha` (115 MB, 544 mil). Todo o cadastro somava
+10 MB.
+
+**O que um recurso custa.** O cadastro dele — recurso, máquina, parâmetro,
+turnos, OEE, calendário — são **4,5 kB**, irrelevantes. O que pesa é a rodada:
+**630 a 730 linhas por recurso, por ano, por origem** (a linha é recurso × dia ×
+turno marcado: 2 turnos em padrão dão 626; 3 turnos em rodízio dão 1.095), a
+~200 bytes por linha com índices. Ou seja **~0,45 MB por recurso por ano**,
+contando as duas origens. Não é o recurso que aperta o banco — é o **ano**: um
+ano novo para os 351 recursos de hoje são ~88 MB permanentes.
+
+**A limpeza, e o que ela ensinou.** Apagar duas cargas de demanda antigas tirou
+290 mil linhas e **não moveu o tamanho do banco**: o Postgres marca o espaço
+como reutilizável, não devolve o arquivo. Foi preciso:
+
+| | |
+|---|---|
+| `vacuum full demanda_linha` | 115 → **54 MB** (a tabela que o motor não lê) |
+| `reindex index concurrently capacidade_fato_pkey` | 84 → **26 MB**, sem downtime |
+| **banco** | 369 → **249 MB (49%)** |
+
+A PK estava em 130 bytes por linha para 40 de conteúdo — **3,3× inchada**. O
+heap está em 1,5×, e isso **oscila**: cada *Recalcular tudo* apaga a rodada e
+insere outra, e o buraco é reaproveitado pelo recálculo seguinte. Por isso o
+`vacuum full` de `capacidade_fato` **não foi feito** — compraria 45 MB que o
+próximo recálculo toma de volta, com a tabela travada. Já o índice **sobe** em
+vez de oscilar (página de índice meio vazia não se reaproveita como página de
+tabela), e o `reindex concurrently` não derruba nada: esse é o que vira
+manutenção periódica.
+
+**Daí o limite de 4 cenários de demanda** (`MAX_CARGAS`, conferido em
+`criarCarga` antes de a primeira linha subir, e a tela desliga o botão e diz o
+porquê). Cada carga são ~140 mil linhas e ~30 MB, e nenhuma sai sozinha —
+importar nunca apagou nada, e foi assim que quatro ciclos viraram um terço do
+banco sem ninguém decidir isso. É parede e não aviso porque o custo só aparece
+meses depois, quando falta espaço para o ano de orçamento e ninguém relaciona
+uma coisa com a outra.
+
+**A projeção, com 4 cenários e 2028 cadastrado para os recursos de hoje:**
+
+| | banco | do limite |
+|---|---|---|
+| hoje (2 cargas, 2026 e 2027) | 249 MB | 49% |
+| com 4 cenários | 315 MB | 62% |
+| **+ 2028 (351 recursos, 443 mil linhas)** | **403 MB** | **75%** |
+| + 2029, se 2026 continuar lá | 491 MB | 91% |
+
+2028 cabe. **2029 não cabe** sem apagar as rodadas de um ano fechado — e é por
+isso que particionar `capacidade_fato` por ano entrou em *O QUE FALTA*.
+
 ### Pessoa não tem quantidade; tem gente por turno (migração 36)
 
 A `Qtd` do cadastro de recurso é o teto físico da máquina — quantas existem,
@@ -2254,13 +2311,15 @@ por quê — útil para não redecidir, mas já construído.
 
 ### Limpeza de schema
 
-- **O que ainda pesa depois da 35** (números de 22/09/2026: `capacidade_fato`
-  com 668 mil linhas e 208 MB; `demanda_linha` com 544 mil e 115 MB; o banco
-  inteiro em 344 MB do limite de 512): a chave primária de `capacidade_fato`
-  `(execucao_id, recurso_id, data, turno_id)`. É o grão do cálculo e não tem o que
-  colapsar; o que dá para olhar quando apertar de novo é `ix_cf_recurso_data`
-  (15 MB) e as colunas mortas `unidade_medida_id`, `qtd_planejada` e
-  `qtd_disponivel`, que nunca receberam valor.
+- **O que ainda pesa** — ver a seção *O tamanho do banco* abaixo, com a medição
+  de 29/09/2026. As colunas mortas `unidade_medida_id`, `qtd_planejada` e
+  `qtd_disponivel` de `capacidade_fato` nunca receberam valor e continuam lá.
+- **Apagar as rodadas de um ano fechado.** Hoje não há como: a rodada de 2026
+  fica para sempre, e cada ano de orçamento custa ~88 MB permanentes. É o que
+  vai faltar para 2029. O caminho bom não é um botão de apagar e sim
+  **particionar `capacidade_fato` por ano**: trocar a rodada vira `drop` de
+  partição, que devolve o arquivo na hora e **não deixa buraco nenhum** — mata
+  ao mesmo tempo o problema do espaço e o do inchaço por recálculo.
 - **O memorial saiu** (migração 33) — ver abaixo. Se um dia voltar, a
   `descricao` de cada etapa não precisa ser gravada: dá para remontá-la na
   leitura a partir de `etapa` e `origem_tabela`, e isso sozinho cortava quase

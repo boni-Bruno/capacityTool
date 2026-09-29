@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 const fmt = (n) => Number(n ?? 0).toLocaleString('pt-BR');
 const quando = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '—');
 
-export default function Cargas({ itens }) {
+export default function Cargas({ itens, maximo = 0 }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState(null);
@@ -82,7 +82,14 @@ export default function Cargas({ itens }) {
 
   return (
     <div className="painel">
-      <h2>Cargas</h2>
+      <h2>
+        Cargas
+        {maximo > 0 && (
+          <span className="muted" style={{ marginLeft: 8, fontWeight: 400 }}>
+            · {itens.length} de {maximo}
+          </span>
+        )}
+      </h2>
 
       <div className="grade-rolagem">
         <table>
@@ -165,6 +172,14 @@ export default function Cargas({ itens }) {
         um arquivo.
         {' '}Carga antiga fica guardada e explica por que o número de um mês
         fechado era outro. A que está no ar não pode ser apagada.
+        {maximo > 0 && (
+          <>
+            {' '}Cabem <strong>{maximo} cenários ao mesmo tempo</strong>: cada um
+            ocupa uns 30 MB permanentes do banco, e nenhum sai sozinho. Para
+            importar o {maximo + 1}º, escolha antes qual dos {maximo} não serve
+            mais.
+          </>
+        )}
         {' '}A <strong>observação</strong> é o que distingue duas cargas com o
         mesmo nome daqui a um mês — &ldquo;sem o pedido da Renner&rdquo;,
         &ldquo;reprocesso do ciclo anterior&rdquo;. Ela grava ao sair do campo.

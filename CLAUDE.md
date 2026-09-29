@@ -247,6 +247,11 @@ NN_*.sql           migrações, na ordem em que devem rodar
   ou parcial por recurso/ano/origem — e o laço roda no navegador: uma
   requisição por rodada, porque função serverless tem minuto contado.
 - Não guarda histórico de rodada.
+- **Não guarda mais de 4 cenários de demanda** (`MAX_CARGAS`). O limite é de
+  espaço: cada carga são ~140 mil linhas e ~30 MB num banco de 512 MB, e nenhuma
+  sai sozinha — importar nunca apagou nada. Barrar a quinta obriga a escolher
+  qual não serve mais, que é a decisão que estava sendo adiada até faltar espaço
+  para o ano de orçamento.
 - **Não guarda o memorial do cálculo** (migração 33). O motor grava só a
   `capacidade_fato` — o resultado. A explicação passo a passo custava 44% do
   limite do banco para responder por um recurso num dia, e saiu quando a

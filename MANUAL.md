@@ -639,6 +639,21 @@ carga nova; a anterior fica guardada. A carga tem **observação** — grave o q
 a distingue ("sem o pedido X", "reprocesso do ciclo anterior") porque daqui a
 um mês duas cargas com o mesmo nome não se distinguem de outro jeito.
 
+### Quantos cenários cabem: 4
+
+A ferramenta guarda **no máximo 4 cargas ao mesmo tempo**. Com 4 importadas, o
+botão de escolher arquivo fica desligado até você apagar uma.
+
+Não é preciosismo: cada cenário são ~140 mil linhas e uns **30 MB permanentes**
+do banco, e **nenhum sai sozinho** — importar nunca apagou nada. Foi assim que
+quatro ciclos de S&OP viraram um terço do banco sem ninguém decidir isso. O
+limite força a escolha de qual não serve mais a ser feita **agora**, e não meses
+depois, quando faltar espaço para o ano de orçamento e ninguém relacionar uma
+coisa com a outra.
+
+Quatro cobre o uso real: os dois últimos ciclos, o orçamento em construção e um
+de comparação.
+
 ### No ar
 
 **A carga no ar é a que o Painel da Ocupação usa.** Importar **não** troca
@@ -1510,6 +1525,22 @@ uma vez.
 **O que fazer.** Cadastre mês a mês nas linhas, ou aplique no cabeçalho e
 depois corrija os meses que continuam no regime antigo. O ano seguinte nunca é
 afetado: o cadastro vale só para o ano escolhido.
+
+---
+
+### Não consigo importar: "já há 4 cenários, que é o máximo"
+
+**Causa.** A ferramenta guarda no máximo **4 cargas de demanda**. Cada uma
+ocupa uns 30 MB permanentes do banco e nenhuma sai sozinha — importar nunca
+apagou nada.
+
+**O que fazer.** Demanda › lista de Cargas: apague a que não serve mais (a que
+está **no ar** não se apaga — ponha outra no ar antes, se for ela que deve
+sair). Aí o botão de importar volta.
+
+O que você perde ao apagar: a possibilidade de comparar com aquele ciclo no
+Painel da Ocupação, na Extração das configurações e no Simulador. O `.parquet`
+original é que seria a volta — guarde-o.
 
 ---
 
