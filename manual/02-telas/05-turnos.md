@@ -8,6 +8,22 @@ Criar e excluir turnos e definir **início e fim por dia da semana**, com o
 intervalo de refeição. Turno novo nasce com a **semana zerada**: sem horário,
 não roda em dia nenhum.
 
+## Regime sugerido (opcional)
+
+Cada turno pode **apontar um calendário** — por exemplo, o turno de rodízio
+apontando o regime *Rodízio*. É só uma opinião: quem vale no cálculo é o regime
+do **recurso**, mês a mês, na tela de Turnos do recurso.
+
+O que ele faz: quando alguém marcar esse turno num mês que está em outro
+regime, aquela tela mostra os meses e um botão para trocar em um clique. É a
+segunda metade de "essa máquina passa a rodar em rodízio em julho" — a que
+costuma ficar para trás.
+
+- Só calendários **da planta do turno** aparecem no seletor.
+- **Em branco é o normal**: turno sem sugestão não propõe nada.
+- Dois turnos marcados no mesmo mês apontando calendários diferentes viram um
+  aviso de conflito, e a escolha continua sendo sua.
+
 ## Como ler
 
 - Turno de 24 h (rodízio) cobre o dia inteiro; não marque junto com 1º, 2º e

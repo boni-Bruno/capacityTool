@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import {
   turnosParaCadastro, plantas, horariosDoTurno, intervalosDoTurno,
+  calendariosPorPlanta,
 } from '../../../lib/cadastro';
 import { DIAS_CURTO } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
@@ -15,11 +16,16 @@ export default async function Page({ searchParams }) {
   const negado = await exigeVer('turnos');
   if (negado) return negado;
 
-  let lista, listaPlantas;
+  let lista, listaPlantas, calendarios;
   try {
-    [lista, listaPlantas] = await Promise.all([turnosParaCadastro(), plantas()]);
+    [lista, listaPlantas, calendarios] = await Promise.all([
+      turnosParaCadastro(), plantas(), calendariosPorPlanta(),
+    ]);
     lista = await soDoEscopo(lista, 'planta_id', 'planta');
     listaPlantas = await soDoEscopo(listaPlantas, 'id', 'planta');
+    // O seletor de regime sugerido mostra nome de calendário: o escopo vale
+    // para ele também, e não só para a lista de turnos.
+    calendarios = await soDoEscopo(calendarios, 'planta_id', 'planta');
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }
@@ -52,7 +58,8 @@ export default async function Page({ searchParams }) {
       <div className="painel">
         <h2>Turnos cadastrados</h2>
         <Suspense>
-          <Turnos lista={lista} plantas={listaPlantas} selecionado={turno?.id ?? null} />
+          <Turnos lista={lista} plantas={listaPlantas} calendarios={calendarios}
+                  selecionado={turno?.id ?? null} />
         </Suspense>
 
         <p className="rodape">

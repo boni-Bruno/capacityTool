@@ -190,14 +190,20 @@ export default async function Page({ searchParams }) {
   // divergiam, a coluna que a pessoa clicava não era a que ela lia. Faltando o
   // "2º Turno" no lote, clicar no segundo campo gravava o 3º.
   const turnos = emLote
-    ? ativos.map((t) => ({ turno_id: Number(t.id), codigo: t.codigo, nome: t.nome }))
+    ? ativos.map((t) => ({
+      turno_id: Number(t.id), codigo: t.codigo, nome: t.nome,
+      calendario_sugerido_id: t.calendario_sugerido_id,
+    }))
     : [];
   const inicial = {};
   const parciais = {};
   for (const c of celulas) {
     const turnoId = Number(c.turno_id);
     if (!turnos.some((t) => t.turno_id === turnoId)) {
-      turnos.push({ turno_id: turnoId, codigo: c.codigo, nome: c.nome });
+      turnos.push({
+        turno_id: turnoId, codigo: c.codigo, nome: c.nome,
+        calendario_sugerido_id: c.calendario_sugerido_id,
+      });
     }
     const dias = Number(c.dias_cobertos);
     const total = Number(c.dias_mes);

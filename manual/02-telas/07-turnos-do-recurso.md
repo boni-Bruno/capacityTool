@@ -61,6 +61,16 @@ No **lote** a coluna começa em branco, e mês em branco **não mexe** no que ca
 recurso já tem: dá para trocar só julho a dezembro dos 40 recursos sem tocar no
 primeiro semestre de nenhum.
 
+### Quando o turno sugere um regime
+
+Se o turno marcado tem um **regime sugerido** (cadastrado na tela de Turnos) e
+o mês está em outro regime, aparece um aviso com os meses e o botão **Aplicar o
+regime sugerido em N mês(es)**. É uma proposta: nada muda até você clicar, e
+ignorá-la também é resposta — quem vale no cálculo é a coluna, não o turno.
+
+Se dois turnos marcados no mesmo mês sugerem regimes diferentes, a ferramenta
+não escolhe: diz quais são e deixa a decisão na coluna.
+
 ## Como conferir
 
 Marcar o turno é necessário, mas não basta. Para o recurso produzir num dia:

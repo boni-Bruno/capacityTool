@@ -666,6 +666,37 @@ regimes que ele teve (`PADRAO › RODIZIO`). E a escolha de calendário do paine
 (`calendariosDaArea`) passou a olhar o **ano inteiro** em vez de 31/12: senão o
 rodízio de julho a dezembro sumia da lista de opções de quem abre o painel.
 
+### O turno sugere o regime (migração 40)
+
+Resolvido o QUE se cadastra, sobrou o COMO. Quem monta 2027 marca o turno de
+rodízio em julho e, na coluna ao lado, precisa lembrar de trocar o regime
+daquele mês também — duas ações para o que na cabeça de quem cadastra é uma
+decisão só ("essa máquina passa a rodar em rodízio em julho"), e a segunda é a
+que fica para trás.
+
+O turno passa a poder **apontar um calendário** (`turno.calendario_sugerido_id`,
+editável na tela de Turnos). Marcado esse turno num mês cujo regime é outro, a
+matriz mostra os meses e um botão: **Aplicar o regime sugerido em N mês(es)**.
+
+**Sugestão, e não amarração** — é a linha inteira da decisão. Derivar o regime
+do turno seria mais curto e erraria o caso real: o mesmo turno pode existir numa
+planta que trabalha aos domingos e noutra que não, e há recurso com **dois
+turnos marcados no mesmo mês apontando para calendários diferentes**. Quando os
+dois discordam vira **conflito**, que a tela mostra e não resolve — escolher um
+seria decidir no lugar de quem cadastra, com um critério ("o primeiro da lista")
+que não tem nada a ver com a fábrica.
+
+**A tela propõe, nunca troca sozinha.** Regime mudando calado é número mudando
+calado, e é exatamente o que este ciclo inteiro existe para impedir. Ignorar a
+proposta também é resposta: ela some quando aceita e não bloqueia nada.
+
+`null` é o normal, e é assim que todos os turnos nascem — semear a coluna com um
+palpite faria a ferramenta propor troca de regime a quem nunca pediu, e proposta
+que aparece sozinha é ignorada por reflexo na terceira vez.
+
+A regra mora em `lib/regime-sugerido.js`, puro e testado: é ela que decide o que
+a tela propõe, e propor a troca errada muda número sem ninguém perceber.
+
 ### Pessoa não tem quantidade; tem gente por turno (migração 36)
 
 A `Qtd` do cadastro de recurso é o teto físico da máquina — quantas existem,

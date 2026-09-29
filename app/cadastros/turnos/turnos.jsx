@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 // Código e descrição são campos separados de propósito — antes a tela mostrava
 // "1 — 1º Turno" grudado e não dava para saber onde acabava um e começava o
 // outro.
-export default function Turnos({ lista, plantas, selecionado }) {
+export default function Turnos({ lista, plantas, calendarios = [], selecionado }) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -25,7 +25,14 @@ export default function Turnos({ lista, plantas, selecionado }) {
     )[0]?.id ?? '',
   });
   const [editando, setEditando] = useState(null);
-  const [rascunho, setRascunho] = useState({ codigo: '', nome: '' });
+  const [rascunho, setRascunho] = useState(
+    { codigo: '', nome: '', calendario_sugerido_id: '' });
+
+  // Os calendários da planta DAQUELE turno: turno e calendário são os dois da
+  // planta, e oferecer o de outra seria oferecer uma sugestão que a tela do
+  // recurso nunca poderia cumprir.
+  const daPlanta = (plantaId) =>
+    calendarios.filter((c) => Number(c.planta_id) === Number(plantaId));
   const [confirmando, setConfirmando] = useState(null);
   // Quando o turno tem cadastro pendurado, a exclusão para e pergunta para onde
   // mandar. `destino` guarda a resposta enquanto a pergunta está na tela.
@@ -85,7 +92,7 @@ export default function Turnos({ lista, plantas, selecionado }) {
       abrirNovo(j.id);   // já abre o turno novo para cadastrar os dias
     });
 
-  const salvarNome = (id) =>
+  const salvarEdicao = (id) =>
     chamar('PATCH', { id, ...rascunho }, () => setEditando(null));
 
   const reativar = (id) => chamar('PUT', { id });
@@ -139,6 +146,9 @@ export default function Turnos({ lista, plantas, selecionado }) {
                 diferentes são a mesma linha para quem olha — e o código é único
                 POR PLANTA justamente para que possam coexistir. */}
             <th style={{ width: 140 }}>Planta</th>
+            <th style={{ width: 180 }} title="O regime que este turno propõe ao recurso quando é marcado num mês">
+              Regime sugerido
+            </th>
             <th />
           </tr>
         </thead>
@@ -169,9 +179,25 @@ export default function Turnos({ lista, plantas, selecionado }) {
                       />
                     </td>
                     <td className="muted">{t.planta}</td>
+                    <td>
+                      {daPlanta(t.planta_id).length ? (
+                        <select
+                          value={rascunho.calendario_sugerido_id}
+                          onChange={(e) => setRascunho(
+                            { ...rascunho, calendario_sugerido_id: e.target.value })}
+                        >
+                          <option value="">— nenhum —</option>
+                          {daPlanta(t.planta_id).map((c) => (
+                            <option key={c.id} value={String(c.id)}>{c.nome}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="muted">sem calendário na planta</span>
+                      )}
+                    </td>
                     <td className="acoes">
                       <button className="btn btn-primario btn-mini" disabled={ocupado}
-                              onClick={() => salvarNome(t.id)}>
+                              onClick={() => salvarEdicao(t.id)}>
                         {ocupado ? '…' : 'Salvar'}
                       </button>
                       <button className="btn btn-mini" disabled={ocupado}
@@ -195,6 +221,11 @@ export default function Turnos({ lista, plantas, selecionado }) {
                       )}
                     </td>
                     <td className="muted">{t.planta}</td>
+                    <td>
+                      {t.calendario_sugerido
+                        ? <span className="selo padrao">{t.calendario_sugerido}</span>
+                        : <span className="muted">—</span>}
+                    </td>
                     <td className="acoes">
                       {confirmando === t.id ? (
                         <>
@@ -229,11 +260,17 @@ export default function Turnos({ lista, plantas, selecionado }) {
                             className="btn btn-mini"
                             onClick={() => {
                               setEditando(t.id);
-                              setRascunho({ codigo: t.codigo, nome: t.nome });
+                              setRascunho({
+                                codigo: t.codigo,
+                                nome: t.nome,
+                                calendario_sugerido_id:
+                                  t.calendario_sugerido_id == null
+                                    ? '' : String(t.calendario_sugerido_id),
+                              });
                               setErro(null);
                             }}
                           >
-                            Renomear
+                            Editar
                           </button>
                           <button className="btn btn-mini"
                                   onClick={() => { setConfirmando(t.id); setErro(null); }}>
@@ -325,6 +362,16 @@ export default function Turnos({ lista, plantas, selecionado }) {
           </div>
         </div>
       )}
+
+      <p className="rodape">
+        O <strong>regime sugerido</strong> é opinião, não amarração: quem vale
+        no cálculo é o regime do <strong>recurso</strong>, mês a mês, em Turnos
+        do recurso. Apontar o calendário aqui faz aquela tela{' '}
+        <strong>oferecer a troca</strong> quando alguém marcar este turno num mês
+        que está em outro regime — é a segunda metade de uma decisão só ("essa
+        máquina passa a rodar em rodízio em julho"), e era a que ficava para
+        trás. Em branco é o normal: turno sem sugestão não propõe nada.
+      </p>
 
       {erro && <p className="erro">{erro}</p>}
       {aviso && <div className="aviso" style={{ marginTop: 12 }}>{aviso}</div>}

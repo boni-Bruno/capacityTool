@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { MESES, descreveDias } from '../../../lib/dias';
+import { sugestoesDoAno } from '../../../lib/regime-sugerido';
 import Alvos from '../alvos';
 
 // Matriz de turnos: uma linha por mês, uma coluna por turno.
@@ -100,6 +101,28 @@ export default function Matriz({
     .map((_, i) => i + 1).filter((mes) => !cal[mes]);
 
   const ligada = (k) => (celulas[k] ?? '') !== '';
+
+  // O QUE OS TURNOS MARCADOS SUGEREM como regime. O turno de rodízio aponta o
+  // calendário RODIZIO (cadastro de Turnos), e marcar esse turno em julho sem
+  // trocar o regime de julho é a metade da decisão que fica para trás. A tela
+  // PROPÕE, com os meses listados e um clique — não troca sozinha: regime
+  // mudando calado é número mudando calado.
+  const sugerido = useMemo(() => {
+    const ligados = {};
+    for (let mes = 1; mes <= 12; mes += 1) {
+      ligados[mes] = turnos
+        .filter((t) => (celulas[chave(t.turno_id, mes)] ?? '') !== '')
+        .map((t) => t.turno_id);
+    }
+    return sugestoesDoAno(turnos, ligados, cal);
+  }, [turnos, celulas, cal]);
+
+  const mesesSugeridos = Object.keys(sugerido.aplicar).map(Number);
+
+  function aplicaSugestao() {
+    setCal((c) => ({ ...c, ...sugerido.aplicar }));
+    setOk(null);
+  }
 
   function poe(turnoId, mes, valor) {
     setCelulas((c) => ({ ...c, [chave(turnoId, mes)]: valor }));
@@ -500,6 +523,45 @@ export default function Matriz({
             <span key={c.id}>
               {i > 0 && ' · '}
               <strong>{c.nome}</strong>: {descreveDias(c.dias)}
+            </span>
+          ))}
+        </p>
+      )}
+
+      {/* A PROPOSTA DO TURNO. Aparece só quando há divergência entre o que o
+          turno marcado sugere e o regime do mês — e some ao ser aceita, porque
+          aí não há mais o que propor. */}
+      {mesesSugeridos.length > 0 && (
+        <div className="aviso" style={{ marginTop: 12 }}>
+          <strong>
+            {mesesSugeridos.length === 1
+              ? `Em ${MESES[mesesSugeridos[0]]}, o turno marcado sugere outro regime de dias.`
+              : `Em ${mesesSugeridos.length} meses os turnos marcados sugerem outro `
+                + 'regime de dias.'}
+          </strong>
+          <p style={{ margin: '6px 0 0' }}>
+            {mesesSugeridos.map((m) => MESES[m]).join(', ')} —{' '}
+            {[...new Set(mesesSugeridos.map((m) => sugerido.aplicar[m]))]
+              .map((id) => calendarios.find((c) => Number(c.id) === id)?.nome ?? id)
+              .join(' / ')}.
+            {' '}Quem vale no cálculo é o regime da coluna, não o turno; aceitar
+            é um clique, e ignorar também é resposta.
+          </p>
+          <div className="acoes" style={{ marginTop: 10 }}>
+            <button type="button" className="btn btn-mini btn-primario"
+                    onClick={aplicaSugestao}>
+              Aplicar o regime sugerido em {mesesSugeridos.length} mês(es)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {sugerido.conflitos.length > 0 && (
+        <p className="rodape" style={{ marginTop: 10 }}>
+          {sugerido.conflitos.map((c) => (
+            <span key={c.mes}>
+              <strong>{MESES[c.mes]}</strong>: {c.turnos.join(' e ')} sugerem
+              regimes diferentes — escolha na coluna.{' '}
             </span>
           ))}
         </p>

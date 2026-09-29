@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  criarTurno, renomearTurno, excluirTurno, reativarTurno,
+  criarTurno, alterarTurno, excluirTurno, reativarTurno,
 } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeRota } from '../../../../lib/sessao';
@@ -24,8 +24,8 @@ export async function POST(req) {
 export async function PATCH(req) {
   try {
     await exigeRota(req);
-    const { id, codigo, nome } = await req.json();
-    await renomearTurno(id, { codigo, nome });
+    const { id, codigo, nome, calendario_sugerido_id } = await req.json();
+    await alterarTurno(id, { codigo, nome, calendario_sugerido_id });
     revalidarCadastros();
     return NextResponse.json({ ok: true });
   } catch (e) {
