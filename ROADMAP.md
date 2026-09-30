@@ -730,7 +730,24 @@ A fábrica é a mesma nos dois planos. Feriado diferente por cenário se faz com
 calendário a mais na planta — `recurso_calendario` já é por cenário, então não
 há schema novo para isso.
 
-**Todo o cadastro de hoje virou Simulação.** O Orçamento recebe as **máquinas** e
+**O OEE precisou de um remendo (migração 44).** A 41 levou turno, regime e
+parâmetro para a Simulação e **não tocou no `recurso_oee`** — e o OEE cadastrado
+estava em `META`, porque META era o padrão da tela de OEE. O cadastro ficou
+partido: a jornada na Simulação e o OEE que vale para ela no Orçamento, o que o
+Bruno viu no painel na primeira olhada.
+
+Foi resolvido com uma **troca**, e não com uma mudança de lado, porque os dois
+lados tinham cadastro de verdade: nenhum recurso tinha medida só na Simulação,
+118 tinham medida só no Orçamento, e **261 tinham medida nos dois e diferente**.
+Mover um por cima do outro apagaria 261 números que alguém digitou. Trocar não
+apaga nada: o que ele chamava de "meta" virou a Simulação, e o que ele chamava
+de "simulado" virou o ponto de partida do Orçamento.
+
+A troca vai em **três passos com um valor temporário**: o `exclude` de
+`recurso_oee` inclui a origem e é conferido linha a linha, então um `update`
+direto colidiria com a linha do outro cenário que ainda ocupa o mesmo período.
+
+**O resto do cadastro de hoje virou Simulação.** O Orçamento recebe as **máquinas** e
 o **regime de dias** copiados (migração 43) e **não recebe a jornada** — é o que
 vem das fábricas e o que o Bruno vai digitar. As duas primeiras não são escolha
 de plano, são a fábrica que existe; e sem elas o Orçamento seria inutilizável,
