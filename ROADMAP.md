@@ -697,6 +697,52 @@ que aparece sozinha é ignorada por reflexo na terceira vez.
 A regra mora em `lib/regime-sugerido.js`, puro e testado: é ela que decide o que
 a tela propõe, e propor a troca errada muda número sem ninguém perceber.
 
+### Dois cenários isolados: Orçamento e Simulação (migrações 41 e 42)
+
+O Bruno quer comparar duas configurações lado a lado, e a saída óbvia — uma
+branch do Neon por cenário — custava ~310 MB cada e obrigava a sair do plano
+gratuito.
+
+**O eixo já existia e estava quase vazio.** A rodada é por (área, ano, `origem`)
+desde o começo, e a `capacidade_fato` já guardava os dois cálculos em paralelo —
+221 mil linhas de 2027 vezes dois. Só que a única coisa que mudava entre META e
+SIMULADO era o **OEE**: turno, calendário e quantidade eram os mesmos. Já se
+pagava o armazenamento de dois cenários e os dois eram idênticos.
+
+A 41 dá `origem` a `recurso_turno`, `recurso_calendario` e `recurso_parametro`,
+com a origem entrando no `exclude` de sobreposição — as duas linhas do mesmo
+recurso no mesmo período são legítimas quando são de cenários diferentes. A 42
+põe `and origem = p_origem` nas junções do motor.
+
+**Isolados, e não base + diferença.** A primeira versão tinha uma sentinela
+`AMBAS`: o Orçamento seria a base e a Simulação só o que mudasse por cima. O
+Bruno derrubou, e está certo sobre o uso real — os dois planos vêm de lugares
+diferentes (a Simulação é construída aqui, o Orçamento chega das fábricas e é
+digitado) e não são versões um do outro. Herança faria uma correção no Orçamento
+mexer calado num número de Simulação já aprovado. E o isolamento sai mais barato
+de ler: o motor perdeu a regra de queda, e a instalada não precisou virar
+resolução dia a dia (faixa do cenário e faixa compartilhada têm recortes
+diferentes, e subtrair `daterange` levanta exceção quando o resto não é
+contíguo).
+
+**O que é da empresa não tem cenário**: planta, área e a identidade do recurso.
+A fábrica é a mesma nos dois planos. Feriado diferente por cenário se faz com um
+calendário a mais na planta — `recurso_calendario` já é por cenário, então não
+há schema novo para isso.
+
+**Todo o cadastro de hoje virou Simulação.** O Orçamento nasce vazio e será
+digitado.
+
+**A armadilha que essa migração ensinou, no mesmo dia.** A primeira aplicação já
+semeava o Orçamento com máquinas e regime. Foi aplicada, conferida e **desfeita**
+em seguida: com duas linhas por recurso em `recurso_parametro`, `recursos()` e a
+lista de Recursos passam a **duplicar** cada máquina, e `definirTurnosDoAno` e
+`definirCalendarioDoAno` — que apagam por `recurso_id`, sem olhar origem —
+apagariam o cadastro dos **dois** cenários de uma vez. A regra "migração antes do
+deploy" continua valendo, com uma emenda: **migração que muda a cardinalidade de
+uma tabela só pode ir antes do deploy que a acompanha**. Enquanto houver uma
+linha por recurso, o app que está no ar continua correto sem saber de nada.
+
 ### O tamanho do banco, e o limite de 4 cenários (29/09/2026)
 
 Medição feita antes de abrir frente nova, para saber se o teto estava perto. O
@@ -2302,6 +2348,39 @@ id da instalação.
 
 Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
 por quê — útil para não redecidir, mas já construído.
+
+### Os cenários, o que falta (migrações 41 e 42 aplicadas em 30/09/2026)
+
+O modelo e o motor estão prontos e no banco. **O código ainda não sabe de
+cenário**, e é isso que falta — tudo num commit só, porque a migração 43
+(a semente do Orçamento) só pode rodar junto com ele:
+
+1. **`origem` em toda consulta de cadastro.** Hoje elas leem por `recurso_id`
+   sem olhar cenário, e por isso a 41 ficou com uma linha por recurso. Os
+   pontos: `recursos()` e `matrizTurnosDoAno`/`definirTurnosDoAno`/
+   `faixasCalendario`/`definirCalendarioDoAno` (`lib/cadastro.js`), a lista de
+   recursos, a janela de operação, `definirAtivoRecurso` e `criarRecurso`
+   (`lib/estrutura.js`), `calendariosDaArea` (`lib/calendario.js`) e os joins de
+   `porRecurso`/`detalheDoRecorte` (`lib/db.js`). Os `delete ... where
+   recurso_id = X` são os perigosos: sem origem, apagam os dois cenários.
+2. **`criarRecurso` passa a nascer nos dois** — máquina nova existe nos dois
+   planos —, com regime PADRÃO em cada um e OEE 100%, como já faz.
+3. **Seletor de cenário nas telas que escrevem**: Turnos do recurso, Recursos,
+   OEE (que já tem origem) e Paradas. Estado na URL, como o resto.
+4. **Rótulos**: `lib/origens.js` passa a dizer **Orçamento** e **Simulação**; os
+   códigos no banco continuam META e SIMULADO, porque renomear o valor gravado
+   reescreveria `calculo_execucao`, `recurso_oee` e toda URL compartilhada para
+   ganhar nada.
+5. **Migração 43**: semeia o Orçamento com as máquinas (`recurso_parametro`) e o
+   regime (`recurso_calendario`) copiados da Simulação, e **sem jornada** — é o
+   que vem das fábricas. E tira o `default 'SIMULADO'` das três colunas, para
+   gravação sem origem parar de escolher um cenário por sorteio.
+6. **Manual**: conceito de cenário, a página de Turnos do recurso e uma pegadinha
+   em `04-perguntas.md` ("o Orçamento está zerado").
+
+Enquanto isso não sobe: **não rode Recalcular tudo**. O motor já filtra por
+cenário, então a rodada do Orçamento sairia zerada — que é o estado final certo,
+mas antes da hora.
 
 ### Do cadastro, para quando ele sair do estágio de teste
 

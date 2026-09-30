@@ -235,6 +235,15 @@ NN_*.sql           migrações, na ordem em que devem rodar
   o recurso desaparece do cálculo daquele mês sem zerar nada e sem erro. Por
   isso, ali, mês em branco quer dizer "não mexer" — nunca "apagar" —, recurso
   novo nasce com o `PADRAO` da planta, e a gravação recusa buraco.
+- **cenário = `origem`**, e são dois, **isolados**: `META` é o **Orçamento** (o
+  que vem das fábricas) e `SIMULADO` é a **Simulação** (o que se constrói aqui).
+  O que é da EMPRESA — planta, área, a identidade do recurso (código, CC-CT,
+  patrimônio) — é um só nos dois. O que é **planejamento do recurso** tem
+  `origem` e vive em dobro: `recurso_parametro`, `recurso_calendario`,
+  `recurso_turno` e `recurso_oee`. **Não há herança**: cenário não é versão do
+  outro, e corrigir um nunca mexe no outro. Feriado diferente por cenário se faz
+  com um calendário a mais na planta, apontado só pelos recursos daquele
+  cenário — `calendario` em si não tem origem.
 - **uma rodada por (área, ano, origem)**: a nova substitui a anterior. O sistema
   mostra a capacidade atual; rodada velha não é consultada por ninguém. O
   **Recalcular parcial** não cria rodada: regrava só os recursos escolhidos
