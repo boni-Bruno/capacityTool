@@ -53,7 +53,7 @@ export async function POST(req) {
     const [grupos, serie, turnos, cadastrados] = await Promise.all([
       detalheDoRecorte(areas, ccs, ano, de, ate, origem, carga),
       serieDoRecorte(areas, ccs, ano, de, ate, origem, carga),
-      turnosDoRecorte(areas, ccs, ano, de, ate),
+      turnosDoRecorte(areas, ccs, ano, de, ate, origem),
       turnosCadastrados(),
     ]);
 

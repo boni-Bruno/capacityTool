@@ -47,7 +47,9 @@ export default async function Page({ searchParams }) {
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
   const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
-  const todosRecursos = await recursos(areaId);
+  // A lista sai do cenário escolhido: recurso fora do plano naquele cenário não
+  // tem OEE para cadastrar ali.
+  const todosRecursos = await recursos(areaId, origem);
 
   // CC e CT estreitam a lista antes de escolher a máquina — e o recorte é
   // também o alcance do lote: filtrar o CC 278 já é dizer "os nove CTs dele".
@@ -223,7 +225,7 @@ export default async function Page({ searchParams }) {
               </span>
             </>
           )}
-          {' '}· OEE {rotuloOrigem(origem)} · {ano}
+          {' '}· {rotuloOrigem(origem)} · {ano}
         </h2>
 
         <EditorOee
@@ -241,7 +243,7 @@ export default async function Page({ searchParams }) {
         {!emLote && conflito.length > 0 && (
           <div className="aviso" style={{ marginTop: 14 }}>
             <strong>
-              Este recurso também tem OEE {conflito.map((o) => rotuloOrigem(o.origem)).join(' e ')}
+              Este recurso também tem OEE no cenário {conflito.map((o) => rotuloOrigem(o.origem)).join(' e ')}
               {' '}em {ano}.
             </strong>
             <p style={{ margin: '6px 0 0' }}>

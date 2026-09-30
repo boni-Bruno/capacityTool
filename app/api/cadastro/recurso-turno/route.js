@@ -3,6 +3,7 @@ import { definirTurnosDoAno } from '../../../../lib/cadastro';
 import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
+import { cenarioEscolhido } from '../../../../lib/origens';
 
 // Salva a matriz mês x turno de um recurso, um ano por vez.
 //
@@ -31,7 +32,8 @@ export async function POST(req) {
 
     // `escopo`: os turnos que a TELA ofereceu. Só eles são reescritos — o que
     // ela não mostrou não pode ser apagado por omissão. Ver definirTurnosDoAno.
-    const r = await definirTurnosDoAno(recursoId, ano, b.marcados ?? {}, b.escopo);
+    const r = await definirTurnosDoAno(recursoId, ano, b.marcados ?? {}, b.escopo,
+                                       cenarioEscolhido(b.cenario));
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {

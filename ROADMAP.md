@@ -730,8 +730,27 @@ A fábrica é a mesma nos dois planos. Feriado diferente por cenário se faz com
 calendário a mais na planta — `recurso_calendario` já é por cenário, então não
 há schema novo para isso.
 
-**Todo o cadastro de hoje virou Simulação.** O Orçamento nasce vazio e será
-digitado.
+**Todo o cadastro de hoje virou Simulação.** O Orçamento recebe as **máquinas** e
+o **regime de dias** copiados (migração 43) e **não recebe a jornada** — é o que
+vem das fábricas e o que o Bruno vai digitar. As duas primeiras não são escolha
+de plano, são a fábrica que existe; e sem elas o Orçamento seria inutilizável,
+porque a tela de Recursos lista por `recurso_parametro` e sem parâmetro não há
+recurso para escolher. Assim ele nasce válido e com capacidade **zero** — zero
+que se explica sozinho, e não ausência calada.
+
+**A fronteira entre estrutura e planejamento decide quem grava onde.** A tela de
+**Recursos** é estrutura: grava nos **dois** cenários, com os mesmos valores, e
+não tem seletor. **Turnos do recurso** e **OEE** são planejamento: têm seletor de
+cenário na URL e gravam só no escolhido. É por isso que `garantirParametro` e
+`criarRecurso` escrevem as duas linhas, e `definirTurnosDoAno` e
+`definirCalendarioDoAno` filtram por origem — os `delete` deles eram o risco
+maior: sem o filtro, salvar a Simulação apagaria a jornada do Orçamento numa tela
+que nem mostra que ele existe.
+
+**Nas leituras do painel o cenário sai da própria rodada**, e não de um parâmetro
+novo: quem lê `capacidade_fato` já escolheu a rodada, e ela carrega a origem.
+Passar a origem por fora seria uma segunda fonte para a mesma verdade, e o dia em
+que as duas divergissem a coluna de regime mostraria o plano errado.
 
 **A armadilha que essa migração ensinou, no mesmo dia.** A primeira aplicação já
 semeava o Orçamento com máquinas e regime. Foi aplicada, conferida e **desfeita**
@@ -2349,38 +2368,19 @@ id da instalação.
 Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
 por quê — útil para não redecidir, mas já construído.
 
-### Os cenários, o que falta (migrações 41 e 42 aplicadas em 30/09/2026)
+### Dos cenários, o que ficou de fora
 
-O modelo e o motor estão prontos e no banco. **O código ainda não sabe de
-cenário**, e é isso que falta — tudo num commit só, porque a migração 43
-(a semente do Orçamento) só pode rodar junto com ele:
-
-1. **`origem` em toda consulta de cadastro.** Hoje elas leem por `recurso_id`
-   sem olhar cenário, e por isso a 41 ficou com uma linha por recurso. Os
-   pontos: `recursos()` e `matrizTurnosDoAno`/`definirTurnosDoAno`/
-   `faixasCalendario`/`definirCalendarioDoAno` (`lib/cadastro.js`), a lista de
-   recursos, a janela de operação, `definirAtivoRecurso` e `criarRecurso`
-   (`lib/estrutura.js`), `calendariosDaArea` (`lib/calendario.js`) e os joins de
-   `porRecurso`/`detalheDoRecorte` (`lib/db.js`). Os `delete ... where
-   recurso_id = X` são os perigosos: sem origem, apagam os dois cenários.
-2. **`criarRecurso` passa a nascer nos dois** — máquina nova existe nos dois
-   planos —, com regime PADRÃO em cada um e OEE 100%, como já faz.
-3. **Seletor de cenário nas telas que escrevem**: Turnos do recurso, Recursos,
-   OEE (que já tem origem) e Paradas. Estado na URL, como o resto.
-4. **Rótulos**: `lib/origens.js` passa a dizer **Orçamento** e **Simulação**; os
-   códigos no banco continuam META e SIMULADO, porque renomear o valor gravado
-   reescreveria `calculo_execucao`, `recurso_oee` e toda URL compartilhada para
-   ganhar nada.
-5. **Migração 43**: semeia o Orçamento com as máquinas (`recurso_parametro`) e o
-   regime (`recurso_calendario`) copiados da Simulação, e **sem jornada** — é o
-   que vem das fábricas. E tira o `default 'SIMULADO'` das três colunas, para
-   gravação sem origem parar de escolher um cenário por sorteio.
-6. **Manual**: conceito de cenário, a página de Turnos do recurso e uma pegadinha
-   em `04-perguntas.md` ("o Orçamento está zerado").
-
-Enquanto isso não sobe: **não rode Recalcular tudo**. O motor já filtra por
-cenário, então a rodada do Orçamento sairia zerada — que é o estado final certo,
-mas antes da hora.
+- **Parada por cenário.** `parada` não tem `origem`: ela é evento com data, e a
+  alavanca que o Bruno descreveu é jornada, regime e quantidade. Se um dia
+  "e se eu não fizer essa parada programada?" fizer falta, a coluna entra do
+  mesmo jeito que nas outras três.
+- **Qtd por cenário.** A coluna existe (`recurso_parametro.origem`), mas a tela
+  de Recursos grava as duas linhas iguais, porque ela é **estrutura da empresa**
+  e estrutura é a mesma nos dois planos. "E se eu comprar mais duas máquinas?"
+  já cabe no modelo; falta só a tela perguntar.
+- **Comparar os dois na mesma tela.** Hoje se compara trocando o cenário no
+  seletor, e o painel refaz a consulta. Uma coluna "Orçamento × Simulação" lado
+  a lado é outra construção.
 
 ### Do cadastro, para quando ele sair do estágio de teste
 

@@ -124,6 +124,31 @@ regime, e Recalcular parcial para ele.
 
 ---
 
+## O painel do Orçamento está zerado (ou muito menor que o da Simulação)
+
+**Causa.** Os dois cenários são **isolados** e cada um tem a sua jornada. O
+Orçamento nasceu com as **máquinas** e o **regime de dias**, mas **sem turnos** —
+eles são o que vem das fábricas. Sem turno não há planejada, e a instalada
+aparece sozinha.
+
+**O que fazer.** Turnos do recurso, com **Cenário = Orçamento**, e cadastre a
+jornada. Depois **Recalcular**. Enquanto isso, o número que vale é o da
+Simulação.
+
+---
+
+## Cadastrei os turnos e não mudou nada no painel
+
+**Causa.** Antes de suspeitar de recálculo: confira em **qual cenário** você
+cadastrou. Turnos do recurso abre em **Simulação**; se o painel está em
+**Orçamento**, ele mostra outro plano — e o contrário também. Nenhum dos dois dá
+erro, porque os dois cadastros são legítimos.
+
+**O que fazer.** O cenário está no seletor e num selo ao lado do título da
+matriz. Confira que ele é o mesmo dos dois lados, e recalcule.
+
+---
+
 ## O recurso aparece em alguns meses e some em outros
 
 **Sintoma.** No painel, a linha do recurso tem número de janeiro a junho e de

@@ -79,12 +79,13 @@ export function FiltrosTopo({ areas, areaId, ano, origem, anos = [] }) {
         ))}
       </select>
 
-      {/* Muda de rodada, não recalcula: META e SIMULADO já estão calculadas
-          e guardadas cada uma na sua. */}
-      <select value={origem} onChange={(e) => muda('origem', e.target.value)}>
+      {/* O CENÁRIO. Muda de rodada, não recalcula: Orçamento e Simulação já
+          estão calculadas e guardadas cada uma na sua. */}
+      <select value={origem} title="Cenário"
+              onChange={(e) => muda('origem', e.target.value)}>
         {ORIGENS.map((o) => (
           <option key={o} value={o}>
-            OEE {rotuloOrigem(o)}
+            {rotuloOrigem(o)}
           </option>
         ))}
       </select>

@@ -43,7 +43,7 @@ const TODAS = 'todas';
 
 export default function Matriz({
   recursoId, ano, turnos, inicial, parciais, qtRecurso = 1, alvos = null,
-  pessoa = false, calendarios = [], calInicial = {},
+  pessoa = false, calendarios = [], calInicial = {}, cenario = 'SIMULADO',
 }) {
   const router = useRouter();
   const [celulas, setCelulas] = useState(inicial);
@@ -251,7 +251,7 @@ export default function Matriz({
         const c = await fetch('/api/cadastro/recurso-calendario', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recurso_id: id, ano, por_mes: porMesCal }),
+          body: JSON.stringify({ recurso_id: id, ano, por_mes: porMesCal, cenario }),
         });
         const jc = await c.json();
         if (!jc.ok) throw new Error(jc.erro);
@@ -261,7 +261,7 @@ export default function Matriz({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          recurso_id: id, ano, marcados,
+          recurso_id: id, ano, marcados, cenario,
           // As colunas que esta tela mostrou. O servidor só reescreve estas:
           // turno que a tela não ofereceu não é apagado por omissão.
           escopo: turnos.map((t) => t.turno_id),

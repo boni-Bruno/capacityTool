@@ -194,7 +194,7 @@ export default async function Page({ searchParams }) {
   // um calendário e das exceções de UMA área, e oito áreas com feriados
   // diferentes não têm um dia útil comum para dividir.
   const calendarios = area
-    ? await calendariosDaArea(area.id, `${ano}-01-01`, `${ano}-12-31`) : [];
+    ? await calendariosDaArea(area.id, `${ano}-01-01`, `${ano}-12-31`, origem) : [];
   const calPedido = Number(searchParams?.cal);
   const cal = calendarios.find((c) => c.id === calPedido) ?? calendarios[0] ?? null;
 
@@ -246,7 +246,7 @@ export default async function Page({ searchParams }) {
         </div>
         <div className="aviso">
           <strong>
-            Nenhum cálculo do OEE {rotuloOrigem(origem)} para{' '}
+            Nenhum cálculo do cenário {rotuloOrigem(origem)} para{' '}
             {rotuloDaEscolha} em {ano}.
           </strong>
           <p style={{ margin: '8px 0 12px' }}>
@@ -1283,7 +1283,7 @@ export default async function Page({ searchParams }) {
         <p className="rodape">
           {exec.quantas > 1
             ? `${exec.quantas} rodadas (${exec.id})`
-            : `Rodada ${exec.id}`} · OEE {rotuloOrigem(exec.origem)} · cenário{' '}
+            : `Rodada ${exec.id}`} · {rotuloOrigem(exec.origem)} · cenário{' '}
           {exec.cenario} · {exec.quantas > 1 ? 'a mais antiga calculada' : 'calculada'} em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}
           {exec.faltam > 0 && (

@@ -10,10 +10,17 @@ quantas máquinas (ou pessoas)** — e qual **calendário (regime)** ele segue.
 
 ## Seletores
 
-**Planta › Área › Tipo (máquina/pessoa) › CC › CT › Patrimônio › Código ›
-Recurso › Ano.** O Tipo nasce em **máquina**; se a área também tem pessoas, a
-tela avisa que elas não aparecem — troque o Tipo para cadastrá-las. Máquina e
-pessoa **nunca dividem a mesma matriz**.
+**Planta › Área › Cenário › Tipo (máquina/pessoa) › CC › CT › Patrimônio ›
+Código › Recurso › Ano.** O Tipo nasce em **máquina**; se a área também tem
+pessoas, a tela avisa que elas não aparecem — troque o Tipo para cadastrá-las.
+Máquina e pessoa **nunca dividem a mesma matriz**.
+
+**O Cenário é o corte mais importante desta tela.** Orçamento e Simulação são
+planos isolados, e o que você marcar aqui vale **só para o cenário selecionado**.
+Ele aparece como selo ao lado do título da matriz, não só no seletor — cadastrar
+a jornada inteira de um recurso no cenário errado não dá erro nenhum: dá um
+painel certo e outro vazio, e a descoberta vem semanas depois. A tela abre em
+**Simulação**.
 
 ## A matriz
 

@@ -41,6 +41,28 @@ CT, e cada recurso com aquele CC e CT entra na conta daquele CT. Não existe
 tabela de-para para isso — no instante em que um recurso é cadastrado com o
 CC-CT certo, a demanda daquele CT passa a ter capacidade.
 
+## Cenário: Orçamento e Simulação
+
+A ferramenta guarda **dois planos ao mesmo tempo**, isolados um do outro:
+
+- **Orçamento** — o que vem das fábricas e é digitado aqui.
+- **Simulação** — o que se constrói na ferramenta para testar hipóteses.
+
+**Isolados quer dizer isolados**: não há herança, e mexer num nunca mexe no
+outro. Cada um tem a sua jornada (turnos), o seu regime de dias e o seu OEE, e
+cada um tem a sua própria rodada de cálculo — o seletor de **Cenário** no painel
+troca de rodada, não recalcula.
+
+**O que NÃO muda entre os dois** é a *estrutura da empresa*: plantas, áreas e a
+identidade de cada recurso (código, CC-CT, patrimônio, quantidade de máquinas,
+janela de operação). A fábrica é a mesma nos dois planos — o que muda é o que se
+planeja fazer com ela. Por isso a tela de **Recursos** não pergunta o cenário, e
+as de **Turnos do recurso** e **OEE** perguntam.
+
+Se um cenário precisar de **feriados diferentes**, o caminho é criar um
+calendário a mais na planta e apontar nele só os recursos daquele cenário — o
+vínculo recurso → calendário já é por cenário.
+
 ## Turno, calendário, dia útil
 
 - **Turno** é da planta: nome e horário de início e fim **por dia da semana**.

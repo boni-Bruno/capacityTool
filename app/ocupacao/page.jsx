@@ -184,7 +184,7 @@ export default async function Page({ searchParams }) {
         {topo}
         <div className="aviso">
           <strong>
-            Nenhum cálculo do OEE {rotuloOrigem(origem)} para{' '}
+            Nenhum cálculo do cenário {rotuloOrigem(origem)} para{' '}
             {rotuloDaEscolha} em {ano}.
           </strong>
           <p style={{ margin: '8px 0 12px' }}>
@@ -795,7 +795,7 @@ export default async function Page({ searchParams }) {
         <p className="rodape">
           {exec.quantas > 1
             ? `${exec.quantas} rodadas (${exec.id})`
-            : `Rodada ${exec.id}`} · OEE {rotuloOrigem(exec.origem)} · base{' '}
+            : `Rodada ${exec.id}`} · {rotuloOrigem(exec.origem)} · base{' '}
           {carga.cenario} · {exec.quantas > 1 ? 'a mais antiga calculada' : 'calculada'} em{' '}
           {new Date(exec.concluido_em).toLocaleString('pt-BR')}
           {exec.faltam > 0 && (

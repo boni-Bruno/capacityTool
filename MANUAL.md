@@ -1,6 +1,6 @@
 # capacityTool - Manual completo
 
-Gerado em 2026-09-29 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
+Gerado em 2026-09-30 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
 
 ---
 
@@ -96,6 +96,28 @@ O vínculo entre a capacidade e a demanda é `CC-CT`: a base de demanda fala em
 CT, e cada recurso com aquele CC e CT entra na conta daquele CT. Não existe
 tabela de-para para isso — no instante em que um recurso é cadastrado com o
 CC-CT certo, a demanda daquele CT passa a ter capacidade.
+
+### Cenário: Orçamento e Simulação
+
+A ferramenta guarda **dois planos ao mesmo tempo**, isolados um do outro:
+
+- **Orçamento** — o que vem das fábricas e é digitado aqui.
+- **Simulação** — o que se constrói na ferramenta para testar hipóteses.
+
+**Isolados quer dizer isolados**: não há herança, e mexer num nunca mexe no
+outro. Cada um tem a sua jornada (turnos), o seu regime de dias e o seu OEE, e
+cada um tem a sua própria rodada de cálculo — o seletor de **Cenário** no painel
+troca de rodada, não recalcula.
+
+**O que NÃO muda entre os dois** é a *estrutura da empresa*: plantas, áreas e a
+identidade de cada recurso (código, CC-CT, patrimônio, quantidade de máquinas,
+janela de operação). A fábrica é a mesma nos dois planos — o que muda é o que se
+planeja fazer com ela. Por isso a tela de **Recursos** não pergunta o cenário, e
+as de **Turnos do recurso** e **OEE** perguntam.
+
+Se um cenário precisar de **feriados diferentes**, o caminho é criar um
+calendário a mais na planta e apontar nele só os recursos daquele cenário — o
+vínculo recurso → calendário já é por cenário.
 
 ### Turno, calendário, dia útil
 
@@ -481,10 +503,17 @@ quantas máquinas (ou pessoas)** — e qual **calendário (regime)** ele segue.
 
 ### Seletores
 
-**Planta › Área › Tipo (máquina/pessoa) › CC › CT › Patrimônio › Código ›
-Recurso › Ano.** O Tipo nasce em **máquina**; se a área também tem pessoas, a
-tela avisa que elas não aparecem — troque o Tipo para cadastrá-las. Máquina e
-pessoa **nunca dividem a mesma matriz**.
+**Planta › Área › Cenário › Tipo (máquina/pessoa) › CC › CT › Patrimônio ›
+Código › Recurso › Ano.** O Tipo nasce em **máquina**; se a área também tem
+pessoas, a tela avisa que elas não aparecem — troque o Tipo para cadastrá-las.
+Máquina e pessoa **nunca dividem a mesma matriz**.
+
+**O Cenário é o corte mais importante desta tela.** Orçamento e Simulação são
+planos isolados, e o que você marcar aqui vale **só para o cenário selecionado**.
+Ele aparece como selo ao lado do título da matriz, não só no seletor — cadastrar
+a jornada inteira de um recurso no cenário errado não dá erro nenhum: dá um
+painel certo e outro vazio, e a descoberta vem semanas depois. A tela abre em
+**Simulação**.
 
 ### A matriz
 
@@ -1498,6 +1527,31 @@ não gera nenhuma linha para ele. Ou tem, e não foi recalculado.
 
 **O que fazer.** Turnos do recurso (com o Tipo certo — pessoa ou máquina),
 regime, e Recalcular parcial para ele.
+
+---
+
+### O painel do Orçamento está zerado (ou muito menor que o da Simulação)
+
+**Causa.** Os dois cenários são **isolados** e cada um tem a sua jornada. O
+Orçamento nasceu com as **máquinas** e o **regime de dias**, mas **sem turnos** —
+eles são o que vem das fábricas. Sem turno não há planejada, e a instalada
+aparece sozinha.
+
+**O que fazer.** Turnos do recurso, com **Cenário = Orçamento**, e cadastre a
+jornada. Depois **Recalcular**. Enquanto isso, o número que vale é o da
+Simulação.
+
+---
+
+### Cadastrei os turnos e não mudou nada no painel
+
+**Causa.** Antes de suspeitar de recálculo: confira em **qual cenário** você
+cadastrou. Turnos do recurso abre em **Simulação**; se o painel está em
+**Orçamento**, ele mostra outro plano — e o contrário também. Nenhum dos dois dá
+erro, porque os dois cadastros são legítimos.
+
+**O que fazer.** O cenário está no seletor e num selo ao lado do título da
+matriz. Confira que ele é o mesmo dos dois lados, e recalcule.
 
 ---
 

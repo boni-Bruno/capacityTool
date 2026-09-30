@@ -10,6 +10,7 @@ import Seletor from '../seletor';
 import Matriz from './matriz';
 import Ciente from '../ciente';
 import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
+import { CENARIOS, cenarioEscolhido } from '../../../lib/origens';
 import { SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
 
 export const metadata = { title: 'Turnos do recurso' };
@@ -42,7 +43,11 @@ export default async function Page({ searchParams }) {
   // Mesma lista do painel: ano com rodada não some quando o tempo passa.
   const anos = anosParaEscolha(await anosComRodada());
   const ano = anoEscolhido(searchParams?.ano, anos);
-  const daArea = await recursos(areaId);
+  // O CENÁRIO vem da URL, como todo recorte deste projeto. Ele decide qual
+  // planejamento a tela lê e grava: Orçamento e Simulação são isolados, e o
+  // endereço tem que dizer em qual você está.
+  const cenario = cenarioEscolhido(searchParams?.cenario);
+  const daArea = await recursos(areaId, cenario);
 
   // O TIPO É O PRIMEIRO CORTE, e não tem "todos". Máquina e pessoa não podem
   // dividir uma matriz: para a máquina "todas" quer dizer as que existem, e
@@ -85,6 +90,13 @@ export default async function Page({ searchParams }) {
     {
       nome: 'area', rotulo: 'Área', tipo: 'select', valor: String(areaId),
       opcoes: listaAreas.map((a) => ({ valor: String(a.id), rotulo: rotuloArea(a) })),
+    },
+    {
+      // O CENÁRIO É O PRIMEIRO CORTE depois da área, e não tem "todos": os dois
+      // são isolados, e uma matriz misturando Orçamento e Simulação gravaria
+      // nos dois com a mesma marca.
+      nome: 'cenario', rotulo: 'Cenário', tipo: 'select', valor: cenario,
+      opcoes: CENARIOS.map((c) => ({ valor: c.codigo, rotulo: c.rotulo })),
     },
     {
       // Sem "todos", de propósito — ver o comentário do corte por tipo.
@@ -168,10 +180,10 @@ export default async function Page({ searchParams }) {
     ? [[], await calendariosDaPlanta(recurso.id), {}, [],
        await turnosOferecidos(listaRecursos.map((r) => r.id))]
     : [...await Promise.all([
-      matrizTurnosDoAno(recurso.id, ano),
+      matrizTurnosDoAno(recurso.id, ano, cenario),
       calendariosDaPlanta(recurso.id),
-      calendarioDoAno(recurso.id, ano),
-      turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso),
+      calendarioDoAno(recurso.id, ano, cenario),
+      turnosSobrepostos(recurso.id, ano, recurso.tipo_recurso, cenario),
     ]), []];
 
   // Quantas máquinas o recurso tem. É o teto de cada célula da matriz e o
@@ -323,6 +335,14 @@ export default async function Page({ searchParams }) {
               </span>
             </>
           )}
+          {/* O CENÁRIO EM DESTAQUE, e não só no seletor lá em cima. Os dois são
+              isolados: cadastrar a jornada inteira de um recurso no cenário
+              errado não dá erro nenhum — dá um painel certo e outro vazio, e a
+              descoberta vem semanas depois. */}
+          <span className={'selo ' + (cenario === 'META' ? 'rodizio' : 'padrao')}
+                style={{ marginLeft: 8 }}>
+            {CENARIOS.find((c) => c.codigo === cenario)?.rotulo}
+          </span>
         </h2>
 
         {outroTipo}
@@ -366,7 +386,7 @@ export default async function Page({ searchParams }) {
             anterior — a tela mostrava a configuração da máquina errada e ainda
             oferecia Salvar, o que gravaria a config de um recurso no outro. */}
         <Matriz
-          key={`${emLote ? 'lote' : recurso.id}:${ano}:${listaRecursos.length}`}
+          key={`${emLote ? 'lote' : recurso.id}:${ano}:${cenario}:${listaRecursos.length}`}
           recursoId={recurso.id}
           ano={ano}
           qtRecurso={qtRecurso}
@@ -374,6 +394,7 @@ export default async function Page({ searchParams }) {
           turnos={turnos}
           inicial={inicial}
           parciais={parciais}
+          cenario={cenario}
           calendarios={regimes}
           calInicial={calAtual}
           alvos={emLote

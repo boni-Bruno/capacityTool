@@ -255,7 +255,7 @@ export default function RecalcularTudo({ areas, anos }) {
             <p className="recalc-txt">
               {estado.feitos + 1} de {estado.total} ·{' '}
               <strong>{rotuloArea(estado.atual.area)}</strong> {estado.atual.ano}
-              {' '}· OEE {rotuloOrigem(estado.atual.origem)}
+              {' '}· {rotuloOrigem(estado.atual.origem)}
               {estado.atual.recursos && ` · ${estado.atual.recursos.length} recurso(s)`}
             </p>
           ) : (
