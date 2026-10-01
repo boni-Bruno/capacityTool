@@ -202,13 +202,10 @@ export default function Versoes({
                   </p>
                 )}
                 <div className="acoes">
-                  {/* O fluxo guiado ainda não existe — e um botão levando a
-                      uma tela que não está no ar é pior que botão nenhum. Até
-                      lá o cadastro é pelas telas do menu, como sempre foi. */}
-                  <button type="button" className="btn btn-primario" disabled
-                          title="O fluxo guiado entra na próxima entrega">
-                    Iniciar planejamento (em construção)
-                  </button>
+                  <a className="btn btn-primario"
+                     href={`/planejamento?cenario=${c.codigo}&ano=${anoFoco}`}>
+                    Iniciar planejamento
+                  </a>
                   <button type="button" className="btn" disabled={ocupado}
                           onClick={() => { setFechando(aberta); setObs(''); }}>
                     Fechar a v{aberta.numero}

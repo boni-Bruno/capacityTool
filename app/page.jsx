@@ -32,6 +32,9 @@ const TEXTOS = {
   '/cadastros/calendarios':
     'Os dias em que cada linha trabalha: turnos por dia da semana, ' +
     'feriados e paradas, e a contagem de dias úteis do ano.',
+  '/planejamento':
+    'O cadastro de uma fábrica em ordem, etapa por etapa, sem deixar nada ' +
+    'para trás. Começa escolhendo a fábrica; o cenário e o ano vêm da versão aberta.',
   '/cadastros/habilitacao':
     'Abre e fecha as versões de cada cenário e ano. Sem versão aberta não ' +
     'há ano para cadastrar — e fechar guarda a fotografia do que foi aprovado.',

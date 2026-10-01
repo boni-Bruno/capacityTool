@@ -211,6 +211,33 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 :root:not([data-theme="light"]) .selo.falta,
 :root[data-theme="dark"]        .selo.falta  { background: #3a1f1f; color: var(--erro); }
 
+/* A TRILHA DE ETAPAS do fluxo guiado. Clicável de propósito: quem lembrou de
+   algo da etapa 2 na 4 volta sem perder o que já confirmou. Rola no eixo X em
+   tela estreita em vez de quebrar em duas linhas — a ordem das etapas é a
+   informação, e quebrada ela deixa de se ler como sequência. */
+.trilha {
+  display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;
+  padding: 2px 0 8px; margin-bottom: 4px;
+}
+.trilha-passo {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--card); color: var(--muted); cursor: pointer;
+  font: inherit; font-size: 13px;
+}
+.trilha-passo:hover { color: var(--text); border-color: var(--muted); }
+.trilha-n {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 19px; height: 19px; border-radius: 50%; font-size: 11px;
+  background: var(--gray-bg); color: var(--gray-fg);
+}
+.trilha-pronto { color: var(--text); }
+.trilha-pronto .trilha-n { background: var(--teal-bg); color: var(--teal-fg); }
+.trilha-aqui {
+  border-color: var(--accent); color: var(--text); font-weight: 500;
+}
+.trilha-aqui .trilha-n { background: var(--accent); color: #fff; }
+
 .rodape { font-size: 12px; color: var(--muted); margin-top: 1rem; }
 
 .aviso {
