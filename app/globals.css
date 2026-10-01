@@ -200,6 +200,17 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .selo.ok  { background: var(--teal-bg); color: var(--teal-fg); }
 .selo.nao { background: var(--gray-bg); color: var(--gray-fg); text-decoration: line-through; }
 
+/* O checklist de prontidão: três estados, e a cor é o que faz "falta" ser
+   lido antes do texto. Alerta reusa o âmbar de .selo.vira — é o mesmo tipo
+   de recado ("olha isto") e duas cores de aviso diferentes na mesma tela
+   ensinariam a ignorar as duas. */
+.selo.alerta { background: #fdf0e3; color: #8a4b0d; }
+.selo.falta  { background: #fae4e4; color: var(--erro); }
+:root:not([data-theme="light"]) .selo.alerta,
+:root[data-theme="dark"]        .selo.alerta { background: #3a2a14; color: #e8b878; }
+:root:not([data-theme="light"]) .selo.falta,
+:root[data-theme="dark"]        .selo.falta  { background: #3a1f1f; color: var(--erro); }
+
 .rodape { font-size: 12px; color: var(--muted); margin-top: 1rem; }
 
 .aviso {

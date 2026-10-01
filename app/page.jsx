@@ -32,6 +32,9 @@ const TEXTOS = {
   '/cadastros/calendarios':
     'Os dias em que cada linha trabalha: turnos por dia da semana, ' +
     'feriados e paradas, e a contagem de dias úteis do ano.',
+  '/cadastros/habilitacao':
+    'Abre e fecha as versões de cada cenário e ano. Sem versão aberta não ' +
+    'há ano para cadastrar — e fechar guarda a fotografia do que foi aprovado.',
   '/cadastros/turnos-do-recurso':
     'Quais turnos cada recurso roda em cada mês, e o regime de dias ' +
     '(rodízio ou padrão).',
