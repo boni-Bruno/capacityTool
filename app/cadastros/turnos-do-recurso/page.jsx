@@ -6,6 +6,7 @@ import {
   turnosSobrepostos, turnosOferecidos,
 } from '../../../lib/cadastro';
 import AvisoBanco from '../aviso-banco';
+import { semOsDoFluxo } from '../../../lib/filtro-fluxo';
 import Seletor from '../seletor';
 import Matriz from './matriz';
 import Ciente from '../ciente';
@@ -146,7 +147,7 @@ export default async function Page({ searchParams }) {
       <>
         <div className="topo">
           <h1 className="titulo">Turnos do recurso</h1>
-          <Suspense><Seletor campos={campos} /></Suspense>
+          <Suspense><Seletor campos={semOsDoFluxo(campos, searchParams)} /></Suspense>
         </div>
         <div className="aviso">
           <strong>
@@ -312,7 +313,7 @@ export default async function Page({ searchParams }) {
       <SomenteLeitura tela="turnos_recurso" />
       <div className="topo">
         <h1 className="titulo">Turnos do recurso</h1>
-        <Suspense><Seletor campos={campos} /></Suspense>
+        <Suspense><Seletor campos={semOsDoFluxo(campos, searchParams)} /></Suspense>
       </div>
 
       {/* A key reabre a porta quando o alcance muda: passar de 48 recursos

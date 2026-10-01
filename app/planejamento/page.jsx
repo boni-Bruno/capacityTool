@@ -221,9 +221,29 @@ export default async function Page({ searchParams }) {
   const proximo = exigidos.slice(ordem + 1).find((c) => c !== passo) ?? null;
 
   const base = `/planejamento?cenario=${cenario}&ano=${ano}&area=${area.area_id}`;
+
+  // TODO O RESTO DA URL VAI JUNTO, e não só o que o fluxo decide.
+  //
+  // Os editores embutidos têm seletores próprios — CC, CT, patrimônio, código,
+  // recurso, tipo — e eles escrevem na URL desta rota, porque é a que está no
+  // navegador. Passando só area/ano/cenario, a página recebia `cc: undefined`
+  // em toda navegação e voltava para "todos": o endereço mudava, a tela não.
+  // Era o que acontecia ao escolher um CC aqui dentro.
+  //
+  // A ordem importa: espalha primeiro, sobrescreve depois. Fábrica, ano e
+  // cenário são do FLUXO e não do editor — quem os escolhe é o passo 0 e a
+  // versão aberta, e deixar o seletor interno mudá-los tiraria a pessoa da
+  // fábrica que ela está planejando sem dizer nada.
   const sp = {
-    area: String(area.area_id), ano: String(ano),
-    cenario, origem: cenario,
+    ...searchParams,
+    area: String(area.area_id),
+    ano: String(ano),
+    cenario,
+    origem: cenario,
+    // A marca que faz o editor esconder os seletores de fábrica, ano e cenário
+    // (lib/filtro-fluxo.js): oferecer uma escolha que a rota desfaz no próximo
+    // render parece defeito, e é pior que não ter a opção.
+    fluxo: '1',
   };
 
   // O passo 6 precisa dos números; os outros não, e lê-los sempre seria pagar

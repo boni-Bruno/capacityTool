@@ -7,6 +7,7 @@ import { ORIGENS, rotuloOrigem } from '../../../lib/origens';
 import { inicioDoMes } from '../../../lib/faixas';
 import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
+import { semOsDoFluxo } from '../../../lib/filtro-fluxo';
 import Seletor from '../seletor';
 import EditorOee from './editor';
 import Ciente from '../ciente';
@@ -93,7 +94,7 @@ export default async function Page({ searchParams }) {
       <>
         <div className="topo">
           <h1 className="titulo">OEE</h1>
-          <Suspense><Seletor campos={campos} /></Suspense>
+          <Suspense><Seletor campos={semOsDoFluxo(campos, searchParams)} /></Suspense>
         </div>
         <div className="aviso">
           <strong>
@@ -207,7 +208,7 @@ export default async function Page({ searchParams }) {
       <SomenteLeitura tela="oee" />
       <div className="topo">
         <h1 className="titulo">OEE</h1>
-        <Suspense><Seletor campos={campos} /></Suspense>
+        <Suspense><Seletor campos={semOsDoFluxo(campos, searchParams)} /></Suspense>
       </div>
 
       <Porta key={`${emLote ? 'lote' : recurso.id}:${listaRecursos.length}:${ano}`}

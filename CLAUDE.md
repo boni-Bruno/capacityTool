@@ -120,8 +120,8 @@ Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
 `dia-util.js`, `ordem.js`, `anos.js`, `tema.js`, `origens.js`, `dias.js`,
 `grade.js`, `cores.js`, `xlsx.js`, `recursos-formato.js`, `simulador.js`,
 `pivot.js`, `permissoes.js`, `escopo.js`, `senha.js`, `sessao-token.js`,
-`ticket-formato.js`, `regime-sugerido.js`, `versao.js`, `prontidao.js`.
-Nenhum deles importa `./db`.
+`ticket-formato.js`, `regime-sugerido.js`, `versao.js`, `prontidao.js`,
+`filtro-fluxo.js`. Nenhum deles importa `./db`.
 
 **Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
 quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número

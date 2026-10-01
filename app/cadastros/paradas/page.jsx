@@ -4,6 +4,7 @@ import { anoEscolhido } from '../../../lib/anos';
 import { recursos, tiposParada, paradas, turnos } from '../../../lib/cadastro';
 import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
+import { semOsDoFluxo } from '../../../lib/filtro-fluxo';
 import Seletor from '../seletor';
 import EditorParadas from './editor';
 import { SemVersaoAberta, SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
@@ -109,7 +110,7 @@ export default async function Page({ searchParams }) {
       <div className="topo">
         <h1 className="titulo">Paradas planejadas</h1>
         <Suspense>
-          <Seletor campos={campos} />
+          <Seletor campos={semOsDoFluxo(campos, searchParams)} />
         </Suspense>
       </div>
 
