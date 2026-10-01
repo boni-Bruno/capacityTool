@@ -2385,6 +2385,68 @@ id da instalação.
 Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
 por quê — útil para não redecidir, mas já construído.
 
+### Versões do cenário: o orçamento é um ciclo (migração 45)
+
+Começar a popular o Orçamento 2027 expôs duas coisas de uma vez. A primeira é de
+UX: o menu oferece dez telas soltas e nada garante que uma área foi revisada por
+inteiro. A segunda saiu de uma frase do Bruno em 01/10 e mudou o desenho:
+
+> *"o orçamento é iniciado em setembro e finalizado (batido martelo) em
+> novembro-dezembro, e nesse meio tempo temos de 3 a 6 versões, cada uma com
+> mudança de cadastro"*
+
+O orçamento **não é um evento, é um ciclo** — e isso quebrava o modelo em dois
+lugares. A versão anterior **desaparecia**: o cadastro é sobrescrito e "uma
+rodada por (área, ano, origem)" quer dizer que os números da v3 somem quando a
+v4 roda, então *"por que a capacidade mudou entre a v3 e a v4?"* não tinha
+resposta. E um checklist de revisão sem versão viraria inútil na segunda rodada:
+tudo apareceria "concluído", e o feriado que entrou em outubro não avisaria
+ninguém.
+
+**Então a unidade de trabalho passou a ser a versão do ano.**
+
+**Uma versão aberta por (cenário, ano), e quem garante é o banco** — índice
+parcial único em `cenario_versao (origem, ano) where fechada_em is null`. Duas
+abertas seriam duas pessoas cadastrando coisas diferentes achando que é a mesma,
+e o erro só apareceria no número, semanas depois. Testado contra o banco: a
+segunda abertura é recusada.
+
+**A fotografia é mensal, e essa foi a decisão cara.** Guardar a
+`capacidade_fato` de cada versão custaria ~88 MB por versão — seis versões do
+Orçamento 2027 passariam de 500 MB sozinhas e estourariam o banco (medição de
+29/09). O grão de **mês** custa, medido na base real, **4.692 linhas e 367 kB**
+por versão, e responde tudo que a reunião de orçamento pergunta. O dia a dia não
+responderia nenhuma pergunta a mais, só pesaria 240×.
+
+**`passos_exigidos` fica no banco, não em código**, porque é decisão de quem
+abriu a versão naquele dia: *"a v4 só mexeu em jornada e OEE"*. O sistema não
+tem como adivinhar o que mudou — `recurso_turno`, `recurso_calendario` e
+`recurso_oee` não gravam quando foram alterados nem por quem. Adivinhar exigiria
+a auditoria antes, que continua em "Fora de escopo".
+
+**O fechamento de cenário pedido em 30/09 está aqui dentro**, e não precisou de
+feature própria: versão fechada é exatamente "ninguém mexe mais nisso".
+
+**O checklist de prontidão** (`lib/prontidao.js`) é o que teria pego o erro que
+originou tudo. A regra do feriado é **comparação com o ano anterior**, não limite
+absoluto — não existe "quantos feriados são o certo", mas o que a base diz para
+2028 fala sozinho:
+
+| planta | exceções 2028 / 2027 | veredito |
+|---|---|---|
+| Matriz | **6 contra 41** | alerta — abre com confirmação |
+| Paraguai | 2 contra 28 | alerta, e falta: nenhum turno ativo |
+| Ibirama | 0 / 0 | sem comparação; falta: nenhum turno ativo |
+
+Queda pequena (60 contra 69) não acusa de propósito: é ruído de calendário —
+feriado que caiu no domingo, emenda a menos — e acusar isso treinaria a pessoa a
+ignorar o aviso na vez que importa. `falta` desliga o botão de abrir; `alerta`
+deixa abrir com confirmação. O checklist informa, não tutela.
+
+**A semente é o risco da migração**: 2026 e 2027 nos dois cenários entram com uma
+v1 aberta. Sem ela a ferramenta congela no deploy — sem versão aberta não há ano
+cadastrável, e ninguém consegue nem corrigir o que já existe.
+
 ### Dos cenários, o que ficou de fora
 
 - **Parada por cenário.** `parada` não tem `origem`: ela é evento com data, e a

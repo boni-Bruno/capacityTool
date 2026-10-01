@@ -120,7 +120,8 @@ Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
 `dia-util.js`, `ordem.js`, `anos.js`, `tema.js`, `origens.js`, `dias.js`,
 `grade.js`, `cores.js`, `xlsx.js`, `recursos-formato.js`, `simulador.js`,
 `pivot.js`, `permissoes.js`, `escopo.js`, `senha.js`, `sessao-token.js`,
-`ticket-formato.js`, `regime-sugerido.js`. Nenhum deles importa `./db`.
+`ticket-formato.js`, `regime-sugerido.js`, `versao.js`, `prontidao.js`.
+Nenhum deles importa `./db`.
 
 **Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
 quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número
@@ -244,6 +245,17 @@ NN_*.sql           migrações, na ordem em que devem rodar
   outro, e corrigir um nunca mexe no outro. Feriado diferente por cenário se faz
   com um calendário a mais na planta, apontado só pelos recursos daquele
   cenário — `calendario` em si não tem origem.
+- **versão do cenário**: a unidade de trabalho do planejamento não é o ano, é a
+  **versão do ano** (migração 45). O orçamento é um ciclo — começa em setembro,
+  bate o martelo em novembro, e no meio são 3 a 6 versões, cada uma com mudança
+  de cadastro. **Uma versão aberta por (cenário, ano)**, garantida por índice
+  parcial único; ano sem versão aberta não é cadastrável, mas **continua
+  consultável** — travar a leitura esconderia o número de quem só quer olhar.
+  Quem abre a versão **escolhe quais etapas ela exige**: o sistema não adivinha
+  o que mudou, porque as tabelas de planejamento não gravam quando foram
+  alteradas. Fechar tira uma **fotografia mensal** (`versao_fato`, recurso × mês,
+  ~370 kB) — o dia a dia custaria 88 MB por versão e não responde nenhuma
+  pergunta a mais. **Versão fechada é o fechamento do cenário**: ninguém mexe.
 - **uma rodada por (área, ano, origem)**: a nova substitui a anterior. O sistema
   mostra a capacidade atual; rodada velha não é consultada por ninguém. O
   **Recalcular parcial** não cria rodada: regrava só os recursos escolhidos
