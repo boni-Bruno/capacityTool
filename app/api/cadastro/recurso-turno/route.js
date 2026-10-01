@@ -4,6 +4,7 @@ import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 import { cenarioEscolhido } from '../../../../lib/origens';
+import { exigeAnoAberto } from '../../../../lib/versao-db';
 
 // Salva a matriz mês x turno de um recurso, um ano por vez.
 //
@@ -30,10 +31,16 @@ export async function POST(req) {
       throw new Error('Ano inválido.');
     }
 
+    // O ano tem que estar em planejamento NESTE cenário (migração 45):
+    // esconder o ano no seletor não impede um POST direto, e gravar num ano
+    // fechado mudaria o cadastro sem mudar a fotografia já aprovada.
+    const cenario = cenarioEscolhido(b.cenario);
+    await exigeAnoAberto(cenario, ano);
+
     // `escopo`: os turnos que a TELA ofereceu. Só eles são reescritos — o que
     // ela não mostrou não pode ser apagado por omissão. Ver definirTurnosDoAno.
     const r = await definirTurnosDoAno(recursoId, ano, b.marcados ?? {}, b.escopo,
-                                       cenarioEscolhido(b.cenario));
+                                       cenario);
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {

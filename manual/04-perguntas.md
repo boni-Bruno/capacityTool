@@ -124,6 +124,21 @@ regime, e Recalcular parcial para ele.
 
 ---
 
+## O ano sumiu do seletor em Turnos do recurso, OEE ou Paradas
+
+**Causa.** Aquele ano não tem **versão aberta** naquele cenário. O cadastro
+acontece dentro de uma versão: ou nenhuma foi aberta ainda, ou a última foi
+fechada — e versão fechada é "ninguém mexe mais".
+
+**O que fazer.** Peça ao gestor de planejamento para abrir uma versão em
+**Habilitação de cenário/ano**. Se a anterior foi fechada de propósito e algo
+precisa mudar, ele abre a próxima (a v2, a v3) marcando quais etapas ela exige.
+
+Repare que **consultar continua funcionando**: o painel, a ocupação e as
+extrações mostram qualquer ano que tenha rodada, fechado ou não.
+
+---
+
 ## O painel do Orçamento está zerado (ou muito menor que o da Simulação)
 
 **Causa.** Os dois cenários são **isolados** e cada um tem a sua jornada. O

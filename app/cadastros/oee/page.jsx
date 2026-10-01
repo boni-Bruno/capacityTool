@@ -1,6 +1,6 @@
 import { Fragment, Suspense } from 'react';
-import { areas, anosComRodada } from '../../../lib/db';
-import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
+import { areas } from '../../../lib/db';
+import { anoEscolhido } from '../../../lib/anos';
 import { recursos } from '../../../lib/cadastro';
 import { faixasOee, origensDoAno } from '../../../lib/oee';
 import { ORIGENS, rotuloOrigem } from '../../../lib/origens';
@@ -10,7 +10,8 @@ import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorOee from './editor';
 import Ciente from '../ciente';
-import { SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
+import { SemVersaoAberta, SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
+import { anosCadastraveis } from '../../../lib/versao-db';
 
 export const metadata = { title: 'OEE' };
 export const dynamic = 'force-dynamic';
@@ -44,7 +45,11 @@ export default async function Page({ searchParams }) {
   const areaPedida = Number(searchParams?.area);
   const areaId = listaAreas.some((a) => a.id === areaPedida) ? areaPedida : listaAreas[0].id;
   // Mesma lista do painel: ano com rodada não some quando o tempo passa.
-  const anos = anosParaEscolha(await anosComRodada());
+  // So os anos com versao aberta neste cenario (migracao 45).
+  const anos = await anosCadastraveis(searchParams?.origem === 'SIMULADO' ? 'SIMULADO' : 'META');
+  if (!anos.length) {
+    return <SemVersaoAberta titulo="OEE" cenario={searchParams?.origem === 'SIMULADO' ? 'Simulação' : 'Orçamento'} />;
+  }
   const ano = anoEscolhido(searchParams?.ano, anos);
   const origem = ORIGENS.includes(searchParams?.origem) ? searchParams.origem : 'META';
   // A lista sai do cenário escolhido: recurso fora do plano naquele cenário não

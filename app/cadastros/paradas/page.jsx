@@ -1,12 +1,13 @@
 import { Suspense } from 'react';
-import { areas, anosComRodada } from '../../../lib/db';
-import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
+import { areas } from '../../../lib/db';
+import { anoEscolhido } from '../../../lib/anos';
 import { recursos, tiposParada, paradas, turnos } from '../../../lib/cadastro';
 import { rotuloArea } from '../../../lib/dias';
 import AvisoBanco from '../aviso-banco';
 import Seletor from '../seletor';
 import EditorParadas from './editor';
-import { SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
+import { SemVersaoAberta, SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
+import { anosCadastraveis } from '../../../lib/versao-db';
 
 export const metadata = { title: 'Paradas' };
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,10 @@ export default async function Page({ searchParams }) {
   const areaPedida = Number(searchParams?.area);
   const areaId = listaAreas.some((a) => a.id === areaPedida) ? areaPedida : listaAreas[0].id;
   // Mesma lista do painel: ano com rodada não some quando o tempo passa.
-  const anos = anosParaEscolha(await anosComRodada());
+  // Parada NAO tem cenario — e a mesma nos dois (migracao 41) —, entao o ano
+  // esta em planejamento se qualquer um dos cenarios o abriu.
+  const anos = await anosCadastraveis(null);
+  if (!anos.length) return <SemVersaoAberta titulo="Paradas" />;
   const ano = anoEscolhido(searchParams?.ano, anos);
 
   const [todosRecursos, tipos, listaTurnos, lista] = await Promise.all([

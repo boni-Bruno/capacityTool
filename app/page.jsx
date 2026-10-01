@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import Shell from './shell';
+import Convite from './convite';
 import { sessaoAtual } from '../lib/sessao';
 import { TUDO, gruposDoMenu } from '../lib/permissoes';
 
@@ -106,6 +108,13 @@ export default async function Menu() {
         <h1 className="menu-marca">Capacidade</h1>
         <p className="menu-sub">Planejamento de capacidade fabril</p>
       </header>
+
+      {/* O convite consulta o banco; a home não. O Suspense preserva a decisão
+          do topo deste arquivo: se o banco estiver fora, a faixa não aparece e
+          a página continua abrindo com os cartões. */}
+      <Suspense fallback={null}>
+        <Convite />
+      </Suspense>
 
       {grupos.map((g) => (
         <div key={g.nome}>

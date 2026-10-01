@@ -81,6 +81,35 @@ export async function podeEditarTela(tela) {
  * têm botões demais para esconder um a um: o servidor recusa a gravação de
  * qualquer jeito, e a faixa avisa antes do clique.
  */
+/**
+ * O que a tela de cadastro mostra quando NENHUM ano está em planejamento.
+ *
+ * Sem versão aberta não há ano para cadastrar (migração 45), e um seletor de
+ * ano vazio não explica nada — a pessoa ficaria procurando o defeito no próprio
+ * cadastro. Isto diz o que houve e para onde ir.
+ */
+export function SemVersaoAberta({ titulo, cenario = null }) {
+  return (
+    <>
+      <div className="topo"><h1 className="titulo">{titulo}</h1></div>
+      <div className="aviso">
+        <strong>
+          Nenhum ano está em planejamento{cenario ? ` no cenário ${cenario}` : ''}.
+        </strong>
+        <p style={{ margin: '8px 0 0' }}>
+          O cadastro acontece dentro de uma <strong>versão aberta</strong>: é ela
+          que diz o que está sendo planejado e guarda o que já foi revisado. Ou
+          nenhuma foi aberta ainda, ou a última foi fechada — e versão fechada é
+          "ninguém mexe mais".
+        </p>
+        <p style={{ margin: '8px 0 0' }}>
+          <a href="/cadastros/habilitacao">Habilitação de cenário/ano →</a>
+        </p>
+      </div>
+    </>
+  );
+}
+
 export async function SomenteLeitura({ tela }) {
   if (await podeEditarTela(tela)) return null;
   return (

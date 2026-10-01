@@ -4,6 +4,7 @@ import { mensagemDeErro } from '../../../../lib/erros';
 import { exigeRota } from '../../../../lib/sessao';
 import { revalidarCadastros } from '../../../../lib/revalidar';
 import { cenarioEscolhido } from '../../../../lib/origens';
+import { exigeAnoAberto } from '../../../../lib/versao-db';
 
 // Regime de dias do recurso — rodízio ou padrão, MÊS A MÊS. Para quem cadastra
 // é uma característica do recurso; no modelo é qual calendário ele segue em
@@ -16,8 +17,10 @@ export async function POST(req) {
   try {
     await exigeRota(req);
     const { recurso_id, ano, por_mes, cenario } = await req.json();
+    const cen = cenarioEscolhido(cenario);
+    await exigeAnoAberto(cen, ano);
     const r = await definirCalendarioDoAno(recurso_id, ano, por_mes,
-                                          cenarioEscolhido(cenario));
+                                          cen);
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {

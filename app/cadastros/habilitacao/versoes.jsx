@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { piorEstado, podeAbrir } from '../../../lib/prontidao';
 import { limpaPassos } from '../../../lib/versao';
+import { formataUnidade } from '../../../lib/formato';
+import { MESES } from '../../../lib/dias';
 
 // O ciclo de vida de um (cenário, ano): abrir, acompanhar, fechar, abrir a
 // próxima. Ver o cabeçalho de page.jsx para o porquê de cada peça.
@@ -14,6 +16,7 @@ const SELO = { ok: 'ok', alerta: 'alerta', falta: 'falta' };
 
 export default function Versoes({
   versoes, anos, anoFoco, cenarios, passos, prontidao, resumo,
+  comFoto, escolhidas, comparacao,
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -273,6 +276,123 @@ export default function Versoes({
           </div>
         );
       })}
+
+      {/* COMPARAR DUAS VERSÕES — a pergunta que a reunião de orçamento faz, e
+          que antes não tinha resposta: a rodada nova apagava a velha. Só entre
+          versões com fotografia; sem foto não há o que comparar. */}
+      {comFoto.length >= 2 && (
+        <div className="painel">
+          <h2>Comparar versões</h2>
+
+          <div className="acoes" style={{ marginBottom: 12 }}>
+            {['a', 'b'].map((lado) => (
+              <label className="campo" key={lado}>
+                <span className="campo-rot">
+                  {lado === 'a' ? 'De' : 'Para'}
+                </span>
+                <select value={escolhidas[lado] ?? ''}
+                        onChange={(e) => {
+                          const p = new URLSearchParams(params.toString());
+                          if (e.target.value) p.set(lado, e.target.value);
+                          else p.delete(lado);
+                          router.push('?' + p.toString());
+                        }}>
+                  <option value="">escolha…</option>
+                  {comFoto.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {cenarios.find((c) => c.codigo === v.origem)?.rotulo}
+                      {' '}{v.ano} · v{v.numero}
+                      {v.rotulo ? ` — ${v.rotulo}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
+
+          {!comparacao ? (
+            <p className="muted">
+              Escolha duas versões fechadas para ver o que mudou, mês a mês.
+            </p>
+          ) : (
+            <div className="grade-rolagem">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mês</th>
+                    <th className="num">Planejada (de)</th>
+                    <th className="num">Planejada (para)</th>
+                    <th className="num">Diferença</th>
+                    <th className="num">Disponível (de)</th>
+                    <th className="num">Disponível (para)</th>
+                    <th className="num">Diferença</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparacao.map((m) => {
+                    const dp = m.planejada_b - m.planejada_a;
+                    const dd = m.disponivel_b - m.disponivel_a;
+                    return (
+                      <tr key={m.mes}>
+                        <td>{MESES[Number(m.mes.slice(5, 7))]}</td>
+                        <td className="num">{formataUnidade(m.planejada_a, 'min')}</td>
+                        <td className="num">{formataUnidade(m.planejada_b, 'min')}</td>
+                        <td className={'num' + (dp ? '' : ' muted')}>
+                          {dp > 0 ? '+' : ''}{formataUnidade(dp, 'min')}
+                        </td>
+                        <td className="num">{formataUnidade(m.disponivel_a, 'min')}</td>
+                        <td className="num">{formataUnidade(m.disponivel_b, 'min')}</td>
+                        <td className={'num' + (dd ? '' : ' muted')}>
+                          {dd > 0 ? '+' : ''}{formataUnidade(dd, 'min')}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="linha-edit">
+                    <td><strong>total</strong></td>
+                    {['planejada_a', 'planejada_b'].map((k) => (
+                      <td className="num" key={k}>
+                        <strong>
+                          {formataUnidade(
+                            comparacao.reduce((s, m) => s + m[k], 0), 'min')}
+                        </strong>
+                      </td>
+                    ))}
+                    <td className="num">
+                      <strong>
+                        {formataUnidade(comparacao.reduce(
+                          (s, m) => s + (m.planejada_b - m.planejada_a), 0), 'min')}
+                      </strong>
+                    </td>
+                    {['disponivel_a', 'disponivel_b'].map((k) => (
+                      <td className="num" key={k}>
+                        <strong>
+                          {formataUnidade(
+                            comparacao.reduce((s, m) => s + m[k], 0), 'min')}
+                        </strong>
+                      </td>
+                    ))}
+                    <td className="num">
+                      <strong>
+                        {formataUnidade(comparacao.reduce(
+                          (s, m) => s + (m.disponivel_b - m.disponivel_a), 0), 'min')}
+                      </strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <p className="rodape">
+            Os números saem da <strong>fotografia</strong> de cada versão, e não
+            da rodada atual — é por isso que eles não mudam quando alguém
+            recalcula. A foto é por recurso e mês; aqui ela aparece somada. O
+            endereço desta tela carrega as duas versões escolhidas, então mandar
+            a comparação para alguém é mandar o link.
+          </p>
+        </div>
+      )}
 
       {/* ABRIR: o rótulo e, da v2 em diante, quais etapas a versão exige. */}
       {abrindo && (

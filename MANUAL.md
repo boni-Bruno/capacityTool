@@ -1104,6 +1104,35 @@ cadastro — rodada velha vira foto velha, e depois de fechada ela não muda mai
 Fechar com áreas pendentes é possível e fica registrado: o martelo bate quando
 bate.
 
+### Comparar duas versões
+
+Escolha **De** e **Para** entre as versões que têm fotografia, e a tabela mostra
+planejada e disponível mês a mês, com a diferença.
+
+Os números saem da **fotografia** de cada versão, não da rodada atual — por isso
+eles não mudam quando alguém recalcula. O endereço da tela carrega as duas
+versões escolhidas: mandar a comparação para alguém é mandar o link.
+
+Só aparecem versões **com foto**. Uma versão fechada sem rodada nenhuma não tem
+o que comparar, e mostrá-la daria zero — que se leria como queda de capacidade.
+
+### O que a versão aberta libera (e a fechada tranca)
+
+Com uma versão aberta, aquele ano aparece nos seletores de **Turnos do recurso**,
+**OEE** e **Paradas** naquele cenário. Sem versão aberta ele não aparece, e a
+tela diz o porquê em vez de mostrar um seletor vazio.
+
+**Consultar nunca trava**: painel, ocupação e extração mostram qualquer ano com
+rodada, inclusive de versões fechadas. Travar a leitura esconderia o número de
+quem só quer olhar.
+
+A trava também vale no servidor, e não só na tela — gravar num ano fechado
+mudaria o cadastro sem mudar a fotografia, e o número aprovado na reunião
+deixaria de bater com o que está no banco.
+
+**Paradas é o caso especial**: ela não tem cenário (é a mesma nos dois), então o
+ano fica liberado se **qualquer** um dos cenários o tiver aberto.
+
 ### Cuidados
 
 - **Uma versão aberta por cenário e ano**, e é o banco que garante. Duas abertas
@@ -1673,6 +1702,21 @@ não gera nenhuma linha para ele. Ou tem, e não foi recalculado.
 
 **O que fazer.** Turnos do recurso (com o Tipo certo — pessoa ou máquina),
 regime, e Recalcular parcial para ele.
+
+---
+
+### O ano sumiu do seletor em Turnos do recurso, OEE ou Paradas
+
+**Causa.** Aquele ano não tem **versão aberta** naquele cenário. O cadastro
+acontece dentro de uma versão: ou nenhuma foi aberta ainda, ou a última foi
+fechada — e versão fechada é "ninguém mexe mais".
+
+**O que fazer.** Peça ao gestor de planejamento para abrir uma versão em
+**Habilitação de cenário/ano**. Se a anterior foi fechada de propósito e algo
+precisa mudar, ele abre a próxima (a v2, a v3) marcando quais etapas ela exige.
+
+Repare que **consultar continua funcionando**: o painel, a ocupação e as
+extrações mostram qualquer ano que tenha rodada, fechado ou não.
 
 ---
 

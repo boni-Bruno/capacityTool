@@ -1,6 +1,6 @@
 import { Fragment, Suspense } from 'react';
-import { areas, anosComRodada } from '../../../lib/db';
-import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
+import { areas } from '../../../lib/db';
+import { anoEscolhido } from '../../../lib/anos';
 import {
   recursos, matrizTurnosDoAno, calendariosDaPlanta, calendarioDoAno,
   turnosSobrepostos, turnosOferecidos,
@@ -11,7 +11,8 @@ import Matriz from './matriz';
 import Ciente from '../ciente';
 import { rotuloArea, DIAS, MESES } from '../../../lib/dias';
 import { CENARIOS, cenarioEscolhido } from '../../../lib/origens';
-import { SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
+import { SemVersaoAberta, SomenteLeitura, areasDoEscopo, exigeVer } from '../guarda';
+import { anosCadastraveis } from '../../../lib/versao-db';
 
 export const metadata = { title: 'Turnos do recurso' };
 export const dynamic = 'force-dynamic';
@@ -40,13 +41,20 @@ export default async function Page({ searchParams }) {
   // que voltaria vazia parecendo cadastro sem nada.
   const areaPedida = Number(searchParams?.area);
   const areaId = listaAreas.some((a) => a.id === areaPedida) ? areaPedida : listaAreas[0].id;
-  // Mesma lista do painel: ano com rodada não some quando o tempo passa.
-  const anos = anosParaEscolha(await anosComRodada());
-  const ano = anoEscolhido(searchParams?.ano, anos);
   // O CENÁRIO vem da URL, como todo recorte deste projeto. Ele decide qual
   // planejamento a tela lê e grava: Orçamento e Simulação são isolados, e o
-  // endereço tem que dizer em qual você está.
+  // endereço tem que dizer em qual você está. Vem ANTES dos anos porque é ele
+  // que decide quais anos estão em planejamento.
   const cenario = cenarioEscolhido(searchParams?.cenario);
+  // SÓ OS ANOS COM VERSÃO ABERTA neste cenário: cadastrar num ano fechado
+  // mudaria o cadastro sem mudar a fotografia, e o número aprovado na reunião
+  // deixaria de bater com o banco sem nada denunciando.
+  const anos = await anosCadastraveis(cenario);
+  if (!anos.length) {
+    return <SemVersaoAberta titulo="Turnos do recurso"
+                            cenario={cenario === 'META' ? 'Orçamento' : 'Simulação'} />;
+  }
+  const ano = anoEscolhido(searchParams?.ano, anos);
   const daArea = await recursos(areaId, cenario);
 
   // O TIPO É O PRIMEIRO CORTE, e não tem "todos". Máquina e pessoa não podem

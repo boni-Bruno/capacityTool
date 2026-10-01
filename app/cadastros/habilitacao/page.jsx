@@ -1,6 +1,8 @@
 import { anosComRodada } from '../../../lib/db';
 import { anosParaEscolha } from '../../../lib/anos';
-import { versoes, progressoDaVersao, prontidaoBruta } from '../../../lib/versao-db';
+import {
+  versoes, progressoDaVersao, prontidaoBruta, compararVersoes,
+} from '../../../lib/versao-db';
 import { PASSOS, progresso, versaoAberta } from '../../../lib/versao';
 import { prontidaoDaPlanta } from '../../../lib/prontidao';
 import { CENARIOS } from '../../../lib/origens';
@@ -90,6 +92,18 @@ export default async function Page({ searchParams }) {
     resumo[v.id] = { areas: areas.length, prontas };
   });
 
+  // A COMPARAÇÃO vive na URL (?a=&b=), como todo recorte deste projeto: o
+  // endereço descreve o que está na tela, e mandar "olha a v2 contra a v4" é
+  // mandar um link. Só entre versões que têm foto — comparar com uma que foi
+  // fechada sem rodada mostraria zero e pareceria queda de capacidade.
+  const comFoto = lista.filter((v) => Number(v.fotos) > 0);
+  const idA = Number(searchParams?.a);
+  const idB = Number(searchParams?.b);
+  const va = comFoto.find((v) => v.id === idA) ?? null;
+  const vb = comFoto.find((v) => v.id === idB) ?? null;
+  const comparacao = va && vb && va.id !== vb.id
+    ? await compararVersoes(va.id, vb.id) : null;
+
   return (
     <>
       <SomenteLeitura tela="habilitacao" />
@@ -117,7 +131,13 @@ export default async function Page({ searchParams }) {
         cenarios={CENARIOS}
         passos={PASSOS}
         prontidao={prontidao}
-        resumo={resumo} />
+        resumo={resumo}
+        comFoto={comFoto.map((v) => ({
+          id: v.id, origem: v.origem, ano: Number(v.ano),
+          numero: v.numero, rotulo: v.rotulo,
+        }))}
+        escolhidas={{ a: va?.id ?? null, b: vb?.id ?? null }}
+        comparacao={comparacao} />
     </>
   );
 }

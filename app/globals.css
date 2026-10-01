@@ -211,6 +211,20 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 :root:not([data-theme="light"]) .selo.falta,
 :root[data-theme="dark"]        .selo.falta  { background: #3a1f1f; color: var(--erro); }
 
+/* A FAIXA DE CONVITE da home. Discreta de propósito: ela é um atalho para quem
+   tem trabalho em aberto, e um banner gritando na porta de entrada vira a
+   primeira coisa que as pessoas aprendem a ignorar. */
+.convite { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 22px; }
+.convite-linha {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
+  padding: 11px 14px; border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 8px; background: var(--card); color: var(--text);
+  text-decoration: none; font-size: 14px;
+}
+.convite-linha:hover { border-color: var(--accent); }
+.convite-ir { color: var(--accent); font-size: 13px; white-space: nowrap; }
+
 /* A TRILHA DE ETAPAS do fluxo guiado. Clicável de propósito: quem lembrou de
    algo da etapa 2 na 4 volta sem perder o que já confirmou. Rola no eixo X em
    tela estreita em vez de quebrar em duas linhas — a ordem das etapas é a
