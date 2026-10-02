@@ -155,12 +155,19 @@ identificada como "mestre". Fechar o navegador encerra a sessão; o botão
 **Sair** também. Trocar o cargo ou desativar alguém vale na próxima tela que a
 pessoa abrir.
 
+**Sair daqui não sai do Hub.** A senha mora no portal, e a sessão dele continua
+aberta depois que você sai da Capacity Tool — por isso entrar de novo não pede
+senha. A tela que aparece ao sair explica isso e, quando o endereço de saída do
+portal está configurado, oferece o botão para sair dos dois.
+
 ## Ticket
 
 O chamado que quem usa a ferramenta abre de dentro dela: dúvida, sugestão ou
 defeito, sobre uma tela ou sobre a ferramenta toda (grupo **Roadmap** no menu).
 Cada um tem um número, um estado — **Aberto**, **Em análise**, **Feito**, **Não
-vamos fazer** — e a resposta de quem cuida do roadmap.
+procedente** — e a resposta de quem cuida do roadmap. **Só quem gerencia muda o
+estado**, e sair de *Aberto* trava o texto do chamado para todos: dali em
+diante o que se acrescenta é **comentário**, que só cresce e nunca se apaga.
 
 São **duas telas**: em **Meus tickets** você vê os seus, abre um novo (numa
 janela sobre a lista) e corrige o que escreveu; em **Gerenciar tickets** quem

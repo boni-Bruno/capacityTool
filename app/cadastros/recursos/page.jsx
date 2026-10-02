@@ -16,7 +16,7 @@ const TIPOS = [
   { valor: 'PESSOA',  rotulo: 'pessoa' },
 ];
 
-export default async function Page() {
+export default async function Page({ searchParams } = {}) {
   const negado = await exigeVer('recursos');
   if (negado) return negado;
 
@@ -32,6 +32,30 @@ export default async function Page() {
     ]);
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
+  }
+
+  // O RECORTE DE UMA FÁBRICA SÓ, quando `?area=` vem na URL.
+  //
+  // É o que o fluxo guiado precisava: ele embute esta página inteira no passo
+  // dos Recursos, e até 02/10/2026 ela ignorava o endereço — então, no meio de
+  // "planejar a Tecelagem", apareciam as oito áreas que a pessoa alcança. O
+  // escopo sempre valeu (as outras nunca apareceram), mas revisar a fábrica
+  // escolhida com a lista inteira na frente é o mesmo que não ter escolhido.
+  //
+  // DEPOIS do escopo, e validado contra a lista que ele deixou passar: área
+  // fora do alcance não vira recorte, vira nada — e o `?area=` de um link
+  // colado não serve para espiar o que o cargo não vê.
+  const pedida = Number(searchParams?.area);
+  const umaArea = Number.isInteger(pedida)
+    && areas.some((a) => Number(a.id) === pedida) ? pedida : null;
+
+  if (umaArea !== null) {
+    const daArea = (l) => l.filter((x) => Number(x.area_id) === umaArea);
+    recursos = daArea(recursos);
+    desativados = daArea(desativados);
+    // O seletor de área do formulário fica com uma opção só: dentro do fluxo,
+    // criar a máquina em outra fábrica seria sair do passo sem sair da tela.
+    areas = areas.filter((a) => Number(a.id) === umaArea);
   }
 
   if (!areas.length) {

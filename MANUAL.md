@@ -211,12 +211,19 @@ identificada como "mestre". Fechar o navegador encerra a sessão; o botão
 **Sair** também. Trocar o cargo ou desativar alguém vale na próxima tela que a
 pessoa abrir.
 
+**Sair daqui não sai do Hub.** A senha mora no portal, e a sessão dele continua
+aberta depois que você sai da Capacity Tool — por isso entrar de novo não pede
+senha. A tela que aparece ao sair explica isso e, quando o endereço de saída do
+portal está configurado, oferece o botão para sair dos dois.
+
 ### Ticket
 
 O chamado que quem usa a ferramenta abre de dentro dela: dúvida, sugestão ou
 defeito, sobre uma tela ou sobre a ferramenta toda (grupo **Roadmap** no menu).
 Cada um tem um número, um estado — **Aberto**, **Em análise**, **Feito**, **Não
-vamos fazer** — e a resposta de quem cuida do roadmap.
+procedente** — e a resposta de quem cuida do roadmap. **Só quem gerencia muda o
+estado**, e sair de *Aberto* trava o texto do chamado para todos: dali em
+diante o que se acrescenta é **comentário**, que só cresce e nunca se apaga.
 
 São **duas telas**: em **Meus tickets** você vê os seus, abre um novo (numa
 janela sobre a lista) e corrige o que escreveu; em **Gerenciar tickets** quem
@@ -1103,30 +1110,51 @@ Ao enviar, a janela fecha e o chamado aparece na lista com um número.
 
 - Os **chips** filtram por estado; *Em aberto* é o padrão, para o que já foi
   fechado não enterrar o que ainda espera.
-- **Clicar numa linha** abre o texto inteiro do chamado e a resposta.
-- Estados: **Aberto** → **Em análise** → **Feito** ou **Não vamos fazer**.
+- **Clicar numa linha** abre o texto inteiro do chamado, a resposta e a
+  conversa.
+- Estados: **Aberto** → **Em análise** → **Feito** ou **Não procedente**. Só
+  quem gerencia muda o estado.
 
 ### Corrigir o que você escreveu
 
 Abra o seu chamado e clique em **Editar o chamado**: dá para trocar produto,
-tipo, resumo e descrição. Isso vale **enquanto ninguém respondeu** — depois da
-resposta o botão some, porque editar a pergunta deixaria a resposta sem sentido
-para quem ler depois. Se precisar acrescentar algo a um chamado já respondido,
-abra outro ou fale com quem respondeu.
+tipo, resumo e descrição. Isso vale **enquanto o chamado está em "Aberto"** e
+ninguém respondeu.
+
+**Assim que ele sai de Aberto — Em análise, Feito ou Não procedente — o texto
+trava para todo mundo**, inclusive para quem gerencia. É o que mantém o
+rastreio: a partir do momento em que alguém pegou o chamado, o que está escrito
+nele é a referência da conversa, e reescrever a pergunta faria a resposta deixar
+de responder alguma coisa.
+
+### A conversa (comentários)
+
+Dentro de cada chamado há uma conversa. **Quem abriu e quem gerencia podem
+comentar, em qualquer estado** — inclusive depois de fechado, que é como se diz
+*"voltou a acontecer"* sem abrir um chamado novo e perder o histórico do
+primeiro.
+
+Comentário **só acrescenta**: não se edita e não se apaga, nem por quem
+escreveu. É essa a diferença entre acrescentar e reescrever — um deixa rastro, o
+outro apaga.
 
 ### Gerenciar tickets
 
 A fila de **toda a ferramenta**, com uma coluna a mais dizendo quem abriu. Quem
-tem *editar* nesta tela responde, muda o estado e apaga; quem tem só *ver*
-acompanha a fila sem mexer nela.
+tem *editar* nesta tela responde, muda o estado, comenta e apaga; quem tem só
+*ver* acompanha a fila sem mexer nela.
 
 A resposta aparece na hora para quem abriu, na tela Meus tickets dele.
+
+**Mudar o estado é só daqui** — o dono do chamado não muda o estado do próprio
+chamado. E o texto do chamado trava assim que ele sai de *Aberto*, para quem
+gerencia também: dali em diante, o que se acrescenta é comentário.
 
 #### Apagar
 
 Apagar existe para o **chamado repetido** e para o **aberto por engano**.
 
-O que não vai ser feito **se responde**, com "Não vamos fazer" e o porquê —
+O que não vai ser feito **se responde**, com "Não procedente" e o porquê —
 apagar a reclamação em vez de respondê-la é o jeito mais rápido de a fila ficar
 vazia e ninguém mais abrir chamado nenhum.
 
@@ -1666,7 +1694,7 @@ Alguém novo vai usar o app, ou alguém vai passar a fazer mais (ou menos).
 
 | etapa | o que revisar |
 |---|---|
-| **Recursos** | Qtd, equivalência, janela de operação. Máquina nova entra aqui. É estrutura: vale nos dois cenários. |
+| **Recursos** | Qtd, equivalência, janela de operação — só os da fábrica escolhida. Máquina nova entra aqui, já nessa área. É estrutura: vale nos dois cenários. |
 | **Jornada e regime** | a matriz mês × turno, e o regime de dias na primeira coluna |
 | **OEE** | o rendimento, mês a mês |
 | **Paradas** | preventivas, férias coletivas, obra. **Não tem cenário**: vale nos dois |
@@ -2006,6 +2034,32 @@ ao cadastro.
 
 **O que fazer.** Recalcular primeiro. Se continuar zero, confira a data e o
 turno da parada contra o regime do recurso naquele mês.
+
+---
+
+### Cliquei em Sair e voltei para dentro da ferramenta, já logado
+
+**Causa.** Era assim até 02/10/2026, e não era defeito de cookie: a sessão daqui
+era apagada, a tela de entrada mandava para o **Hub S&OP**, o Hub ainda tinha
+sessão aberta e devolvia você logado. A porta de entrada funcionando a um passo
+da saída.
+
+**O que fazer.** Agora o Sair leva a uma tela de despedida que não volta
+sozinha. Para sair **de tudo**, saia também pelo portal — a senha mora lá. Se o
+botão *"Sair também do Hub S&OP"* não aparece nessa tela, falta configurar o
+endereço de saída do portal (`HUB_SAIR_URL`); fale com quem cuida da ferramenta.
+
+---
+
+### Não consigo mais editar o meu chamado
+
+**Causa.** O chamado saiu de **Aberto**. A partir de *Em análise*, *Feito* ou
+*Não procedente* o texto trava para todo mundo — inclusive para quem gerencia —,
+porque dali em diante ele é a referência de uma conversa que já começou.
+
+**O que fazer.** Use o campo de **comentário**, dentro do chamado: ele vale em
+qualquer estado e serve para corrigir, acrescentar ou dizer que o problema
+voltou. Comentário só acrescenta, e é isso que preserva o histórico.
 
 ---
 

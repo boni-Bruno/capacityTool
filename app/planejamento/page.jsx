@@ -289,7 +289,10 @@ export default async function Page({ searchParams }) {
 
       {/* OS EDITORES. Cada um é a página do menu inteira, com o recorte desta
           fábrica já aplicado. */}
-      {passo === 'recursos' && <RecursosPage />}
+      {/* Com `sp`, como os outros: desde 02/10/2026 a página dos Recursos lê
+          `?area=` e se recorta na fábrica do fluxo. Sem isso ela listava todas
+          as áreas do escopo no meio de "planejar a Tecelagem". */}
+      {passo === 'recursos' && <RecursosPage searchParams={sp} />}
       {passo === 'jornada'  && <TurnosDoRecursoPage searchParams={sp} />}
       {passo === 'oee'      && <OeePage searchParams={sp} />}
       {passo === 'paradas'  && <ParadasPage searchParams={sp} />}

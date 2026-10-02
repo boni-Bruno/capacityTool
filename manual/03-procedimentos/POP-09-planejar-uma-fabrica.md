@@ -20,7 +20,7 @@
 
 | etapa | o que revisar |
 |---|---|
-| **Recursos** | Qtd, equivalência, janela de operação. Máquina nova entra aqui. É estrutura: vale nos dois cenários. |
+| **Recursos** | Qtd, equivalência, janela de operação — só os da fábrica escolhida. Máquina nova entra aqui, já nessa área. É estrutura: vale nos dois cenários. |
 | **Jornada e regime** | a matriz mês × turno, e o regime de dias na primeira coluna |
 | **OEE** | o rendimento, mês a mês |
 | **Paradas** | preventivas, férias coletivas, obra. **Não tem cenário**: vale nos dois |

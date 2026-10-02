@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { tickets } from '../../../../lib/tickets';
+import { comentariosDosTickets, tickets } from '../../../../lib/tickets';
 import { produtos } from '../../../../lib/ticket-formato';
 import { sessaoAtual } from '../../../../lib/sessao';
 import { exigeVer, podeEditarTela } from '../../guarda';
@@ -32,8 +32,10 @@ export default async function Page() {
   const posso = await podeEditarTela('tickets_gerenciar');
 
   let lista;
+  let conversas;
   try {
     lista = await tickets({ vejoTodos: true });
+    conversas = await comentariosDosTickets(lista.map((t) => t.id));
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
   }
@@ -79,6 +81,10 @@ export default async function Page() {
           resposta: t.resposta,
           respondido_em: t.respondido_em,
           respondido_por_nome: t.respondido_por_nome ?? null,
+          comentarios: (conversas.get(Number(t.id)) ?? []).map((c) => ({
+            id: c.id, autor_nome: c.autor_nome, texto: c.texto,
+            criado_em: c.criado_em,
+          })),
         }))}
         vejoTodos
         podeResponder={posso}

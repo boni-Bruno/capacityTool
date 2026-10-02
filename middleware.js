@@ -46,6 +46,10 @@ export const config = {
     // sem cookie nenhum — se o porteiro a barrasse, ela nunca teria chance de
     // conferir o token e emitir o cookie. Ela tem a propria tranca, mais dura que
     // esta: sem SSO_SEGREDO, recusa; ver app/sso/route.js.
-    '/((?!entrar|api/entrar|sso|_next/static|_next/image|favicon.ico).*)',
+    // 'saiu' também fica de fora, e pela razão oposta à do 'sso': ela é vista
+    // por quem acabou de NÃO ter sessão. Dentro do matcher, o porteiro mandaria
+    // a tela de "você saiu" para o Hub — que devolveria a pessoa logada, que é
+    // exatamente o laço que ela existe para quebrar.
+    '/((?!entrar|saiu|api/entrar|sso|_next/static|_next/image|favicon.ico).*)',
   ],
 };

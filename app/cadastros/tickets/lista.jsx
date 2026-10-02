@@ -3,8 +3,9 @@
 import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  STATUS, TIPOS, TUDO, motivoParaNaoEditar, podeEditarTicket, rotuloDoProduto,
-  rotuloDoTipo, statusDe, tipo as tipoDe, validaTicket,
+  STATUS, TIPOS, TUDO, motivoParaNaoEditar, podeComentar, podeEditarTicket,
+  rotuloDoProduto, rotuloDoTipo, statusDe, tipo as tipoDe, validaComentario,
+  validaTicket,
 } from '../../../lib/ticket-formato';
 
 // A fila de chamados.
@@ -34,6 +35,7 @@ export default function Lista({
   const [aberto, setAberto] = useState(null);
   const [filtro, setFiltro] = useState('ATIVOS');
   const [rascunho, setRascunho] = useState({});     // resposta, por ticket
+  const [comentario, setComentario] = useState({}); // o que se está escrevendo
   const [edicao, setEdicao] = useState(null);       // { id, produto, tipo, resumo, descricao }
   const [confirma, setConfirma] = useState(null);   // id à espera de confirmação
   const [ocupado, setOcupado] = useState(false);
@@ -48,11 +50,11 @@ export default function Lista({
 
   const grupos = [...new Set((produtos ?? []).filter((p) => p.grupo).map((p) => p.grupo))];
 
-  async function chama(metodo, corpo) {
+  async function chama(metodo, corpo, rota = '/api/cadastro/ticket') {
     setOcupado(true);
     setErro(null);
     try {
-      const r = await fetch('/api/cadastro/ticket', {
+      const r = await fetch(rota, {
         method: metodo,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(corpo),
@@ -79,6 +81,15 @@ export default function Lista({
 
   async function salvaEdicao() {
     if (await chama('PUT', edicao)) setEdicao(null);
+  }
+
+  async function comenta(t) {
+    const texto = comentario[t.id] ?? '';
+    if (validaComentario(texto).length) return;
+    if (await chama('POST', { id: t.id, texto },
+                    '/api/cadastro/ticket-comentario')) {
+      setComentario({ ...comentario, [t.id]: '' });
+    }
   }
 
   async function apaga(t) {
@@ -183,7 +194,8 @@ export default function Lista({
 
                               {/* O dono corrige o que escreveu. O aviso de por
                                   que não dá mais é melhor que o botão sumir
-                                  sem explicação. */}
+                                  sem explicação — e desde que o estado tranca
+                                  o texto, ele é o que explica a trava. */}
                               {t.meu && (
                                 <div className="acoes">
                                   {posso ? (
@@ -193,11 +205,30 @@ export default function Lista({
                                     </button>
                                   ) : (
                                     <span className="muted">
-                                      {motivoParaNaoEditar(t, { souDono: true, cuidoDaFila: false })}
+                                      {motivoParaNaoEditar(t, {
+                                        souDono: true, cuidoDaFila: podeResponder,
+                                      })}
                                     </span>
                                   )}
                                 </div>
                               )}
+
+                              {/* A CONVERSA. Ela é o que sobrou de mutável
+                                  depois que o texto do chamado passou a travar
+                                  fora de "Aberto": acrescentar deixa rastro,
+                                  reescrever apaga. Vale em qualquer estado,
+                                  inclusive fechado — é assim que se diz "voltou
+                                  a acontecer" sem abrir um chamado novo que
+                                  perderia o histórico do primeiro. */}
+                              <Conversa
+                                comentarios={t.comentarios ?? []}
+                                podeEscrever={podeComentar(t, {
+                                  souDono: t.meu, cuidoDaFila: podeResponder,
+                                })}
+                                valor={comentario[t.id] ?? ''}
+                                ocupado={ocupado}
+                                onMuda={(v) => setComentario({ ...comentario, [t.id]: v })}
+                                onEnviar={() => comenta(t)} />
                             </>
                           )}
 
@@ -228,7 +259,12 @@ export default function Lista({
                                 {ocupado ? 'Salvando…' : 'Responder'}
                               </button>
 
-                              {!t.meu && (
+                              {/* `posso` entra aqui também: desde 02/10/2026 o
+                                  texto trava fora de "Aberto" para todo mundo,
+                                  e quem cuida da fila não é exceção — é ele
+                                  quem move o estado, e seria quem apagaria o
+                                  rastro sem querer. */}
+                              {!t.meu && posso && (
                                 <button type="button" className="btn btn-mini"
                                         disabled={ocupado} onClick={() => abreEdicao(t)}>
                                   Editar
@@ -285,6 +321,50 @@ export default function Lista({
             : ' Quem cuida do roadmap responde por aqui mesmo.'}
       </p>
     </>
+  );
+}
+
+// A CONVERSA de um chamado: o que já foi dito, e a caixa de dizer mais.
+//
+// Comentário SÓ ACRESCENTA — não se edita e não se apaga, nem pelo autor. É o
+// que torna a trava do texto suportável: quem quer corrigir algo depois de o
+// chamado sair de "Aberto" acrescenta a correção, e as duas versões ficam
+// visíveis, na ordem em que foram escritas.
+function Conversa({ comentarios, podeEscrever, valor, ocupado, onMuda, onEnviar }) {
+  const faltas = validaComentario(valor);
+
+  if (!comentarios.length && !podeEscrever) return null;
+
+  return (
+    <div className="ticket-conversa">
+      {comentarios.map((c) => (
+        <div key={c.id} className="ticket-comentario">
+          <span className="muted" style={{ fontSize: 12 }}>
+            <strong>{c.autor_nome}</strong>
+            {' · '}
+            {new Date(c.criado_em).toLocaleString('pt-BR', {
+              day: '2-digit', month: '2-digit', year: '2-digit',
+              hour: '2-digit', minute: '2-digit',
+            })}
+          </span>
+          <p className="ticket-texto" style={{ margin: '2px 0 0' }}>{c.texto}</p>
+        </div>
+      ))}
+
+      {podeEscrever && (
+        <div className="acoes" style={{ alignItems: 'flex-start' }}>
+          <textarea rows={2} value={valor} disabled={ocupado}
+                    style={{ flex: 1 }}
+                    placeholder="acrescentar um comentário"
+                    onChange={(e) => onMuda(e.target.value)} />
+          <button type="button" className="btn btn-mini"
+                  disabled={ocupado || faltas.length > 0}
+                  onClick={onEnviar}>
+            {ocupado ? 'Enviando…' : 'Comentar'}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

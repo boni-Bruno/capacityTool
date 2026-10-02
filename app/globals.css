@@ -899,6 +899,16 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
    acompanhada dele. Ver lib/faixa-cor.js e app/ocupacao/faixas.jsx. */
 .ocup-cor { font-weight: 600; }
 
+/* ---- tickets: a conversa do chamado (migracao 47) ----
+   Os comentarios so crescem, e e isso que a trava do texto comprou: quem quer
+   corrigir algo depois acrescenta, e as duas versoes ficam visiveis. A borda a
+   esquerda e o fio da conversa. */
+.ticket-conversa {
+  display: flex; flex-direction: column; gap: 10px;
+  border-left: 2px solid var(--border); padding-left: 12px; margin-top: 4px;
+}
+.ticket-comentario p { font-size: 13px; }
+
 /* ---- tickets: o chamado aberto dentro da linha ---- */
 
 .ticket-corpo { display: flex; flex-direction: column; gap: 12px; padding: 4px 0 8px; }

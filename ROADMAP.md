@@ -2033,6 +2033,58 @@ A lição ficou no CLAUDE.md, porque é maior que os tickets: **papel diferente
 pede tela própria**, não um significado especial numa caixa que parece igual às
 outras.
 
+### O chamado trava, e a conversa continua (migração 47)
+
+No dia seguinte ao redesenho, o Bruno fechou a regra que faltava: *"quando o
+chamado estiver em análise, feito ou não procedente, não pode mais ser editado
+nem pelo usuário, pois assim perde rastreio; pode ser incluído um novo
+comentário pelas pessoas, seja o dono do ticket ou o gestor que está atendendo;
+somente o gestor pode mudar o ticket de estado"*.
+
+**Sair de ABERTO tranca o texto para todo mundo**, inclusive para quem cuida da
+fila — antes o curador editava sempre. O marco é o estado porque é ele que diz
+que alguém já leu: a partir dali, o que está escrito é a referência de uma
+conversa que começou, e reescrever a pergunta faz a resposta deixar de responder
+alguma coisa sem que ninguém perceba.
+
+**O que se perdeu em reescrever, ganhou-se em acrescentar**: a tabela
+`ticket_comentario` guarda a conversa, que **só cresce** — não se edita e não se
+apaga, nem pelo autor. Dono e curador comentam em **qualquer estado**, inclusive
+em Feito e Não procedente: é assim que se diz "voltou a acontecer" sem abrir um
+chamado novo que perderia o histórico do primeiro.
+
+O autor vai em **texto junto do id**, como em `ticket`: a sessão mestre não tem
+id, e o nome congela quem a pessoa era no dia.
+
+**"Não vamos fazer" virou "Não procedente"**, só no rótulo — o código
+`RECUSADO` ficou, porque renomeá-lo reescreveria chamados já fechados e não
+mudaria nada do que eles dizem.
+
+Mudar o estado já era só de quem cuida da fila (o PATCH pede
+`tickets_gerenciar.editar`); ficou dito em voz alta na tela e no manual.
+
+### Sair passou a sair (02/10/2026)
+
+Relato do Bruno: *"quando o usuário convidado clica em Sair, retorna para a
+aplicação; no Hub está OK, sai de fato"*.
+
+**Não era defeito de cookie.** O cookie era apagado certinho — e então a pessoa
+ia para `/entrar`, que redireciona ao Hub, que ainda tinha sessão viva e a
+devolvia logada. Era a porta de entrada funcionando perfeitamente a um passo da
+saída, e em dois segundos.
+
+Agora o Sair vai para **`/saiu`**, uma tela que não redireciona ninguém e diz o
+que de fato aconteceu: a sessão daqui acabou, a do portal continua de pé, e é
+por isso que entrar de novo não pede senha. Ela fica **fora do matcher do
+middleware** — dentro dele, o porteiro mandaria a tela de "você saiu" para o
+Hub, que é o laço que ela existe para quebrar. O botão usa `replace` e não
+`push`: com `push`, o Voltar do navegador reentraria.
+
+**O logout central** depende do Hub, e o caminho é dele: `HUB_SAIR_URL` liga o
+botão *"Sair também do Hub S&OP"*. Sem a variável, a tela explica a situação em
+vez de chutar um endereço e mandar a pessoa para um 404 do portal justamente
+quando ela quer sair.
+
 ---
 
 ## A navegação estava lenta, e o motivo era geografia — PRONTO
@@ -2732,10 +2784,12 @@ mesma nos dois), então o ano fica liberado se qualquer um dos dois o abriu.
   cenário no seletor, e o painel refaz a consulta. Uma coluna "Orçamento ×
   Simulação" lado a lado é outra construção. (Comparar duas **versões** do mesmo
   cenário já existe, na tela de Habilitação.)
-- **O passo Recursos do fluxo lista todas as áreas**, e não só a da fábrica
-  escolhida: `app/cadastros/recursos/page.jsx` não lê `searchParams`, então não
-  há como recortá-la por URL. Dá para filtrar na própria tela; se incomodar, é
-  um parâmetro novo lá e uma linha aqui.
+- ~~O passo Recursos do fluxo lista todas as áreas~~ — **feito em 02/10/2026**,
+  depois de o usuário convidado tropeçar nisso: a página passou a ler `?area=`
+  e a se recortar na fábrica do fluxo (lista, desativados e o seletor de área
+  do formulário). O escopo sempre valeu — as áreas de outros nunca apareceram —,
+  mas revisar a Tecelagem com as oito áreas da pessoa na frente é o mesmo que
+  não ter escolhido fábrica nenhuma.
 - **Auditoria por pessoa.** Continua sendo o que falta para o sistema saber o
   que mudou entre uma versão e a seguinte — é por não ter isso que quem abre a
   v4 precisa marcar à mão quais etapas ela exige.

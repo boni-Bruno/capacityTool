@@ -301,6 +301,32 @@ turno da parada contra o regime do recurso naquele mês.
 
 ---
 
+## Cliquei em Sair e voltei para dentro da ferramenta, já logado
+
+**Causa.** Era assim até 02/10/2026, e não era defeito de cookie: a sessão daqui
+era apagada, a tela de entrada mandava para o **Hub S&OP**, o Hub ainda tinha
+sessão aberta e devolvia você logado. A porta de entrada funcionando a um passo
+da saída.
+
+**O que fazer.** Agora o Sair leva a uma tela de despedida que não volta
+sozinha. Para sair **de tudo**, saia também pelo portal — a senha mora lá. Se o
+botão *"Sair também do Hub S&OP"* não aparece nessa tela, falta configurar o
+endereço de saída do portal (`HUB_SAIR_URL`); fale com quem cuida da ferramenta.
+
+---
+
+## Não consigo mais editar o meu chamado
+
+**Causa.** O chamado saiu de **Aberto**. A partir de *Em análise*, *Feito* ou
+*Não procedente* o texto trava para todo mundo — inclusive para quem gerencia —,
+porque dali em diante ele é a referência de uma conversa que já começou.
+
+**O que fazer.** Use o campo de **comentário**, dentro do chamado: ele vale em
+qualquer estado e serve para corrigir, acrescentar ou dizer que o problema
+voltou. Comentário só acrescenta, e é isso que preserva o histórico.
+
+---
+
 ## Um usuário comum está vendo (e respondendo) os tickets de todo mundo
 
 **Causa.** Cargo com **editar** marcado na linha *Meus tickets* do jeito antigo:

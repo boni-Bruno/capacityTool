@@ -36,30 +36,51 @@ Ao enviar, a janela fecha e o chamado aparece na lista com um número.
 
 - Os **chips** filtram por estado; *Em aberto* é o padrão, para o que já foi
   fechado não enterrar o que ainda espera.
-- **Clicar numa linha** abre o texto inteiro do chamado e a resposta.
-- Estados: **Aberto** → **Em análise** → **Feito** ou **Não vamos fazer**.
+- **Clicar numa linha** abre o texto inteiro do chamado, a resposta e a
+  conversa.
+- Estados: **Aberto** → **Em análise** → **Feito** ou **Não procedente**. Só
+  quem gerencia muda o estado.
 
 ## Corrigir o que você escreveu
 
 Abra o seu chamado e clique em **Editar o chamado**: dá para trocar produto,
-tipo, resumo e descrição. Isso vale **enquanto ninguém respondeu** — depois da
-resposta o botão some, porque editar a pergunta deixaria a resposta sem sentido
-para quem ler depois. Se precisar acrescentar algo a um chamado já respondido,
-abra outro ou fale com quem respondeu.
+tipo, resumo e descrição. Isso vale **enquanto o chamado está em "Aberto"** e
+ninguém respondeu.
+
+**Assim que ele sai de Aberto — Em análise, Feito ou Não procedente — o texto
+trava para todo mundo**, inclusive para quem gerencia. É o que mantém o
+rastreio: a partir do momento em que alguém pegou o chamado, o que está escrito
+nele é a referência da conversa, e reescrever a pergunta faria a resposta deixar
+de responder alguma coisa.
+
+## A conversa (comentários)
+
+Dentro de cada chamado há uma conversa. **Quem abriu e quem gerencia podem
+comentar, em qualquer estado** — inclusive depois de fechado, que é como se diz
+*"voltou a acontecer"* sem abrir um chamado novo e perder o histórico do
+primeiro.
+
+Comentário **só acrescenta**: não se edita e não se apaga, nem por quem
+escreveu. É essa a diferença entre acrescentar e reescrever — um deixa rastro, o
+outro apaga.
 
 ## Gerenciar tickets
 
 A fila de **toda a ferramenta**, com uma coluna a mais dizendo quem abriu. Quem
-tem *editar* nesta tela responde, muda o estado e apaga; quem tem só *ver*
-acompanha a fila sem mexer nela.
+tem *editar* nesta tela responde, muda o estado, comenta e apaga; quem tem só
+*ver* acompanha a fila sem mexer nela.
 
 A resposta aparece na hora para quem abriu, na tela Meus tickets dele.
+
+**Mudar o estado é só daqui** — o dono do chamado não muda o estado do próprio
+chamado. E o texto do chamado trava assim que ele sai de *Aberto*, para quem
+gerencia também: dali em diante, o que se acrescenta é comentário.
 
 ### Apagar
 
 Apagar existe para o **chamado repetido** e para o **aberto por engano**.
 
-O que não vai ser feito **se responde**, com "Não vamos fazer" e o porquê —
+O que não vai ser feito **se responde**, com "Não procedente" e o porquê —
 apagar a reclamação em vez de respondê-la é o jeito mais rápido de a fila ficar
 vazia e ninguém mais abrir chamado nenhum.
 
