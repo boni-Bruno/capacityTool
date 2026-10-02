@@ -38,6 +38,7 @@ import TabelaMes from './tabela-mes';
 import TabelaAtributo from './tabela-atributo';
 import FiltroColuna from './filtro-coluna';
 import Pivot from './pivot';
+import Cadastros, { CadastrosCarregando, NotaCadastros } from './cadastros';
 import { areasDoEscopo, exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Capacidade' };
@@ -697,6 +698,10 @@ export default async function Page({ searchParams }) {
           // feriado que ele tem e o outro não.
           rotulo: MESES[m.mes] + (m.parcial ? '*' : '')
                 + (porDiaUtil ? ` (${formataDiasUteis(du)})` : ''),
+          // O número do mês viaja junto para a grade de cadastro casar as
+          // colunas dela com estas — pelo mês, e não pelo rótulo, que carrega
+          // asterisco e contagem de dias úteis.
+          mes: m.mes,
           instalada: por(m.instalada),
           planejada: por(m.planejada),
           disponivel: por(m.disponivel),
@@ -987,8 +992,28 @@ export default async function Page({ searchParams }) {
                      unidade={unidade} sufixo={sufixo} tema={tema} />
             <TabelaMes dados={dados} mostrarInstalada={mostrarInstalada}
                        unidade={unidade} sufixo={sufixo} totais={totais} />
+
+            {/* O CADASTRO QUE PRODUZIU AS BARRAS, nas mesmas colunas: OEE,
+                quantos recursos em cada turno e os minutos de parada. Dentro
+                da mesma grade de propósito — é o alinhamento que permite ler
+                "março caiu porque perdeu o 2º turno" sem contar colunas.
+
+                Em Suspense porque são duas consultas a mais, e o gráfico não
+                tem por que esperar por elas. Só no nível de mês: o OEE é
+                mensal, o regime é mensal e a vigência do turno é mensal — por
+                dia a grade repetiria 31 vezes o mesmo cadastro. */}
+            {periodo.nivel === 'MES' && (
+              <Suspense fallback={<CadastrosCarregando />}>
+                <Cadastros execId={exec.id} areaId={areaId} de={periodo.de}
+                           ate={periodo.ate} recursos={listaIds} origem={origem}
+                           colunas={dados.map((d) => ({ mes: d.mes, rotulo: d.rotulo }))}
+                           rateado={filtrandoAtributo} />
+              </Suspense>
+            )}
           </div>
         </div>
+
+        {periodo.nivel === 'MES' && <NotaCadastros rateado={filtrandoAtributo} />}
 
         {porDiaUtil && (
           <p className="rodape">

@@ -33,6 +33,9 @@ import FiltroColuna from '../painel/filtro-coluna';
 import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
 import Pivot from '../painel/pivot';
+import Cadastros, {
+  CadastrosCarregando, NotaCadastros,
+} from '../painel/cadastros';
 import { areasDoEscopo, exigeVer } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Ocupação' };
@@ -352,6 +355,9 @@ export default async function Page({ searchParams }) {
         // O asterisco avisa que a barra é de um mês cortado pelo recorte —
         // sem ele, a comparação com os vizinhos engana.
         rotulo: MESES[m.mes] + (m.parcial ? '*' : ''),
+        // Para a grade de cadastro casar as colunas dela com estas pelo mês, e
+        // não pelo rótulo, que carrega o asterisco do mês cortado.
+        mes: m.mes,
         capacidade: num(c?.[medida]),
         demanda: num(d?.minutos),
         href: url({ de: m.de, ate: m.ate }),
@@ -570,8 +576,22 @@ export default async function Page({ searchParams }) {
                              unidade={unidade} tema={tema} />
             <TabelaMesOcupacao dados={dados} medida={rotuloMedida}
                                unidade={unidade} />
+
+            {/* O MESMO QUADRO DO PAINEL DA CAPACIDADE — OEE, quantos recursos
+                em cada turno e os minutos de parada, nas mesmas colunas. Aqui
+                ele responde a pergunta seguinte à ocupação: o mês estourou, e
+                o que dá para mexer? O cadastro é o que dá. */}
+            {nivelMes && (
+              <Suspense fallback={<CadastrosCarregando />}>
+                <Cadastros execId={exec.id} areaId={areaId} de={periodo.de}
+                           ate={periodo.ate} recursos={listaIds} origem={origem}
+                           colunas={dados.map((d) => ({ mes: d.mes, rotulo: d.rotulo }))} />
+              </Suspense>
+            )}
           </div>
         </div>
+
+        {nivelMes && <NotaCadastros />}
 
         {estouram.length > 0 && (
           <div className="aviso" style={{ marginTop: 12 }}>

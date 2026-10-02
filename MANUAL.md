@@ -265,6 +265,37 @@ ao **dia**; no dia, ao **turno**.
 - **Capacidade por dia útil** só existe com uma área escolhida: o divisor é do
   calendário e dos feriados daquela área.
 
+### A grade "Cadastros", embaixo do gráfico
+
+Logo abaixo da tabela de capacidade, nas **mesmas colunas**, vem o cadastro que
+produziu aquelas barras:
+
+| linha | o que é |
+|---|---|
+| **OEE (meta/simulado)** | o OEE que a rodada aplicou — disponível ÷ planejada |
+| **uma linha por turno** | quantos recursos rodam naquele turno naquele mês |
+| **Paradas (minutos)** | os minutos que o motor descontou no mês |
+
+É a mesma grade que sai nos slides da **Extração das configurações**, e serve à
+mesma pergunta: *a barra de março caiu porque o OEE caiu ou porque perdeu um
+turno?*
+
+- O **OEE** é o da rodada, não o da tela de OEE. Mudou o cadastro e ainda não
+  recalculou? A grade mostra o que foi usado, não o que está cadastrado.
+- **Turno não totaliza** — a coluna do ano traz "–". Somar seis máquinas de
+  janeiro com as mesmas seis de fevereiro daria doze.
+- **Célula de turno em branco** quer dizer que ele não roda neste recorte. Os
+  turnos da planta aparecem todos, mesmo os que não rodam: é assim que a grade
+  consegue dizer "o 3º turno não roda aqui".
+- As **paradas** são sempre em minuto, mesmo com o painel em hora ou metro, e
+  são o que o motor descontou — não a soma da tela de Paradas, que vale por
+  turno e pode cair fora do calendário do recurso.
+- Ela aparece no **mês a mês**. No dia a dia e no turno a turno, não: OEE,
+  regime e vigência de turno são mensais, e a grade repetiria 31 vezes o mesmo
+  cadastro.
+- Com **filtro por atributo** ligado, a grade **não** acompanha o rateio: ele
+  reparte tempo entre rótulos, e máquina não se reparte.
+
 ### A aba "Capacidade por recurso (Tab. Din.)"
 
 A mesma capacidade, no grão **recurso × mês**, como tabela dinâmica:
@@ -319,6 +350,16 @@ nasce no que está **no ar** na tela de Demanda e pode ser trocado aqui.
   infinita/vazia: ou o CT não tem recurso cadastrado com aquele CC-CT, ou tem e
   não foi recalculado. A tela de Demanda lista esses CTs em *demanda sem
   capacidade*.
+
+### A grade "Cadastros", embaixo do gráfico
+
+A mesma do Painel da Capacidade, nas mesmas colunas: **OEE** da rodada, **uma
+linha por turno** com quantos recursos rodam nele naquele mês, e **Paradas
+(minutos)**. Ver `01-painel-da-capacidade.md` para as regras de leitura.
+
+Aqui ela responde a pergunta seguinte à ocupação: *o mês estourou — e o que dá
+para mexer?* As três linhas são as três alavancas: o rendimento, a jornada e o
+tempo que já está comprometido com parada.
 
 ### A aba "Ocupação por centro de trabalho (Tab. Din.)"
 
@@ -1856,6 +1897,50 @@ e dias.
 
 **O que fazer.** Cadastrar o OEE do mês (a caixa *→ ano todo* ajuda) e
 recalcular.
+
+---
+
+### O OEE da grade "Cadastros" não bate com o que está na tela de OEE
+
+**Sintoma.** A grade embaixo do gráfico mostra 74% em junho; a tela de OEE
+mostra 80% naquele mês, no mesmo cenário.
+
+**Causa.** São dois momentos diferentes, e os dois estão certos. A grade mostra
+o OEE que a **rodada** aplicou — disponível ÷ planejada do cálculo que está no
+ar. A tela de OEE mostra o que está **cadastrado hoje**. Entre uma coisa e
+outra alguém mudou o cadastro e ainda não recalculou.
+
+Pode ser também **média ponderada**: o número da grade é a soma do disponível
+sobre a soma da planejada de todos os recursos do recorte. Uma máquina com 60%
+que roda três turnos pesa mais que uma de 95% que roda um.
+
+**O que fazer.** **Recalcular** (tudo, ou parcial para a área) e olhar de novo.
+Se continuar diferente, é a ponderação — e aí o número da grade é o certo para
+o conjunto.
+
+---
+
+### A linha de um turno está em branco na grade "Cadastros"
+
+**Causa.** Branco quer dizer **não roda neste recorte**, e não "não consegui
+contar". Todos os turnos da planta aparecem na grade justamente para isso: a
+linha vazia é a resposta "o 3º turno não roda nesta área".
+
+**O que fazer.** Nada, se for o esperado. Se deveria rodar, é Turnos do recurso
+— confira o **cenário** e o **mês**, porque a marcação é por mês, e recalcule.
+
+---
+
+### Paradas (minutos) está zerado e eu cadastrei paradas
+
+**Causa.** A linha mostra o que o **motor descontou** naquela rodada, não o que
+está na tela de Paradas. Ela sai zerada quando a parada caiu num dia que o
+calendário do recurso já não trabalhava (feriado, domingo), quando foi
+cadastrada num turno que aquele recurso não roda, ou quando a rodada é anterior
+ao cadastro.
+
+**O que fazer.** Recalcular primeiro. Se continuar zero, confira a data e o
+turno da parada contra o regime do recurso naquele mês.
 
 ---
 

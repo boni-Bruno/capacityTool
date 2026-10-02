@@ -36,6 +36,37 @@ ao **dia**; no dia, ao **turno**.
 - **Capacidade por dia útil** só existe com uma área escolhida: o divisor é do
   calendário e dos feriados daquela área.
 
+## A grade "Cadastros", embaixo do gráfico
+
+Logo abaixo da tabela de capacidade, nas **mesmas colunas**, vem o cadastro que
+produziu aquelas barras:
+
+| linha | o que é |
+|---|---|
+| **OEE (meta/simulado)** | o OEE que a rodada aplicou — disponível ÷ planejada |
+| **uma linha por turno** | quantos recursos rodam naquele turno naquele mês |
+| **Paradas (minutos)** | os minutos que o motor descontou no mês |
+
+É a mesma grade que sai nos slides da **Extração das configurações**, e serve à
+mesma pergunta: *a barra de março caiu porque o OEE caiu ou porque perdeu um
+turno?*
+
+- O **OEE** é o da rodada, não o da tela de OEE. Mudou o cadastro e ainda não
+  recalculou? A grade mostra o que foi usado, não o que está cadastrado.
+- **Turno não totaliza** — a coluna do ano traz "–". Somar seis máquinas de
+  janeiro com as mesmas seis de fevereiro daria doze.
+- **Célula de turno em branco** quer dizer que ele não roda neste recorte. Os
+  turnos da planta aparecem todos, mesmo os que não rodam: é assim que a grade
+  consegue dizer "o 3º turno não roda aqui".
+- As **paradas** são sempre em minuto, mesmo com o painel em hora ou metro, e
+  são o que o motor descontou — não a soma da tela de Paradas, que vale por
+  turno e pode cair fora do calendário do recurso.
+- Ela aparece no **mês a mês**. No dia a dia e no turno a turno, não: OEE,
+  regime e vigência de turno são mensais, e a grade repetiria 31 vezes o mesmo
+  cadastro.
+- Com **filtro por atributo** ligado, a grade **não** acompanha o rateio: ele
+  reparte tempo entre rótulos, e máquina não se reparte.
+
 ## A aba "Capacidade por recurso (Tab. Din.)"
 
 A mesma capacidade, no grão **recurso × mês**, como tabela dinâmica:

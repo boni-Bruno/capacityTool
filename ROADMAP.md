@@ -38,6 +38,7 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Manual de quem opera: conceitos, telas, POPs e pegadinhas | — | `manual/` · `MANUAL.md` |
 | Tabela dinâmica nos dois painéis, no grão de mês | — | Painel · Ocupação › aba "(Tab. Din.)" · `lib/pivot.js` |
 | A entrada é só pelo Hub; a tela de senha vira escotilha | — | `lib/hub.js` · `middleware.js` |
+| Grade de cadastro (OEE, turnos e paradas) embaixo do gráfico | — | Painel · Ocupação · `lib/grade-cadastro.js` |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -2213,6 +2214,80 @@ Níveis e agregações moram na URL (`pv_n`, `pv_f_<medida>`) e sobrevivem à
 troca de mês, unidade e ordenação; o que está aberto fica em estado — dezenas
 de chaves que mudam a cada clique não são endereço. Só com a aba aberta a
 consulta roda, como a de atributo.
+
+---
+
+## A grade de cadastro nos painéis — PRONTO (02/10/2026)
+
+Pedido do Bruno olhando o painel: *"no painel de capacidade e no painel de
+ocupação, quero um quadrante demonstrando os cadastros, como é extraído nos
+slides de extração das configurações: OEE; turnos; qtde de recurso por turno;
+Paradas"*.
+
+O número do painel sempre disse **quanto cabe** e nunca **por quê**. A resposta
+existia desde 03/09, mas só dentro de um `.pptx`: a grade embaixo do gráfico do
+slide, com o OEE, a quantidade de recursos de cada turno e os minutos de parada,
+coluna a coluna com os meses. Quem estava na tela tinha que exportar uma
+apresentação para ver o que produziu a barra que está na frente dele.
+
+Agora ela está nos dois painéis, embaixo da tabela de capacidade: **OEE
+(meta/simulado)**, **uma linha por turno** com quantos recursos rodam nele
+naquele mês, e **Paradas (minutos)**.
+
+**Dentro da mesma `.grade-alinhada`**, e isso é o ponto inteiro. As larguras
+vêm de `app/painel/grade.js`, as mesmas que o gráfico usa como margem, então a
+coluna de junho da grade cai embaixo da barra de junho. Numa tabela própria
+abaixo da caixa de rolagem, a primeira rolagem horizontal já desalinharia as
+duas — justamente quando alguém está conferindo coluna por coluna. O texto
+explicativo, esse sim, fica **fora** da caixa: dentro dela herdaria a largura
+mínima de 1.180 px e um parágrafo passaria a rolar na horizontal.
+
+**A regra mora em `lib/grade-cadastro.js`** (motor puro, 15 testes) porque é a
+mesma de `visualDoGrupo` em `lib/documento.js`, e as duas têm que dizer o mesmo
+número: o slide e o painel lidos lado a lado numa reunião são o pior lugar para
+descobrir que o OEE de junho tem dois valores. O que elas compartilham:
+
+- **OEE = disponível ÷ planejada, divisão de somas** — e não a faixa cadastrada.
+  Ler o cadastro daria um segundo número para a mesma coisa, e ele poderia dizer
+  78% embaixo de uma barra calculada com 75%: a rodada é de ontem, o cadastro é
+  de hoje, e a tela não teria como avisar. O que a grade mostra é o OEE que o
+  motor **aplicou**.
+- **Turno não totaliza**: a coluna do ano traz "–". Somar seis máquinas de
+  janeiro com as mesmas seis de fevereiro daria doze numa fábrica que tem seis.
+  É estado, não fluxo.
+- **Todos os turnos das plantas do recorte**, mesmo os que não rodam, com a
+  célula em branco. Turno ausente da lista é indistinguível de turno que não
+  roda ali, e *"o 3º turno não roda nesta área"* é resposta — resposta que só
+  existe se a linha estiver lá para dizê-la.
+- **Parada em minuto sempre**, dito no rótulo, mesmo com o painel em hora ou
+  metro: "300 metros de parada" não quer dizer nada, e sem a unidade escrita
+  alguém soma esta linha com a de capacidade.
+
+**Uma consulta só** (`cadastroPorMes`), no grão **mês × turno**. O fato tem meio
+milhão de linhas e o planejador varre a rodada inteira (231 mil linhas, ~140 ms
+medidos na Tecelagem 2027); pedir o OEE numa consulta e os turnos em outra
+pagaria essa varredura duas vezes pela mesma tela. Mês × turno é o grão mais
+fino de que a grade precisa, e tudo sai dele por soma — inclusive o OEE do mês.
+Ela roda dentro de um `<Suspense>`: o gráfico não tem por que esperar.
+
+**A planejada e a disponível vêm dessa consulta, e não da série que o painel já
+leu**, por uma razão: em metro ou UM aquelas colunas estão convertidas, e OEE é
+razão — tem que sair de minuto sobre minuto, que existe em qualquer unidade.
+
+**Só no nível de mês.** OEE, regime e vigência de turno são mensais; no dia a
+dia a grade repetiria 31 vezes o mesmo cadastro, e no turno a turno as colunas
+já são os turnos.
+
+**Com filtro por atributo a grade não acompanha o rateio**, e o rodapé diz isso
+com todas as letras: o rateio reparte **tempo** entre rótulos, e máquina não se
+reparte — meia máquina no 1º turno não é leitura nenhuma.
+
+Conferido no banco antes de subir, e a primeira coisa que a grade mostrou já era
+uma informação: na Tecelagem SIMULADO 2027, de junho em diante o 1º, 2º e 3º
+turnos caem de ~118 para ~39 recursos e o **Rodízio salta de 60 para 140** — a
+troca de regime no meio do ano, visível numa linha. O OEE fica em 74,5–74,7% o
+ano todo, e a parada em zero porque a tabela `parada` está vazia na base de
+hoje: o zero é verdade, não falha de leitura.
 
 ---
 

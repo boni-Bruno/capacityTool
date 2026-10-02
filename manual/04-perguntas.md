@@ -257,6 +257,50 @@ recalcular.
 
 ---
 
+## O OEE da grade "Cadastros" não bate com o que está na tela de OEE
+
+**Sintoma.** A grade embaixo do gráfico mostra 74% em junho; a tela de OEE
+mostra 80% naquele mês, no mesmo cenário.
+
+**Causa.** São dois momentos diferentes, e os dois estão certos. A grade mostra
+o OEE que a **rodada** aplicou — disponível ÷ planejada do cálculo que está no
+ar. A tela de OEE mostra o que está **cadastrado hoje**. Entre uma coisa e
+outra alguém mudou o cadastro e ainda não recalculou.
+
+Pode ser também **média ponderada**: o número da grade é a soma do disponível
+sobre a soma da planejada de todos os recursos do recorte. Uma máquina com 60%
+que roda três turnos pesa mais que uma de 95% que roda um.
+
+**O que fazer.** **Recalcular** (tudo, ou parcial para a área) e olhar de novo.
+Se continuar diferente, é a ponderação — e aí o número da grade é o certo para
+o conjunto.
+
+---
+
+## A linha de um turno está em branco na grade "Cadastros"
+
+**Causa.** Branco quer dizer **não roda neste recorte**, e não "não consegui
+contar". Todos os turnos da planta aparecem na grade justamente para isso: a
+linha vazia é a resposta "o 3º turno não roda nesta área".
+
+**O que fazer.** Nada, se for o esperado. Se deveria rodar, é Turnos do recurso
+— confira o **cenário** e o **mês**, porque a marcação é por mês, e recalcule.
+
+---
+
+## Paradas (minutos) está zerado e eu cadastrei paradas
+
+**Causa.** A linha mostra o que o **motor descontou** naquela rodada, não o que
+está na tela de Paradas. Ela sai zerada quando a parada caiu num dia que o
+calendário do recurso já não trabalhava (feriado, domingo), quando foi
+cadastrada num turno que aquele recurso não roda, ou quando a rodada é anterior
+ao cadastro.
+
+**O que fazer.** Recalcular primeiro. Se continuar zero, confira a data e o
+turno da parada contra o regime do recurso naquele mês.
+
+---
+
 ## Metro e UM sumiram do painel
 
 **Causa.** Sem cenário no ar, ou o CT não tem índice de conversão (linhas com

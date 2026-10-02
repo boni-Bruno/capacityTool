@@ -1013,6 +1013,19 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 .tabela-grade .col-mes { text-align: center; }
 .tabela-grade td { overflow: hidden; text-overflow: ellipsis; }
 
+/* ---- a grade de cadastro, embaixo da de capacidade ---- */
+
+/* Outra pergunta — "com o que?" — nas MESMAS colunas da de cima. A linha
+   tracejada separa os dois blocos sem tirar o alinhamento, que e a razao de a
+   grade de cadastro morar dentro da mesma `.grade-alinhada`. */
+.tabela-cadastro { margin-top: 12px; border-top: 1px dashed var(--border); }
+.tabela-cadastro thead th { color: var(--muted); }
+
+/* As linhas de turno sao uma lista dentro do bloco, e o recuo as agrupa sem
+   um cabecalho a mais no meio da grade — que gastaria uma faixa inteira para
+   dizer o que o recuo diz de graca. */
+.cad-turno td:first-child { padding-left: 20px; color: var(--muted); }
+
 /* ---- filtro de coluna ---- */
 
 .filtro-col { position: relative; display: inline-flex; margin-left: 4px; }

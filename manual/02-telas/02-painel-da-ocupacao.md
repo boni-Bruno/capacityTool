@@ -24,6 +24,16 @@ nasce no que está **no ar** na tela de Demanda e pode ser trocado aqui.
   não foi recalculado. A tela de Demanda lista esses CTs em *demanda sem
   capacidade*.
 
+## A grade "Cadastros", embaixo do gráfico
+
+A mesma do Painel da Capacidade, nas mesmas colunas: **OEE** da rodada, **uma
+linha por turno** com quantos recursos rodam nele naquele mês, e **Paradas
+(minutos)**. Ver `01-painel-da-capacidade.md` para as regras de leitura.
+
+Aqui ela responde a pergunta seguinte à ocupação: *o mês estourou — e o que dá
+para mexer?* As três linhas são as três alavancas: o rendimento, a jornada e o
+tempo que já está comprometido com parada.
+
 ## A aba "Ocupação por centro de trabalho (Tab. Din.)"
 
 A mesma ocupação, no grão **CT × mês**, como tabela dinâmica: agrupar por
