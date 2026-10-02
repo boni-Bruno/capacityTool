@@ -26,9 +26,9 @@ export async function POST(req) {
   } catch (e) { return falha(e, 'POST'); }
 }
 
-// Corrigir o que foi escrito. A rota pede só `ticket_novo.editar` — a
-// pergunta "este chamado é seu, e ainda dá tempo?" é do domínio e mora em
-// lib/tickets.js, com o ticket lido do banco. Esconder o botão na tela não
+// Corrigir o que foi escrito. A rota aceita quem abre chamado OU quem cuida da
+// fila — a pergunta "este chamado é seu, e ainda dá tempo?" é do domínio e mora
+// em lib/tickets.js, com o ticket lido do banco. Esconder o botão na tela não
 // impediria um PUT direto.
 export async function PUT(req) {
   try {
@@ -36,7 +36,11 @@ export async function PUT(req) {
     const b = await req.json();
     const r = await editarTicket(b.id, b, {
       usuarioId: s.tipo === 'usuario' ? s.id : null,
-      cuidoDaFila: pode(s.perms, 'tickets.editar'),
+      // Quem cuida da fila edita qualquer chamado, inclusive já respondido; o
+      // dono edita o dele enquanto ninguém respondeu. Desde a migração 46 isso
+      // é `tickets_gerenciar.editar` — com `tickets.editar`, todo mundo que
+      // abre chamado seria curador, que é o defeito que ela fechou.
+      cuidoDaFila: pode(s.perms, 'tickets_gerenciar.editar'),
     });
     revalidarCadastros();
     return NextResponse.json({ ok: true, ...r });
@@ -54,8 +58,8 @@ export async function DELETE(req) {
   } catch (e) { return falha(e, 'DELETE'); }
 }
 
-// Responder e mudar o estado — só quem tem `tickets.editar`, e a rota já
-// conferiu isso.
+// Responder e mudar o estado — só quem tem `tickets_gerenciar.editar`, e a
+// rota já conferiu isso.
 export async function PATCH(req) {
   try {
     const s = await exigeRota(req);

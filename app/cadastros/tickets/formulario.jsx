@@ -2,9 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TIPOS, TIPO_PADRAO, TUDO, tipo as tipoDe, validaTicket } from '../../../../lib/ticket-formato';
+import { TIPOS, TIPO_PADRAO, TUDO, tipo as tipoDe, validaTicket } from '../../../lib/ticket-formato';
 
 // O formulário do chamado.
+//
+// ELE MORA DENTRO DE MEUS TICKETS, num pop-up (ver ./abrir.jsx). Era uma tela
+// própria até 02/10/2026, e separar as duas custava uma ida ao menu para abrir
+// um chamado e outra para ver o que ele respondeu — a mesma pessoa, no mesmo
+// assunto, em duas telas.
 //
 // A PERGUNTA MUDA COM O TIPO: "qual é a sua sugestão?" embaixo de um defeito
 // faria a pessoa descrever a solução em vez do que aconteceu, e o que conserta
@@ -13,7 +18,7 @@ import { TIPOS, TIPO_PADRAO, TUDO, tipo as tipoDe, validaTicket } from '../../..
 // A validação de verdade é do servidor (lib/ticket-formato.js, o mesmo motor);
 // aqui ela só evita o clique que voltaria com erro.
 
-export default function Formulario({ produtos, podeEnviar }) {
+export default function Formulario({ produtos, podeEnviar, aoEnviar = null }) {
   const router = useRouter();
   const [produto, setProduto] = useState(TUDO);
   const [tp, setTp] = useState(TIPO_PADRAO);
@@ -43,12 +48,16 @@ export default function Formulario({ produtos, podeEnviar }) {
       });
       const j = await r.json().catch(() => ({}));
       if (!j.ok) throw new Error(j.erro ?? `O servidor respondeu ${r.status}.`);
-      setOk(`Ticket #${j.id} aberto. Ele aparece em Meus tickets, e você vê ali quando for respondido.`);
+      setOk(`Ticket #${j.id} aberto. Ele entra na lista aqui embaixo, e você vê `
+        + 'nela quando for respondido.');
       setProduto(TUDO);
       setTp(TIPO_PADRAO);
       setResumo('');
       setDescricao('');
       router.refresh();
+      // Quem abriu o pop-up decide o que fazer depois — fechar, no caso. O
+      // `refresh` acima é que traz o chamado novo para a lista atrás dele.
+      aoEnviar?.(j.id);
     } catch (ex) {
       setErro(ex.message ?? 'Não deu para abrir o chamado.');
     } finally {
@@ -57,7 +66,9 @@ export default function Formulario({ produtos, podeEnviar }) {
   }
 
   return (
-    <form className="painel" onSubmit={enviar}>
+    // Sem a moldura de `painel`: o pop-up em volta já é a moldura, e duas
+    // bordas aninhadas fazem a caixa parecer um erro de layout.
+    <form onSubmit={enviar}>
       <div className="linha-opcao">
         <span className="rotulo-opcao">Produto</span>
         <select value={produto} onChange={(e) => setProduto(e.target.value)}>
@@ -115,8 +126,8 @@ export default function Formulario({ produtos, podeEnviar }) {
       <p className="rodape">
         O chamado vai para quem cuida do roadmap da ferramenta. Quanto mais
         concreto o <strong>como reproduzir</strong> — a tela, a área, o mês, o
-        que você clicou —, mais rápido ele vira conserto ou resposta. Acompanhe
-        em <strong>Meus tickets</strong>.
+        que você clicou —, mais rápido ele vira conserto ou resposta. Ele
+        aparece na sua lista assim que for aberto.
       </p>
     </form>
   );

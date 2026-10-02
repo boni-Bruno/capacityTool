@@ -301,6 +301,31 @@ turno da parada contra o regime do recurso naquele mês.
 
 ---
 
+## Um usuário comum está vendo (e respondendo) os tickets de todo mundo
+
+**Causa.** Cargo com **editar** marcado na linha *Meus tickets* do jeito antigo:
+até 02/10/2026 essa caixa não queria dizer "editar os meus chamados", e sim
+"cuidar da fila de todos". Quem marcava a linha inteira do grupo Roadmap — o
+gesto natural para deixar a pessoa abrir chamado — entregava a fila junto.
+
+**O que fazer.** Isso foi reorganizado: agora são **Meus tickets** (os seus) e
+**Gerenciar tickets** (a fila de todos), e cada caixa quer dizer o que o rótulo
+diz. Confira em **Cargos** que o cargo dele tem as duas de *Meus tickets* e
+nenhuma de *Gerenciar tickets*.
+
+---
+
+## Não acho mais a tela "Criar ticket" no menu
+
+**Causa.** Ela deixou de existir: o formulário virou uma **janela dentro de Meus
+tickets**, no botão **Abrir ticket**. Abrir um chamado e acompanhar a resposta
+é o mesmo assunto, e estavam em duas telas.
+
+**O que fazer.** Roadmap › **Meus tickets** › **Abrir ticket**. Se o botão não
+aparece, o seu cargo não tem *editar* em Meus tickets.
+
+---
+
 ## A ocupação de um CT aparece como ∞
 
 **Causa.** Há demanda e **nenhuma capacidade** calculada naquele centro — e

@@ -23,7 +23,13 @@ const fmtData = (d) => (d ? new Date(d).toLocaleString('pt-BR', {
   hour: '2-digit', minute: '2-digit',
 }) : '—');
 
-export default function Lista({ tickets, vejoTodos, produtos }) {
+// `vejoTodos` diz que esta é a fila de todo mundo (muda a coluna de autor e o
+// texto); `podeResponder` diz se esta sessão mexe nela. Eram a mesma coisa até
+// 02/10/2026, e separá-las é o que permite ACOMPANHAR a fila sem respondê-la —
+// um cargo legítimo, e que antes não tinha como existir.
+export default function Lista({
+  tickets, vejoTodos, produtos, podeResponder = vejoTodos,
+}) {
   const router = useRouter();
   const [aberto, setAberto] = useState(null);
   const [filtro, setFiltro] = useState('ATIVOS');
@@ -85,8 +91,14 @@ export default function Lista({ tickets, vejoTodos, produtos }) {
   if (!tickets.length) {
     return (
       <p className="vazio">
-        Nenhum chamado ainda. Dúvida, sugestão ou algo que não funcionou:{' '}
-        <strong>Criar ticket</strong>, aí em cima.
+        {vejoTodos
+          ? 'Nenhum chamado aberto na ferramenta.'
+          : (
+            <>
+              Você ainda não abriu nenhum chamado. Dúvida, sugestão ou algo que
+              não funcionou: <strong>Abrir ticket</strong>, aí em cima.
+            </>
+          )}
       </p>
     );
   }
@@ -124,7 +136,7 @@ export default function Lista({ tickets, vejoTodos, produtos }) {
               const st = statusDe(t.status);
               const abertoAqui = aberto === t.id;
               const editando = edicao?.id === t.id;
-              const posso = podeEditarTicket(t, { souDono: t.meu, cuidoDaFila: vejoTodos });
+              const posso = podeEditarTicket(t, { souDono: t.meu, cuidoDaFila: podeResponder });
               const colunas = vejoTodos ? 7 : 6;
 
               return (
@@ -189,7 +201,7 @@ export default function Lista({ tickets, vejoTodos, produtos }) {
                             </>
                           )}
 
-                          {vejoTodos && !editando && (
+                          {podeResponder && !editando && (
                             <div className="ticket-acoes">
                               <label className="campo" style={{ maxWidth: 220 }}>
                                 <span className="campo-rot">Estado</span>
@@ -262,12 +274,15 @@ export default function Lista({ tickets, vejoTodos, produtos }) {
         o que escreveu <strong>enquanto ninguém respondeu</strong> — depois da
         resposta, editar a pergunta deixaria a resposta sem sentido para quem
         ler depois.
-        {vejoTodos
-          ? ' Você vê os chamados de todo mundo porque o seu cargo responde por eles:'
+        {vejoTodos && podeResponder
+          ? ' Esta é a fila de todo mundo, e o seu cargo responde por ela:'
             + ' mudar o estado vale na hora, a resposta aparece para quem abriu, e'
             + ' apagar é para o chamado repetido ou aberto por engano — o que não vai'
             + ' ser feito se responde com "Não vamos fazer" e o porquê.'
-          : ' Quem cuida do roadmap responde por aqui mesmo.'}
+          : vejoTodos
+            ? ' Esta é a fila de todo mundo. O seu cargo acompanha, mas quem'
+              + ' responde é quem tem editar nesta tela.'
+            : ' Quem cuida do roadmap responde por aqui mesmo.'}
       </p>
     </>
   );

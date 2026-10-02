@@ -216,8 +216,12 @@ pessoa abrir.
 O chamado que quem usa a ferramenta abre de dentro dela: dúvida, sugestão ou
 defeito, sobre uma tela ou sobre a ferramenta toda (grupo **Roadmap** no menu).
 Cada um tem um número, um estado — **Aberto**, **Em análise**, **Feito**, **Não
-vamos fazer** — e a resposta de quem cuida do roadmap. Você vê os seus; o
-Gestor de Planejamento vê os de todos.
+vamos fazer** — e a resposta de quem cuida do roadmap.
+
+São **duas telas**: em **Meus tickets** você vê os seus, abre um novo (numa
+janela sobre a lista) e corrige o que escreveu; em **Gerenciar tickets** quem
+cuida do roadmap vê a fila de todos e responde. A separação é proposital — a
+fila da ferramenta inteira é acesso que se dá de propósito, não por tabela.
 
 ### Ocupação
 
@@ -1061,9 +1065,9 @@ de que sempre existe alguém que pode tudo.
 
 ---
 
-## Roadmap: Criar ticket e Meus tickets
+## Roadmap: Meus tickets e Gerenciar tickets
 
-**Menu:** Roadmap › Criar ticket · Meus tickets.
+**Menu:** Roadmap › Meus tickets · Gerenciar tickets.
 
 ### Para que serve
 
@@ -1072,7 +1076,17 @@ melhoria, ou algo que não funcionou: abre-se um chamado de dentro da própria
 ferramenta, e a resposta volta pelo mesmo lugar — em vez de conversa de
 corredor, mensagem solta e e-mail, cada um num canto.
 
-### Criar ticket
+São **duas telas, e a divisão é "o meu" × "o de todos"**:
+
+| tela | quem usa | o que faz |
+|---|---|---|
+| **Meus tickets** | todo mundo | vê os seus chamados, abre um novo, corrige o que escreveu |
+| **Gerenciar tickets** | quem cuida do roadmap | vê a fila inteira, responde, muda o estado, apaga |
+
+### Meus tickets
+
+A sua fila, do mais recente para o mais antigo, e o botão **Abrir ticket** no
+alto — ele abre o formulário numa **janela sobre a tela**, sem sair da lista.
 
 | campo | o que é |
 |---|---|
@@ -1085,20 +1099,12 @@ Em **Bug/erro** o campo pergunta *o que aconteceu* de propósito: o que conserta
 um defeito é o passo a passo — a tela, a área, o mês, o que você clicou e o que
 apareceu —, não a ideia de como resolver.
 
-Depois de enviar, o chamado recebe um número e aparece em **Meus tickets**.
-
-### Meus tickets
-
-A fila, do mais recente para o mais antigo. **Você vê os seus chamados**; quem
-cuida do roadmap (o **Gestor de Planejamento**) vê os de todo mundo, com uma
-coluna a mais dizendo quem abriu.
+Ao enviar, a janela fecha e o chamado aparece na lista com um número.
 
 - Os **chips** filtram por estado; *Em aberto* é o padrão, para o que já foi
   fechado não enterrar o que ainda espera.
 - **Clicar numa linha** abre o texto inteiro do chamado e a resposta.
 - Estados: **Aberto** → **Em análise** → **Feito** ou **Não vamos fazer**.
-- Quem responde muda o estado e escreve a resposta ali mesmo; ela aparece na
-  hora para quem abriu.
 
 ### Corrigir o que você escreveu
 
@@ -1108,14 +1114,40 @@ resposta o botão some, porque editar a pergunta deixaria a resposta sem sentido
 para quem ler depois. Se precisar acrescentar algo a um chamado já respondido,
 abra outro ou fale com quem respondeu.
 
-### Apagar (só quem cuida da fila)
+### Gerenciar tickets
 
-O Gestor de Planejamento pode **apagar** um chamado, com confirmação. É para o
-**chamado repetido** e para o **aberto por engano**.
+A fila de **toda a ferramenta**, com uma coluna a mais dizendo quem abriu. Quem
+tem *editar* nesta tela responde, muda o estado e apaga; quem tem só *ver*
+acompanha a fila sem mexer nela.
+
+A resposta aparece na hora para quem abriu, na tela Meus tickets dele.
+
+#### Apagar
+
+Apagar existe para o **chamado repetido** e para o **aberto por engano**.
 
 O que não vai ser feito **se responde**, com "Não vamos fazer" e o porquê —
 apagar a reclamação em vez de respondê-la é o jeito mais rápido de a fila ficar
 vazia e ninguém mais abrir chamado nenhum.
+
+### Quem pode o quê (grade de cargos)
+
+Quatro caixas, e cada uma quer dizer o que o rótulo diz:
+
+| caixa | o que dá |
+|---|---|
+| Meus tickets · **ver** | ver os seus chamados |
+| Meus tickets · **editar** | abrir um chamado e corrigir o que escreveu |
+| Gerenciar tickets · **ver** | ver a fila de toda a ferramenta |
+| Gerenciar tickets · **editar** | responder, mudar o estado, apagar |
+
+Para um usuário comum, marque as **duas de Meus tickets** e nenhuma das outras.
+O Gestor de Planejamento tem tudo por ser cargo protegido.
+
+> Até 02/10/2026 isso era diferente, e enganava: as telas eram *Criar ticket* e
+> *Meus tickets*, e marcar "editar" em Meus tickets dava a fila inteira da
+> ferramenta para a pessoa. Se algum cargo seu tinha as duas linhas marcadas,
+> confira em **Cargos** como ele ficou.
 
 ### Cuidados
 
@@ -1974,6 +2006,31 @@ ao cadastro.
 
 **O que fazer.** Recalcular primeiro. Se continuar zero, confira a data e o
 turno da parada contra o regime do recurso naquele mês.
+
+---
+
+### Um usuário comum está vendo (e respondendo) os tickets de todo mundo
+
+**Causa.** Cargo com **editar** marcado na linha *Meus tickets* do jeito antigo:
+até 02/10/2026 essa caixa não queria dizer "editar os meus chamados", e sim
+"cuidar da fila de todos". Quem marcava a linha inteira do grupo Roadmap — o
+gesto natural para deixar a pessoa abrir chamado — entregava a fila junto.
+
+**O que fazer.** Isso foi reorganizado: agora são **Meus tickets** (os seus) e
+**Gerenciar tickets** (a fila de todos), e cada caixa quer dizer o que o rótulo
+diz. Confira em **Cargos** que o cargo dele tem as duas de *Meus tickets* e
+nenhuma de *Gerenciar tickets*.
+
+---
+
+### Não acho mais a tela "Criar ticket" no menu
+
+**Causa.** Ela deixou de existir: o formulário virou uma **janela dentro de Meus
+tickets**, no botão **Abrir ticket**. Abrir um chamado e acompanhar a resposta
+é o mesmo assunto, e estavam em duas telas.
+
+**O que fazer.** Roadmap › **Meus tickets** › **Abrir ticket**. Se o botão não
+aparece, o seu cargo não tem *editar* em Meus tickets.
 
 ---
 

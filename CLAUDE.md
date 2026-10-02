@@ -237,6 +237,13 @@ NN_*.sql           migrações, na ordem em que devem rodar
   demanda. Filtrar por um rótulo soma a *fatia* de cada CT que aquele rótulo
   ocupa. As fatias de um CT somam 1, e é essa propriedade que faz a soma dos
   rótulos fechar com o total.
+- **permissão é uma promessa de rótulo**: `<tela>.editar` tem que querer dizer
+  "editar o que esta tela mostra", e nada além. Quando uma delas significou
+  outra coisa — `tickets.editar` era "ver e responder os chamados de todo
+  mundo" —, marcar a linha inteira na grade de cargos entregou a fila da
+  ferramenta a um usuário convidado, e ninguém marcou errado: o rótulo é que
+  mentia. Papel diferente pede TELA própria (migração 46), não um significado
+  especial numa caixa que parece igual às outras.
 - **cargo, escopo e mestre**: o cargo diz O QUE a pessoa pode (`tela.ver`,
   `tela.editar`, `recalcular`; editar implica ver); o escopo diz ONDE
   (EMPRESA, PLANTA inteira, ou AREA solta — vazio é nada, não é tudo). O que

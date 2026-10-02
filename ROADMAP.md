@@ -1971,9 +1971,9 @@ história do chamado.
   resposta o botão some: editar a pergunta faria a resposta parecer sem sentido
   para quem ler depois. A regra é pura (`podeEditarTicket`) e conferida no
   **servidor**, com o ticket lido do banco — esconder o botão não impede um PUT
-  direto. Na rota, o PUT pede `ticket_novo.editar`: quem pode abrir pode
+  direto. Na rota, o PUT pede a permissão de abrir chamado: quem pode abrir pode
   corrigir o que abriu; de quem é o chamado é pergunta do domínio, não da
-  permissão.
+  permissão. (Os nomes das permissões mudaram na migração 46 — ver abaixo.)
 - **Apagar é de quem cuida da fila**, com confirmação, e serve ao chamado
   repetido e ao aberto por engano. O que não vai ser feito se responde com "Não
   vamos fazer" e o porquê — apagar a reclamação em vez de respondê-la é o jeito
@@ -1986,6 +1986,52 @@ invisível até o cursor passar por cima. Virou o token `--linha-foco`, com valo
 por tema; `.linha-aberta` (ajuste de mix) tinha o mesmo defeito e foi junto. A
 tabela de cadastro convivia com isso desde que o tema escuro entrou: ninguém
 tinha aberto uma linha de edição no escuro tempo bastante para reparar.
+
+### Os tickets viram duas telas, e o rótulo deixa de mentir (migração 46)
+
+Em 02/10/2026, com um usuário convidado usando a ferramenta de verdade, o Bruno
+relatou: *"abriu Meus tickets com o cargo que tem permissão para editar e agora
+ele visualiza o ticket de todo mundo e ainda consegue responder — e se o cargo
+dele não poder editar as abas do roadmap, ele não consegue abrir ticket"*.
+
+**Ninguém marcou errado.** O cargo tinha as duas linhas do grupo Roadmap
+marcadas, que é o gesto natural de quem quer que a pessoa consiga abrir um
+chamado. O defeito era o **rótulo**: `tickets.editar` não queria dizer "editar
+os meus chamados", e sim "sou quem cuida da fila" — uma caixa igual a todas as
+outras da grade, com um significado que nenhuma tela explicava. E a permissão
+que de fato abria chamado chamava-se `ticket_novo.editar`, num nome que ninguém
+relacionaria com o botão.
+
+**O corte mudou de eixo**: era CRIAR × ACOMPANHAR, virou **O MEU × O DE TODOS**.
+
+| tela | ver | editar |
+|---|---|---|
+| **Meus tickets** | os seus chamados | abrir um novo e corrigir o que escreveu |
+| **Gerenciar tickets** | a fila de toda a ferramenta | responder, mudar o estado, apagar |
+
+**E o formulário virou pop-up dentro de Meus tickets**, a pedido do Bruno: abrir
+um chamado e esperar a resposta é o mesmo assunto, e estavam em duas telas do
+menu. A tela *Criar ticket* deixou de existir.
+
+**Acompanhar sem responder passou a ser possível** — `tickets_gerenciar.ver`
+sozinho mostra a fila sem os controles. Antes não havia como: ver todos **era**
+poder responder, porque eram a mesma permissão.
+
+**O PUT da rota aceita qualquer uma das duas permissões**, e é o único lugar do
+mapa assim. Ele serve a dois papéis de verdade: o dono corrigindo o que
+escreveu e o curador acertando um chamado alheio. `permissaoDaRota` passou a
+aceitar lista, com o cuidado escrito ao lado — é "qualquer uma", nunca "todas",
+porque exigência composta é regra de domínio e domínio mora em quem grava.
+
+**A migração 46 converte os cargos** e é o inverso da regra de ordem habitual:
+ela roda **depois** do deploy ficar verde. Rodada antes, o código antigo leria
+`tickets.editar` em quem só abre chamado e entregaria a fila a essa pessoa por
+alguns minutos — exatamente o defeito que ela fecha. Depois, o pior caso é um
+cargo não protegido ficar sem a tela de gerenciar por instantes.
+
+A lição ficou no CLAUDE.md, porque é maior que os tickets: **papel diferente
+pede tela própria**, não um significado especial numa caixa que parece igual às
+outras.
 
 ---
 

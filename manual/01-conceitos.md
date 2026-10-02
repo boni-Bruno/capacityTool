@@ -160,8 +160,12 @@ pessoa abrir.
 O chamado que quem usa a ferramenta abre de dentro dela: dúvida, sugestão ou
 defeito, sobre uma tela ou sobre a ferramenta toda (grupo **Roadmap** no menu).
 Cada um tem um número, um estado — **Aberto**, **Em análise**, **Feito**, **Não
-vamos fazer** — e a resposta de quem cuida do roadmap. Você vê os seus; o
-Gestor de Planejamento vê os de todos.
+vamos fazer** — e a resposta de quem cuida do roadmap.
+
+São **duas telas**: em **Meus tickets** você vê os seus, abre um novo (numa
+janela sobre a lista) e corrige o que escreveu; em **Gerenciar tickets** quem
+cuida do roadmap vê a fila de todos e responde. A separação é proposital — a
+fila da ferramenta inteira é acesso que se dá de propósito, não por tabela.
 
 ## Ocupação
 

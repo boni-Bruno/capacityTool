@@ -1,24 +1,32 @@
-import Link from 'next/link';
 import { tickets } from '../../../lib/tickets';
 import { produtos } from '../../../lib/ticket-formato';
 import { sessaoAtual } from '../../../lib/sessao';
-import { podeEditar } from '../../../lib/permissoes';
-import { exigeVer } from '../guarda';
+import { exigeVer, podeEditarTela } from '../guarda';
 import AvisoBanco from '../aviso-banco';
+import Abrir from './abrir';
 import Lista from './lista';
 
 export const metadata = { title: 'Meus tickets' };
 export const dynamic = 'force-dynamic';
 
 // =============================================================================
-// MEUS TICKETS
+// MEUS TICKETS — os seus, e só os seus.
 //
-// QUEM RESPONDE VÊ TODOS; o resto vê os seus. A regra é do Bruno, e ela é
-// aplicada na CONSULTA (lib/tickets.js), não aqui: filtrar na tela deixaria a
-// fila inteira viajar até o navegador de quem não pode lê-la.
+// Uma tela para o ciclo inteiro de quem usa a ferramenta: ver o que abriu,
+// abrir um novo (no pop-up) e corrigir o que escreveu enquanto ninguém
+// respondeu. A fila de TODOS é outra tela, Gerenciar tickets, e essa separação
+// é o conserto de uma armadilha: até 02/10/2026 `tickets.editar` queria dizer
+// "ver e responder os de todo mundo", e marcar a linha de Roadmap inteira na
+// grade de cargos — o gesto natural — entregava a fila da ferramenta a um
+// usuário convidado.
 //
-// "Ver todos" é ter `tickets.editar` — quem responde. O Gestor de Planejamento
-// tem, por ser cargo protegido; qualquer outro cargo só se alguém marcar.
+// AQUI `vejoTodos` É SEMPRE FALSO, e não "depende da permissão": a tela é "os
+// meus" pelo nome e pelo endereço. Quem cuida da fila entra pela outra porta e
+// sabe que entrou nela.
+//
+// O recorte é da CONSULTA (lib/tickets.js), não da tela: filtrar depois faria a
+// fila inteira viajar até o navegador de quem não pode lê-la, e "não mostrar"
+// não é o mesmo que "não mandar".
 // =============================================================================
 
 export default async function Page() {
@@ -26,12 +34,11 @@ export default async function Page() {
   if (negado) return negado;
 
   const s = await sessaoAtual();
-  const vejoTodos = podeEditar(s.perms, 'tickets');
 
   let lista;
   try {
     lista = await tickets({
-      vejoTodos, usuarioId: s.tipo === 'usuario' ? s.id : null,
+      vejoTodos: false, usuarioId: s.tipo === 'usuario' ? s.id : null,
     });
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
@@ -41,15 +48,14 @@ export default async function Page() {
     <>
       <div className="topo">
         <h1 className="titulo">
-          {vejoTodos ? 'Tickets' : 'Meus tickets'}
+          Meus tickets
           <span className="muted" style={{ fontWeight: 400, fontSize: 15 }}>
             {' '}· {lista.length} chamado(s)
           </span>
         </h1>
         <div className="acoes">
-          <Link href="/cadastros/tickets/novo" className="btn btn-primario">
-            Criar ticket
-          </Link>
+          <Abrir produtos={produtos()}
+                 podeEnviar={await podeEditarTela('tickets')} />
         </div>
       </div>
 
@@ -61,6 +67,10 @@ export default async function Page() {
           criado_em: t.criado_em,
           autor: t.criado_por_nome,
           autor_login: t.autor_login ?? null,
+          // Aqui são todos meus, por construção da consulta — mas o campo
+          // continua saindo do dado, e não de um `true` cravado: é ele que
+          // libera o botão de corrigir, e cravá-lo seria decidir na tela uma
+          // coisa que o banco já responde.
           meu: s.tipo === 'usuario' ? Number(t.criado_por) === s.id : t.criado_por === null,
           produto: t.produto,
           tipo: t.tipo,
@@ -71,7 +81,7 @@ export default async function Page() {
           respondido_em: t.respondido_em,
           respondido_por_nome: t.respondido_por_nome ?? null,
         }))}
-        vejoTodos={vejoTodos}
+        vejoTodos={false}
         produtos={produtos()} />
     </>
   );
