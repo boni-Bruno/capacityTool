@@ -19,6 +19,7 @@ nós dois"*.
 | [nao-instalar-nada-local.md](nao-instalar-nada-local.md) | nada é instalado nem executado na máquina local |
 | [roadmap-sempre-atualizado.md](roadmap-sempre-atualizado.md) | o ROADMAP anda junto do commit, sem pedir autorização |
 | [documentacao-nos-dois-arquivos.md](documentacao-nos-dois-arquivos.md) | ROADMAP é o QUE, CLAUDE.md é o COMO |
+| [migracao-e-cardinalidade.md](migracao-e-cardinalidade.md) | migração que dobra as linhas de uma tabela vai junto com o deploy, não antes |
 
 ## O que vai em cada lugar, para nada duplicar
 

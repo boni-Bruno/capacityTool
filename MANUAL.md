@@ -1,6 +1,6 @@
 # capacityTool - Manual completo
 
-Gerado em 2026-10-01 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
+Gerado em 2026-10-02 a partir de manual/. Nao edite este arquivo; edite as partes e rode manual/juntar.ps1.
 
 ---
 
@@ -40,7 +40,7 @@ sempre isso.
 
 | parte | o que tem |
 |---|---|
-| `01-conceitos.md` | instalada, planejada, disponível, OEE, CC-CT, rodada, cenário, unidade, cargo e escopo |
+| `01-conceitos.md` | instalada, planejada, disponível, OEE, CC-CT, rodada, cenário, versão, unidade, cargo e escopo |
 | `02-telas/` | uma página por tela, na ordem do menu |
 | `03-procedimentos/` | os POPs numerados |
 | `04-perguntas.md` | pegadinhas: sintoma → causa → o que fazer |
@@ -118,6 +118,27 @@ as de **Turnos do recurso** e **OEE** perguntam.
 Se um cenário precisar de **feriados diferentes**, o caminho é criar um
 calendário a mais na planta e apontar nele só os recursos daquele cenário — o
 vínculo recurso → calendário já é por cenário.
+
+### Versão do cenário
+
+O orçamento **não é um evento, é um ciclo**: começa em setembro, bate o martelo
+em novembro ou dezembro, e no meio são três a seis versões, cada uma com mudança
+de cadastro. Por isso a unidade de trabalho não é o ano — é a **versão do ano**.
+
+- **Só uma versão aberta** por cenário e ano. Enquanto ela está aberta, aquele
+  ano aparece para cadastro em Turnos do recurso, OEE e Paradas.
+- **Fechar** tranca o cadastro e guarda uma **fotografia**: o resultado por
+  recurso e mês. É ela que permite responder *"o que mudou da v3 para a v4?"* —
+  pergunta que antes não tinha resposta, porque a rodada nova apagava a velha.
+- **Abrir a próxima** (v2, v3…) libera o cadastro de novo. Quem abre escolhe
+  **quais etapas a versão exige** revisar: *"a v4 só mexeu em jornada e OEE"*.
+
+**Consultar nunca trava.** Painel, ocupação e extração mostram qualquer ano que
+tenha rodada, de versão aberta ou fechada.
+
+Quem abre e fecha é o **Gestor de Planejamento**, na tela de Habilitação de
+cenário/ano. Quem percorre o cadastro usa **Planejar uma fábrica** — o fluxo
+guiado, que leva uma fábrica por vez da revisão dos recursos até a conferência.
 
 ### Turno, calendário, dia útil
 

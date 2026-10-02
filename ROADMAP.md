@@ -113,11 +113,11 @@ O resumo do que vale saber daqui:
   no ritmo de cada ferramenta, e mantê-lo no Hub obrigaria quem administra o portal
   a saber o que "editor" significa em cada uma delas.
 
-  **E isso ainda não existe aqui.** A Capacity Tool não tem autorização por pessoa
-  nenhuma: `cap_sessao` é o mesmo valor para todo mundo, e quem entra pode tudo.
-  Fica registrado para não passar por feito — a mudança no Hub não regrediu nada,
-  porque o papel que ele mandava nunca foi lido, mas o outro lado da promessa
-  continua por construir.
+  **E isso passou a existir** (migração 38, 21/09/2026): cargos com permissão por
+  tela, usuários convidados dentro do app, escopo por planta e área, e sessão
+  assinada com a identidade de quem entrou. Ver *Usuários, cargos e escopo*, mais
+  abaixo. Quando este parágrafo foi escrito, `cap_sessao` era o mesmo valor para
+  todo mundo e quem entrava podia tudo; ficou aqui o tempo em que era verdade.
 - **`SSO_SEGREDO` vale tanto quanto `APP_SENHA`.** Quem tem um dos dois entra.
   Não há como fazer SSO sem essa equivalência; o que dá para fazer, e foi feito, é
   o token durar 90 s, valer uma vez e o segredo ser específico desta ferramenta —
@@ -125,8 +125,10 @@ O resumo do que vale saber daqui:
 
 O buraco conhecido, e ele é herdado, não criado: **tirar o acesso de alguém no
 Hub não derruba a sessão que essa pessoa já tem aqui.** Ela vale até o cookie
-vencer. Some de vez quando esta ferramenta tiver sessão por usuário — o que hoje
-está fora de escopo.
+vencer — hoje um cookie de sessão do navegador, com teto de 12 h no `exp` do
+JWT. Desativar o usuário **aqui** fecha a porta na requisição seguinte, porque
+permissão e escopo saem do banco a cada uma; o que continua valendo por até 12 h
+é o caso de a pessoa perder o acesso só no Hub.
 
 ---
 
@@ -2447,6 +2449,67 @@ deixa abrir com confirmação. O checklist informa, não tutela.
 v1 aberta. Sem ela a ferramenta congela no deploy — sem versão aberta não há ano
 cadastrável, e ninguém consegue nem corrigir o que já existe.
 
+### As telas do ciclo e o planejamento guiado (01/10/2026)
+
+O que a migração 45 criou no modelo virou três telas, em commits separados.
+
+**Habilitação de cenário/ano** (`/cadastros/habilitacao`, grupo Planejamento da
+capacidade). É onde o ciclo acontece: abrir versão → acompanhar → fechar
+fotografando → abrir a próxima. Mostra o **checklist de prontidão** por planta,
+o progresso de cada versão aberta, o histórico das fechadas com quantas linhas
+cada foto guardou, e a **comparação entre duas versões** mês a mês.
+
+Fechar faz as duas coisas **na mesma transação**: tranca o cadastro e grava a
+fotografia. Separadas, fechar sem fotografar deixaria uma versão que ninguém
+consegue comparar, e fotografar sem fechar deixaria a foto envelhecendo enquanto
+o cadastro muda. Não há DELETE de versão: apagar levaria junto a foto, que é o
+registro de um número já aprovado numa reunião.
+
+**O fluxo guiado** (`/planejamento`). Cenário, ano e fábrica escolhidos uma vez,
+e seis etapas na ordem da cadeia do motor: Recursos → Jornada e regime → OEE →
+Paradas → Recalcular → Conferir. Estado todo na URL, como o resto do projeto.
+
+**Os editores são as páginas do menu inteiras**, e não cópias das props delas —
+server component compõe, então cada passo renderiza a tela que já existe, com as
+consultas, a guarda de permissão e o escopo dela. Copiar o prop-building seria
+um segundo lugar para manter em dia, e no primeiro esquecimento o fluxo mostraria
+uma tela diferente da do menu. Mexer na matriz de turnos conserta os dois.
+
+Isso cobrou um preço no mesmo dia, e vale registrar: o passo passava só
+`{area, ano, cenario}` para a página embutida, então os seletores **dela** (CC,
+CT, patrimônio, recurso) escreviam na URL e voltavam como `undefined` no render
+seguinte — o endereço mudava e a tela não. Agora o `searchParams` inteiro é
+repassado e só fábrica, ano e cenário são sobrescritos; e esses três **somem do
+seletor interno** (`lib/filtro-fluxo.js`), porque oferecer uma escolha que a
+rota desfaz parece defeito e é pior que não ter a opção.
+
+**Confirmar é ato explícito**, com desmarcar ao lado: passar pela tela não conta,
+e quem confirmou sem olhar precisa poder voltar atrás — senão a próxima pessoa
+confia num visto que ninguém deu.
+
+**O passo Conferir** é o que paga o fluxo. Lista o que o motor **aceita** e que
+produz número errado em silêncio — nenhum é erro de digitação, são ausências:
+recurso sem jornada no ano (some do painel), mês sem regime (some do mês), OEE
+em 100% o ano todo. Medido no Orçamento 2027, primeira área: 36 sem jornada, 29
+em 100%, nenhum sem regime. Mais a planejada contra o ano anterior, que fica
+**fora** das anomalias de propósito — máquina nova é motivo legítimo para saltar.
+
+**A faixa de convite na home** mora em componente próprio dentro de um
+`<Suspense>`, e isso não é detalhe: a home não consulta o banco de propósito
+(*"se a DATABASE_URL cair, esta tela ainda abre e explica onde ir"*). Com o
+Suspense e um `catch` que devolve `null`, o banco fora faz a faixa sumir em vez
+de derrubar a porta de entrada justamente quando alguém precisa dela.
+
+**A trava** vale nos dois lugares, e o segundo é o que importa. Nos seletores,
+Turnos do recurso, OEE e Paradas oferecem só anos com versão aberta — e sem
+nenhum, a tela explica em vez de mostrar seletor vazio, que faria a pessoa
+procurar o defeito no próprio cadastro. Nas rotas, `exigeAnoAberto` recusa:
+esconder o ano no seletor não impede um POST direto, e gravar num ano fechado
+mudaria o cadastro sem mudar a fotografia — o número aprovado deixaria de bater
+com o banco. **Consulta não trava**: painel, ocupação e extração mostram
+qualquer ano com rodada. **Paradas é o caso especial** — não tem cenário (é a
+mesma nos dois), então o ano fica liberado se qualquer um dos dois o abriu.
+
 ### Dos cenários, o que ficou de fora
 
 - **Parada por cenário.** `parada` não tem `origem`: ela é evento com data, e a
@@ -2457,9 +2520,17 @@ cadastrável, e ninguém consegue nem corrigir o que já existe.
   de Recursos grava as duas linhas iguais, porque ela é **estrutura da empresa**
   e estrutura é a mesma nos dois planos. "E se eu comprar mais duas máquinas?"
   já cabe no modelo; falta só a tela perguntar.
-- **Comparar os dois na mesma tela.** Hoje se compara trocando o cenário no
-  seletor, e o painel refaz a consulta. Uma coluna "Orçamento × Simulação" lado
-  a lado é outra construção.
+- **Comparar os dois CENÁRIOS na mesma tela.** Hoje se compara trocando o
+  cenário no seletor, e o painel refaz a consulta. Uma coluna "Orçamento ×
+  Simulação" lado a lado é outra construção. (Comparar duas **versões** do mesmo
+  cenário já existe, na tela de Habilitação.)
+- **O passo Recursos do fluxo lista todas as áreas**, e não só a da fábrica
+  escolhida: `app/cadastros/recursos/page.jsx` não lê `searchParams`, então não
+  há como recortá-la por URL. Dá para filtrar na própria tela; se incomodar, é
+  um parâmetro novo lá e uma linha aqui.
+- **Auditoria por pessoa.** Continua sendo o que falta para o sistema saber o
+  que mudou entre uma versão e a seguinte — é por não ter isso que quem abre a
+  v4 precisa marcar à mão quais etapas ela exige.
 
 ### Do cadastro, para quando ele sair do estágio de teste
 

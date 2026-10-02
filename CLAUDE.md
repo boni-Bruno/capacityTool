@@ -97,6 +97,14 @@ quando ela nasceu de um erro, a história vai para `memoria/` no mesmo commit.
    do arquivo em bloco de código para ele rodar — e dizer que foi recusa de
    permissão, não escolha minha.
 
+   **Migração que muda a CARDINALIDADE de uma tabela é a exceção**: ela vai
+   junto com o deploy que a acompanha, nunca antes. Enquanto o número de linhas
+   por entidade não muda, o código antigo continua correto sem saber de nada; no
+   instante em que ele dobra, toda consulta que lê e todo `delete ... where
+   recurso_id = X` que apaga por id da entidade passa a estar errado — e errado
+   em silêncio. Separar em duas migrações: a estrutura antes, o preenchimento
+   que multiplica as linhas depois do deploy ficar verde.
+
    **Depois de aplicar, conferir no banco** que o efeito é o esperado, e dizer o
    que ficou faltando do lado dele: **Recalcular tudo**, reimportar, o que for.
 2. **Commit e push imediatos**, sem esperar confirmação. Mensagem em português,
