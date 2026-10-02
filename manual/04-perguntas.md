@@ -301,6 +301,41 @@ turno da parada contra o regime do recurso naquele mês.
 
 ---
 
+## A ocupação ficou sem cor nenhuma no painel
+
+**Causa.** A cor vem das **faixas cadastradas** (botão *Cores da ocupação*, no
+alto do bloco mês a mês), e não de uma régua fixa. Sem faixa nenhuma, ou com uma
+porcentagem que não cai em faixa alguma, o número sai sem cor — de propósito:
+inventar uma cor para o que ninguém classificou seria dar significado a um
+vazio.
+
+**O que fazer.** Abrir *Cores da ocupação* e cadastrar as faixas, ou conferir se
+há buraco entre elas (85 a 95 e 100 a ∞ deixam 95 a 100 sem cor). Lembre que o
+fim é **aberto**: uma faixa que termina em 100 não pinta exatamente 100%.
+
+---
+
+## O painel e o slide mostram cores diferentes para o mesmo mês
+
+**Causa.** A régua é a mesma desde 02/10/2026 — então o que difere é o
+**número**, não a cor. As porcentagens podem ser outras porque o slide foi
+gerado com outra **medida** (disponível, planejada ou instalada), outro **OEE**
+(meta ou simulado), outra **base de demanda** ou outro **recorte**.
+
+**O que fazer.** Compare as escolhas das duas telas antes da cor. Se as duas
+mostram a mesma porcentagem com cores diferentes, aí sim é defeito — relate.
+
+---
+
+## Mudei as cores e o documento antigo continua com as cores velhas
+
+**Causa.** O `.pptx` já gerado é um arquivo: ele guarda as cores do momento em
+que saiu. A régua vale para o **próximo** documento.
+
+**O que fazer.** Gerar o documento de novo.
+
+---
+
 ## Metro e UM sumiram do painel
 
 **Causa.** Sem cenário no ar, ou o CT não tem índice de conversão (linhas com

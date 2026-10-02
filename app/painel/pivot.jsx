@@ -7,6 +7,7 @@ import {
 } from '../../lib/pivot';
 import { MESES } from '../../lib/dias';
 import { detalhe, formataUnidade } from '../../lib/formato';
+import { estiloDaOcupacao } from '../../lib/faixa-cor';
 
 // A TABELA DINÂMICA dos dois painéis.
 //
@@ -28,10 +29,11 @@ import { detalhe, formataUnidade } from '../../lib/formato';
 const fmtPct = (v) => (v === null || v === undefined ? '—'
   : `${(v * 100).toFixed(1)}%`);
 
-// Vermelho quando estoura, âmbar quando aperta — as mesmas classes da tabela
-// de ocupação, para a leitura ser a mesma nas duas.
-const classeOcup = (v) => (v === null ? 'muted'
-  : v > 1 ? 'ocup-estoura' : v >= 0.85 ? 'ocup-aperta' : '');
+// A MESMA RÉGUA CADASTRADA das outras tabelas de ocupação e do .pptx. A razão
+// aqui é fração (0,92) e a faixa é porcentagem (92) — daí o ×100, e é a única
+// diferença: a régua é uma só. Ver lib/faixa-cor.js.
+const estiloOcup = (faixas, v) =>
+  estiloDaOcupacao(faixas, v === null || v === undefined ? null : v * 100);
 
 // O rótulo de um valor de nível. Mês chega como 'AAAA-MM-01'.
 function rotuloDe(campo, valor) {
@@ -44,7 +46,7 @@ function rotuloDe(campo, valor) {
 }
 
 export default function Pivot({ linhas, campos, medidas, razoes, unidade,
-                                padrao, prefixo = 'pv' }) {
+                                padrao, prefixo = 'pv', faixas = [] }) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -217,12 +219,17 @@ export default function Pivot({ linhas, campos, medidas, razoes, unidade,
                         : formataUnidade(no.medidas[m.campo], unidade)}
                     </td>
                   ))}
-                  {razoes.map((r) => (
-                    <td key={r.nome}
-                        className={`num ${r.estilo === 'ocupacao' ? classeOcup(no.razoes[r.nome]) : ''}`}>
-                      {fmtPct(no.razoes[r.nome])}
-                    </td>
-                  ))}
+                  {razoes.map((r) => {
+                    const e = r.estilo === 'ocupacao'
+                      ? estiloOcup(faixas, no.razoes[r.nome])
+                      : { className: '', style: undefined };
+                    return (
+                      <td key={r.nome} className={`num ${e.className}`}
+                          style={e.style}>
+                        {fmtPct(no.razoes[r.nome])}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}

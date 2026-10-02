@@ -892,8 +892,12 @@ td.erro-cel { color: var(--erro); font-weight: 600; cursor: help; }
 .ocup-num { display: block; }
 .ocup-det { display: block; font-size: 10px; opacity: .6; font-weight: 400; }
 
-.ocup-estoura { color: var(--erro); font-weight: 600; }
-.ocup-aperta  { color: #8a4b0d; font-weight: 600; }
+/* A COR VEM DA REGUA CADASTRADA (faixa_ocupacao), em `style`, e nao daqui: ela
+   e a mesma que pinta o numero no .pptx, e cravar dois tons em CSS foi o que
+   fez o painel dizer "apertado" em ambar onde o documento dizia "ideal" em
+   verde. O que sobra para o CSS e o PESO da fonte — a cor so chama a atencao
+   acompanhada dele. Ver lib/faixa-cor.js e app/ocupacao/faixas.jsx. */
+.ocup-cor { font-weight: 600; }
 
 /* ---- tickets: o chamado aberto dentro da linha ---- */
 

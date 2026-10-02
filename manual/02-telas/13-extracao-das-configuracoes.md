@@ -29,6 +29,10 @@ capacidade (disponível, planejada, instalada) com OEE meta ou simulado, unidade
 (minuto, metro, UM — metro e UM só com cenário), demanda (um cenário ou
 nenhum), e as **faixas de cor** da ocupação.
 
+As faixas de cor são **as mesmas do Painel da Ocupação** — uma régua só para os
+dois lugares. O botão está aqui e lá, e dá no mesmo: o que muda num, muda no
+outro. Ver `02-painel-da-ocupacao.md`.
+
 Cada slide leva o gráfico mês a mês (barras de capacidade, linha de demanda)
 e, alinhada coluna a coluna, uma grade com o OEE e a quantidade de recursos
 por turno — para ver se a barra de março caiu pelo OEE ou por um turno a menos.

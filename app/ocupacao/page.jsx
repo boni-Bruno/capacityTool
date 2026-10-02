@@ -3,9 +3,10 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import {
   anosComRodada, areas, capacidadePorCtMes, demandaPorDiaDaArea,
-  demandaPorMesDaArea, ocupacaoPorCt, ocupacaoPorCtMes, porDia, porMes,
-  porRecurso, rodadasDasAreas, ultimaExecucao,
+  demandaPorMesDaArea, faixasDeOcupacao, ocupacaoPorCt, ocupacaoPorCtMes,
+  porDia, porMes, porRecurso, rodadasDasAreas, ultimaExecucao,
 } from '../../lib/db';
+import { estiloDaOcupacao, faixaDe } from '../../lib/faixa-cor';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
   atributos as atributosDePara, cargas, cargaCorrente, combinacoesPorMes,
@@ -32,11 +33,12 @@ import TabelaAtributoOcupacao from './tabela-atributo';
 import FiltroColuna from '../painel/filtro-coluna';
 import { LARGURA_MIN } from '../painel/grade';
 import FiltrosOcupacao from './filtros';
+import Faixas from './faixas';
 import Pivot from '../painel/pivot';
 import Cadastros, {
   CadastrosCarregando, NotaCadastros,
 } from '../painel/cadastros';
-import { areasDoEscopo, exigeVer } from '../cadastros/guarda';
+import { areasDoEscopo, exigeVer, podeEditarTela } from '../cadastros/guarda';
 
 export const metadata = { title: 'Painel da Ocupação' };
 export const dynamic = 'force-dynamic';
@@ -75,12 +77,11 @@ const ocupa = (dem, cap) => (num(cap) === 0 ? null : (num(dem) * 100) / num(cap)
 
 const fmtPct = (v) => (v === null ? '—' : `${v.toFixed(1)}%`);
 
-// Vermelho quando estoura, âmbar quando aperta. A cor é redundante com o
-// número de propósito: numa tabela de cinquenta linhas, achar as que estouram
-// lendo número por número é o que ninguém faz.
-const classePct = (v) => (v === null ? 'muted'
-  : v > 100 ? 'ocup-estoura'
-    : v >= 85 ? 'ocup-aperta' : '');
+// A COR SAI DA RÉGUA CADASTRADA (`faixa_ocupacao`), a mesma que pinta o número
+// no .pptx da Extração das configurações. Até 02/10/2026 esta tela tinha a sua
+// própria, cravada aqui — `>100 vermelho, >=85 âmbar` —, e o painel dizia
+// "apertado" em âmbar onde o documento da mesma semana dizia "ideal" em verde.
+// Duas réguas para a mesma pergunta é uma a mais. Ver `lib/faixa-cor.js`.
 
 export default async function Page({ searchParams }) {
   const negado = await exigeVer('ocupacao');
@@ -89,8 +90,15 @@ export default async function Page({ searchParams }) {
   const tema = leTema(cookies().get(COOKIE_TEMA)?.value);
   let listaAreas;
   let listaCargas;
+  let faixas;
+  let podeMexerNaRegua;
   try {
-    [listaAreas, listaCargas] = await Promise.all([areasDoEscopo(), cargas()]);
+    [listaAreas, listaCargas, faixas, podeMexerNaRegua] = await Promise.all([
+      areasDoEscopo(), cargas(), faixasDeOcupacao(),
+      // A régua é a MESMA do documento, então quem a muda é quem responde pelo
+      // documento. Aqui ela só aparece onde é lida.
+      podeEditarTela('extracao_config'),
+    ]);
   } catch (e) {
     return (
       <>
@@ -485,7 +493,9 @@ export default async function Page({ searchParams }) {
       ) },
     { chave: 'ocupacao', num: true, rot: 'Ocupação',
       celula: (r) => (
-        <span className={classePct(r.ocupacao)}>{fmtPct(r.ocupacao)}</span>
+        <span {...estiloDaOcupacao(faixas, r.ocupacao)}>
+          {fmtPct(r.ocupacao)}
+        </span>
       ) },
   ];
 
@@ -517,8 +527,17 @@ export default async function Page({ searchParams }) {
           </div>
           <div className="kpi">
             <p className="rot">Ocupação</p>
-            <p className={`val ${classePct(totOcup)}`}>{fmtPct(totOcup)}</p>
+            <p className={`val ${estiloDaOcupacao(faixas, totOcup).className}`}
+               style={estiloDaOcupacao(faixas, totOcup).style}>
+              {fmtPct(totOcup)}
+            </p>
             <p className="sub">
+              {/* O NOME DA FAIXA junto do número, como no slide. A cor sozinha
+                  exige que alguém lembre a legenda, e a legenda não está na
+                  tela; o nome responde direto o que a cor quis dizer. */}
+              {faixaDe(faixas, totOcup)?.rotulo && (
+                <><strong>{faixaDe(faixas, totOcup).rotulo}</strong> · </>
+              )}
               {totOcup === null ? 'sem capacidade no período'
                 : totOcup > 100
                   ? `falta ${formataUnidade(totDem - totCap, unidade)} `
@@ -564,9 +583,19 @@ export default async function Page({ searchParams }) {
               {' '}· {rotuloMedida} contra a demanda
             </span>
           </h2>
-          <Suspense>
-            <FiltrosOcupacao cargas={listaCargas} carga={cargaId} />
-          </Suspense>
+          <div className="filtros" style={{ marginBottom: 0, alignItems: 'center' }}>
+            <Suspense>
+              <FiltrosOcupacao cargas={listaCargas} carga={cargaId} />
+            </Suspense>
+            {/* A RÉGUA DE COR ONDE A COR É LIDA. Ela pinta esta tela inteira e
+                o número do .pptx, e até 02/10 só se mexia dentro da tela de
+                extração — longe de quem olha a ocupação todo dia.
+                `refrescar` porque as cores são pintadas no servidor: sem o
+                refresh, gravar mudaria a legenda e não a tabela.
+                Quem não publica o documento vê só a legenda: a régua é cadastro
+                de quem apresenta, mas o que a cor quer dizer é de quem lê. */}
+            <Faixas faixas={faixas} refrescar editavel={podeMexerNaRegua} />
+          </div>
         </div>
 
         {/* Gráfico e tabela na MESMA caixa de rolagem — ver ../painel/grade.js. */}
@@ -575,7 +604,7 @@ export default async function Page({ searchParams }) {
             <GraficoOcupacao dados={dados} medida={rotuloMedida}
                              unidade={unidade} tema={tema} />
             <TabelaMesOcupacao dados={dados} medida={rotuloMedida}
-                               unidade={unidade} />
+                               unidade={unidade} faixas={faixas} />
 
             {/* O MESMO QUADRO DO PAINEL DA CAPACIDADE — OEE, quantos recursos
                 em cada turno e os minutos de parada, nas mesmas colunas. Aqui
@@ -619,6 +648,10 @@ export default async function Page({ searchParams }) {
               distribuição que o plano não deu.
             </>
           )}
+          {' '}A <strong>cor da ocupação</strong> — aqui, na tabela por centro
+          de trabalho, na dinâmica e no número que sai no <strong>.pptx</strong>{' '}
+          da Extração das configurações — vem da régua ali em cima, e é uma só
+          para os quatro lugares. Porcentagem fora de toda faixa sai sem cor.
         </p>
       </div>
 
@@ -732,6 +765,7 @@ export default async function Page({ searchParams }) {
                          den: 'capacidade', estilo: 'ocupacao' },
                      ]}
                      unidade={unidade}
+                     faixas={faixas}
                      padrao={['cc', 'ct']} />
             </Suspense>
           </>
@@ -745,6 +779,7 @@ export default async function Page({ searchParams }) {
                 meses={mesesDaTabela}
                 unidade={unidade}
                 medida={rotuloMedida}
+                faixas={faixas}
                 atributo={atributosFiltro.find((a) => a.codigo === attrTabela)?.nome
                           ?? attrTabela} />
             </div>

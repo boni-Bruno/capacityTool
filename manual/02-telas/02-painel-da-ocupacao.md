@@ -14,6 +14,27 @@ Os mesmos do Painel da Capacidade — fábrica (uma área, ou **todas as
 fábricas**; abre com "selecionar fábrica…"), ano, OEE —, mais o cenário, que
 nasce no que está **no ar** na tela de Demanda e pode ser trocado aqui.
 
+## As cores da ocupação (e o botão que as define)
+
+No alto do bloco *Mês a mês*, ao lado da base de demanda, ficam a **legenda das
+cores** e o botão **Cores da ocupação**. A régua é **uma só** e vale em quatro
+lugares: o indicador, o mês a mês, a tabela por CT (e a por atributo e a
+dinâmica) e o **número que sai no .pptx** da Extração das configurações. Mudar
+aqui muda o documento.
+
+- Cada faixa é um intervalo de porcentagem, uma cor e um nome (*ideal*,
+  *apertado*, *estourado*…). O nome aparece junto do indicador de Ocupação.
+- O intervalo é **fechado no início e aberto no fim**: 85 a 100 e 100 a 115 se
+  encostam sem se sobrepor, e 100% cai na segunda. Fim em branco = "daí em
+  diante"; início em branco = "até aqui".
+- **Porcentagem fora de toda faixa sai sem cor** — e isso é resposta, não falha.
+  Sem faixa nenhuma cadastrada, a ocupação aparece sem cor em toda a tela.
+- A cor pinta **o número**, não o fundo. Como ela cai em dois fundos (a folha
+  branca do slide e o painel, que pode estar em tema escuro), o editor avisa
+  quando um tom some num dos dois.
+- Quem não pode editar a Extração das configurações vê a legenda, mas não o
+  botão.
+
 ## Como ler
 
 - Ocupação **acima de 100%** = o plano pede mais do que cabe. Abaixo = folga.

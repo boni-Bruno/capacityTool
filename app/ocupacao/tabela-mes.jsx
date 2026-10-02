@@ -7,15 +7,16 @@
 // porcentagem é o erro clássico desta tabela, e ele só apareceria conferindo
 // contra o indicador lá em cima.
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
+import { estiloDaOcupacao } from '../../lib/faixa-cor';
 import { ROTULO, TOTAL } from '../painel/grade';
-
-const classePct = (v) => (v === null ? 'muted'
-  : v > 100 ? 'ocup-estoura'
-    : v >= 85 ? 'ocup-aperta' : '');
 
 const fmtPct = (v) => (v === null ? '—' : `${v.toFixed(1)}%`);
 
-export default function TabelaMesOcupacao({ dados, medida, unidade = 'min' }) {
+// `faixas` é a régua cadastrada, a mesma do .pptx — ver ./faixas.jsx. Vazia, a
+// ocupação sai sem cor, que é o que a régua diz quando não diz nada.
+export default function TabelaMesOcupacao({
+  dados, medida, unidade = 'min', faixas = [],
+}) {
   if (!dados.length) return null;
   const suf = sufixoUnidade(unidade);
 
@@ -67,13 +68,16 @@ export default function TabelaMesOcupacao({ dados, medida, unidade = 'min' }) {
             <td>Ocupação</td>
             {dados.map((x) => {
               const o = ocupa(x.demanda, x.capacidade);
+              const e = estiloDaOcupacao(faixas, o);
               return (
-                <td key={x.rotulo} className={`num col-mes ${classePct(o)}`}>
+                <td key={x.rotulo} className={`num col-mes ${e.className}`}
+                    style={e.style}>
                   {fmtPct(o)}
                 </td>
               );
             })}
-            <td className={`num forte ${classePct(ocupa(totDem, totCap))}`}>
+            <td className={`num forte ${estiloDaOcupacao(faixas, ocupa(totDem, totCap)).className}`}
+                style={estiloDaOcupacao(faixas, ocupa(totDem, totCap)).style}>
               {fmtPct(ocupa(totDem, totCap))}
             </td>
           </tr>

@@ -16,7 +16,9 @@ import {
 import { areaDoVisual, formasDoVisual } from '../../../lib/slide-visual';
 import { iso, ultimoDiaDoMes } from '../../../lib/periodo';
 import Arvore from './arvore';
-import Faixas from './faixas';
+// A régua de cor mora no painel da ocupação, que é a tela onde a ocupação é a
+// pergunta — e é a MESMA régua que pinta aqui. Ver o cabeçalho de lá.
+import Faixas from '../../ocupacao/faixas';
 
 // A tela da extração das configurações.
 //

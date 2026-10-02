@@ -1,4 +1,5 @@
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
+import { estiloDaOcupacao } from '../../lib/faixa-cor';
 import { ROTULO, TOTAL } from '../painel/grade';
 
 // A ocupação repartida entre os rótulos de um atributo.
@@ -11,15 +12,12 @@ import { ROTULO, TOTAL } from '../painel/grade';
 // ela É da linha e a linha É classificada. Só a primeira precisa de rateio, e
 // é bom que a tabela diga isso: são naturezas diferentes na mesma linha.
 
-const classePct = (v) => (v === null ? 'muted'
-  : v > 100 ? 'ocup-estoura'
-    : v >= 85 ? 'ocup-aperta' : '');
-
 const fmtPct = (v) => (v === null ? '—' : `${v.toFixed(1)}%`);
 const num = (v) => Number(v ?? 0);
 
+// `faixas` é a régua cadastrada, a mesma do .pptx — ver ./faixas.jsx.
 export default function TabelaAtributoOcupacao({
-  linhas, meses, unidade = 'min', atributo, medida,
+  linhas, meses, unidade = 'min', atributo, medida, faixas = [],
 }) {
   const suf = sufixoUnidade(unidade);
 
@@ -66,8 +64,10 @@ export default function TabelaAtributoOcupacao({
               <td className={l.rotulo === null ? 'muted' : 'forte'}>{nome}</td>
               {meses.map((m) => {
                 const o = ocupa(dem(l, m.chave), cap(l, m.chave));
+                const e = estiloDaOcupacao(faixas, o);
                 return (
-                  <td key={m.chave} className={`num col-mes ${classePct(o)}`}
+                  <td key={m.chave} className={`num col-mes ${e.className}`}
+                      style={e.style}
                       title={`${medida}: ${detalhe(cap(l, m.chave), unidade)}`
                              + ` · Demanda: ${detalhe(dem(l, m.chave), unidade)}`}>
                     <span className="ocup-num">{fmtPct(o)}</span>
@@ -79,7 +79,8 @@ export default function TabelaAtributoOcupacao({
                   </td>
                 );
               })}
-              <td className={`num forte ${classePct(ocupa(somaDem(l), somaCap(l)))}`}>
+              <td className={`num forte ${estiloDaOcupacao(faixas, ocupa(somaDem(l), somaCap(l))).className}`}
+                  style={estiloDaOcupacao(faixas, ocupa(somaDem(l), somaCap(l))).style}>
                 <span className="ocup-num">{fmtPct(ocupa(somaDem(l), somaCap(l)))}</span>
                 <span className="ocup-det">
                   {formataUnidade(somaDem(l), unidade)}
@@ -99,13 +100,16 @@ export default function TabelaAtributoOcupacao({
           {meses.map((m) => {
             const c = linhas.reduce((s, l) => s + cap(l, m.chave), 0);
             const d = linhas.reduce((s, l) => s + dem(l, m.chave), 0);
+            const e = estiloDaOcupacao(faixas, ocupa(d, c));
             return (
-              <td key={m.chave} className={`num col-mes ${classePct(ocupa(d, c))}`}>
+              <td key={m.chave} className={`num col-mes ${e.className}`}
+                  style={e.style}>
                 {fmtPct(ocupa(d, c))}
               </td>
             );
           })}
-          <td className={`num ${classePct(ocupa(totDem, totCap))}`}>
+          <td className={`num ${estiloDaOcupacao(faixas, ocupa(totDem, totCap)).className}`}
+              style={estiloDaOcupacao(faixas, ocupa(totDem, totCap)).style}>
             {fmtPct(ocupa(totDem, totCap))}
           </td>
         </tr>

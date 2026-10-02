@@ -2291,6 +2291,54 @@ hoje: o zero é verdade, não falha de leitura.
 
 ---
 
+## Uma régua de cor só, no painel e no slide — PRONTO (02/10/2026)
+
+O Bruno, olhando o painel da ocupação ao lado do documento: *"a cor não está
+igual a da extração das configurações. Quero escolher o range e a cor na tela do
+painel da ocupação e isso valer para a extração do .pptx também"*.
+
+Eram **duas réguas para a mesma pergunta**. A do documento é cadastrada desde a
+migração 29 (`faixa_ocupacao`, com nome e cor por faixa) e é a que estava certa:
+*ociosidade* até 51%, *folga*, *ideal* de 66 a 86, *apertado*, *estourado* de 96
+em diante. A do painel estava cravada em código — `>100 vermelho, >=85 âmbar` —,
+e em **seis cópias**: o indicador, o mês a mês, a tabela por CT, a por atributo,
+a dinâmica e a página. Resultado: o painel dizia "apertado" em âmbar num mês que
+o documento da mesma semana chamava de *ideal* em verde.
+
+**A régua cadastrada passou a ser a única**, e as seis cópias viraram uma função
+em `lib/faixa-cor.js` (`estiloDaOcupacao`), que devolve classe e cor prontas. O
+CSS ficou só com o peso da fonte: a cor vem do cadastro, e era justamente
+cravá-la em CSS que criava a segunda régua.
+
+**Sem faixa que contenha o valor, sai sem cor — inclusive no painel.** Isso
+derruba de propósito o vermelho automático acima de 100% que existia antes:
+buraco é resposta, e a tela diz na legenda quando não há faixa nenhuma. Quem
+quiser o vermelho cadastra o vermelho.
+
+**O editor mudou de casa**: de `app/cadastros/extracao-config/faixas.jsx` para
+`app/ocupacao/faixas.jsx`, e a extração passou a importá-lo. A régua é lida na
+ocupação todo dia e era editada numa tela aberta uma vez por mês; o caminho
+inverso esconderia o cadastro de quem convive com ele. O pop-up ficou nos dois
+lugares, gravando a mesma coisa.
+
+**A permissão continua sendo `extracao_config.editar`**, e não a do painel: é a
+mesma régua que pinta o documento apresentado, e quem responde por ele é quem
+deve mexer. Quem não a tem vê a **legenda** — entender o que a cor quer dizer é
+de quem lê, não de quem publica.
+
+**O aviso de contraste passou a perguntar pelos DOIS fundos.** A cor pinta o
+número, e agora esse número cai na folha branca do slide e no painel, que pode
+estar em tema escuro: um vermelho escuro bonito no slide quase some no painel, e
+um amarelo claro faz o contrário. `corFraca` (branco) ganhou a irmã
+`corFracaNoEscuro`, e o editor diz qual dos dois lugares a cor escolhida
+estraga.
+
+**O nome da faixa entrou no indicador** ("estourado · falta 1.139.674 min"),
+pela razão que o slide já tinha: cor sozinha exige lembrar a legenda, e a
+legenda não está na tela.
+
+---
+
 ## O manual de quem opera — PRONTO, e cresce com o uso
 
 Em 14/09/2026 o Bruno começou a usar a ferramenta a sério e pediu um lugar

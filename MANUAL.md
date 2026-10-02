@@ -341,6 +341,27 @@ Os mesmos do Painel da Capacidade — fábrica (uma área, ou **todas as
 fábricas**; abre com "selecionar fábrica…"), ano, OEE —, mais o cenário, que
 nasce no que está **no ar** na tela de Demanda e pode ser trocado aqui.
 
+### As cores da ocupação (e o botão que as define)
+
+No alto do bloco *Mês a mês*, ao lado da base de demanda, ficam a **legenda das
+cores** e o botão **Cores da ocupação**. A régua é **uma só** e vale em quatro
+lugares: o indicador, o mês a mês, a tabela por CT (e a por atributo e a
+dinâmica) e o **número que sai no .pptx** da Extração das configurações. Mudar
+aqui muda o documento.
+
+- Cada faixa é um intervalo de porcentagem, uma cor e um nome (*ideal*,
+  *apertado*, *estourado*…). O nome aparece junto do indicador de Ocupação.
+- O intervalo é **fechado no início e aberto no fim**: 85 a 100 e 100 a 115 se
+  encostam sem se sobrepor, e 100% cai na segunda. Fim em branco = "daí em
+  diante"; início em branco = "até aqui".
+- **Porcentagem fora de toda faixa sai sem cor** — e isso é resposta, não falha.
+  Sem faixa nenhuma cadastrada, a ocupação aparece sem cor em toda a tela.
+- A cor pinta **o número**, não o fundo. Como ela cai em dois fundos (a folha
+  branca do slide e o painel, que pode estar em tema escuro), o editor avisa
+  quando um tom some num dos dois.
+- Quem não pode editar a Extração das configurações vê a legenda, mas não o
+  botão.
+
 ### Como ler
 
 - Ocupação **acima de 100%** = o plano pede mais do que cabe. Abaixo = folga.
@@ -864,6 +885,10 @@ Slides (resumo / por CC / por CT / apresentação), ano, período de mês a mês
 capacidade (disponível, planejada, instalada) com OEE meta ou simulado, unidade
 (minuto, metro, UM — metro e UM só com cenário), demanda (um cenário ou
 nenhum), e as **faixas de cor** da ocupação.
+
+As faixas de cor são **as mesmas do Painel da Ocupação** — uma régua só para os
+dois lugares. O botão está aqui e lá, e dá no mesmo: o que muda num, muda no
+outro. Ver `02-painel-da-ocupacao.md`.
 
 Cada slide leva o gráfico mês a mês (barras de capacidade, linha de demanda)
 e, alinhada coluna a coluna, uma grade com o OEE e a quantidade de recursos
@@ -1941,6 +1966,41 @@ ao cadastro.
 
 **O que fazer.** Recalcular primeiro. Se continuar zero, confira a data e o
 turno da parada contra o regime do recurso naquele mês.
+
+---
+
+### A ocupação ficou sem cor nenhuma no painel
+
+**Causa.** A cor vem das **faixas cadastradas** (botão *Cores da ocupação*, no
+alto do bloco mês a mês), e não de uma régua fixa. Sem faixa nenhuma, ou com uma
+porcentagem que não cai em faixa alguma, o número sai sem cor — de propósito:
+inventar uma cor para o que ninguém classificou seria dar significado a um
+vazio.
+
+**O que fazer.** Abrir *Cores da ocupação* e cadastrar as faixas, ou conferir se
+há buraco entre elas (85 a 95 e 100 a ∞ deixam 95 a 100 sem cor). Lembre que o
+fim é **aberto**: uma faixa que termina em 100 não pinta exatamente 100%.
+
+---
+
+### O painel e o slide mostram cores diferentes para o mesmo mês
+
+**Causa.** A régua é a mesma desde 02/10/2026 — então o que difere é o
+**número**, não a cor. As porcentagens podem ser outras porque o slide foi
+gerado com outra **medida** (disponível, planejada ou instalada), outro **OEE**
+(meta ou simulado), outra **base de demanda** ou outro **recorte**.
+
+**O que fazer.** Compare as escolhas das duas telas antes da cor. Se as duas
+mostram a mesma porcentagem com cores diferentes, aí sim é defeito — relate.
+
+---
+
+### Mudei as cores e o documento antigo continua com as cores velhas
+
+**Causa.** O `.pptx` já gerado é um arquivo: ele guarda as cores do momento em
+que saiu. A régua vale para o **próximo** documento.
+
+**O que fazer.** Gerar o documento de novo.
 
 ---
 
