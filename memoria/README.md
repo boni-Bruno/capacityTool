@@ -12,14 +12,15 @@ Estava tudo na memória local do assistente, dentro do perfil do usuário
 Foi decisão do Bruno em 10/09/2026 trazer para cá: *"isso é do projeto e não de
 nós dois"*.
 
-## Os três arquivos que moram aqui
+## Os arquivos que moram aqui
 
 | arquivo | a regra |
 |---|---|
 | [nao-instalar-nada-local.md](nao-instalar-nada-local.md) | nada é instalado nem executado na máquina local |
 | [roadmap-sempre-atualizado.md](roadmap-sempre-atualizado.md) | o ROADMAP anda junto do commit, sem pedir autorização |
 | [documentacao-nos-dois-arquivos.md](documentacao-nos-dois-arquivos.md) | ROADMAP é o QUE, CLAUDE.md é o COMO |
-| [migracao-e-cardinalidade.md](migracao-e-cardinalidade.md) | migração que dobra as linhas de uma tabela vai junto com o deploy, não antes |
+| [migracao-e-cardinalidade.md](migracao-e-cardinalidade.md) | migração que o código antigo leria errado — linhas a mais, ou significado novo — vai junto com o deploy, não antes |
+| [rotulo-de-permissao.md](rotulo-de-permissao.md) | `<tela>.editar` não pode significar outra coisa; papel diferente pede tela própria |
 
 ## O que vai em cada lugar, para nada duplicar
 

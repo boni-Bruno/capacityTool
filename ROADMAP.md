@@ -39,6 +39,9 @@ ver o [CLAUDE.md](CLAUDE.md). Este arquivo conta o QUE; aquele conta o COMO.
 | Tabela dinâmica nos dois painéis, no grão de mês | — | Painel · Ocupação › aba "(Tab. Din.)" · `lib/pivot.js` |
 | A entrada é só pelo Hub; a tela de senha vira escotilha | — | `lib/hub.js` · `middleware.js` |
 | Grade de cadastro (OEE, turnos e paradas) embaixo do gráfico | — | Painel · Ocupação · `lib/grade-cadastro.js` |
+| Uma régua de cor da ocupação para o painel e para o .pptx | `29` | Painel da Ocupação › Cores da ocupação |
+| Ciclo de versões do cenário, com fotografia ao fechar | `45` | Habilitação de cenário/ano · Planejar uma fábrica |
+| Tickets em duas telas: os meus e a fila de todos, com conversa | `46` `47` | Roadmap › Meus tickets · Gerenciar tickets |
 
 O que sobrou da conversão está na seção 3 — as regras de classificação e o
 filtro por atributo derivado.
@@ -1930,6 +1933,12 @@ por corredor, mensagem e e-mail — cada um num lugar, nenhum com resposta
 rastreável. Um grupo novo no menu, **Roadmap**, com duas telas: **Criar
 ticket** e **Meus tickets** (migração `39_tickets.sql`).
 
+> **O desenho desta seção valeu de 28/09 a 02/10/2026.** As duas telas viraram
+> **Meus tickets** e **Gerenciar tickets** na migração 46, o formulário virou
+> pop-up e as permissões mudaram de nome — ver *Os tickets viram duas telas*,
+> mais abaixo. O que está aqui continua explicando POR QUE cada coisa existe; o
+> que mudou é o corte entre as telas e o nome das permissões.
+
 **O que o chamado pede**: o **produto** (a ferramenta toda — o padrão —, um
 grupo do menu inteiro, ou uma tela), o **tipo** (dúvida, sugestão, bug/erro),
 um **resumo de uma linha** e a descrição. A pergunta da descrição **muda com o
@@ -1944,14 +1953,16 @@ na lista em vez de sumir: ticket escondido é pior que rótulo feio.
 
 **Quem vê o que**: quem responde vê todos, o resto vê os seus — e isso é
 decidido na **consulta**, não na tela, porque filtrar na tela mandaria a fila
-inteira para o navegador de quem não pode lê-la. "Quem responde" é ter
-`tickets.editar`, que o Gestor de Planejamento tem por ser cargo protegido.
+inteira para o navegador de quem não pode lê-la. (Quem responde era
+`tickets.editar` até a migração 46; passou a ser `tickets_gerenciar.editar`, e a
+consulta hoje é escolhida pela TELA que chama.)
 
-**Duas telas e não uma** porque são dois atos: abrir chamado é do dia a dia de
-todo mundo, acompanhar a fila é outra coisa — e assim `tickets.editar` ganha um
-significado próprio, que é responder.
+**Duas telas e não uma** porque são dois atos — e esta foi a parte que não
+sobreviveu ao uso: o corte era abrir × acompanhar, e deu a `tickets.editar` um
+significado próprio que o rótulo não dizia. Na migração 46 o corte virou **o meu
+× o de todos**, que é o que a grade de cargos consegue explicar sozinha.
 
-**O estado e a resposta** (Aberto → Em análise → Feito ou Não vamos fazer)
+**O estado e a resposta** (Aberto → Em análise → Feito ou Não procedente)
 entraram junto, e não como "fase 2": uma caixa de entrada sem resposta visível
 é um lugar para onde as coisas vão morrer, e ninguém abre o segundo chamado
 depois que o primeiro não teve resposta. Chamado não se apaga — "não vamos
@@ -2649,10 +2660,13 @@ id da instalação.
 
 ---
 
-## O QUE FALTA
+## O ciclo de versões do cenário — PRONTO (migração 45)
 
-Tudo abaixo está aberto. O resto deste arquivo é registro do que foi decidido e
-por quê — útil para não redecidir, mas já construído.
+As duas seções abaixo são **registro do que foi construído** em 30/09 e 01/10 —
+o modelo de versões e as telas que vieram dele. Elas moraram dentro de *O QUE
+FALTA* enquanto estavam sendo feitas, e ficar ali depois de prontas era o
+roadmap mentindo para quem lê de cima para baixo. **O que está aberto começa em
+[O QUE FALTA](#o-que-falta), mais abaixo.**
 
 ### Versões do cenário: o orçamento é um ciclo (migração 45)
 
@@ -2750,6 +2764,14 @@ repassado e só fábrica, ano e cenário são sobrescritos; e esses três **some
 seletor interno** (`lib/filtro-fluxo.js`), porque oferecer uma escolha que a
 rota desfaz parece defeito e é pior que não ter a opção.
 
+**O passo Recursos se recorta na fábrica escolhida** desde 02/10/2026: a página
+passou a ler `?area=` e a filtrar a lista, os desativados e o seletor de área do
+formulário. Até ali ela ignorava o endereço, e no meio de "planejar a Tecelagem"
+apareciam as oito áreas que a pessoa alcança — o escopo sempre valeu, as áreas
+de outros nunca apareceram, mas revisar uma fábrica com a lista inteira na
+frente é o mesmo que não ter escolhido fábrica. O recorte é validado **depois**
+do escopo: `?area=` de um link colado não serve para espiar o que o cargo não vê.
+
 **Confirmar é ato explícito**, com desmarcar ao lado: passar pela tela não conta,
 e quem confirmou sem olhar precisa poder voltar atrás — senão a próxima pessoa
 confia num visto que ninguém deu.
@@ -2777,6 +2799,45 @@ com o banco. **Consulta não trava**: painel, ocupação e extração mostram
 qualquer ano com rodada. **Paradas é o caso especial** — não tem cenário (é a
 mesma nos dois), então o ano fica liberado se qualquer um dos dois o abriu.
 
+---
+
+## O QUE FALTA
+
+Daqui para baixo está **aberto**. Tudo acima é registro do que já foi decidido e
+construído — útil para não redecidir, e para entender por que uma coisa é como
+é.
+
+### O que está na fila, por ordem de quem pediu
+
+- **Etapa de aprovação de cadastro.** Pedido do Bruno em 02/10/2026, depois de
+  um usuário convidado cadastrar um recurso: *"usuário convidado adicionou um
+  recurso — criar etapa de aprovação"*. **Não foi desenhado ainda**, e as
+  perguntas que decidem o desenho são dele:
+  - o que exige aprovação — só recurso novo, ou qualquer cadastro (jornada, OEE,
+    parada)? Só o que vem de cargo não protegido, ou de todo mundo?
+  - o que o cadastro pendente faz **enquanto espera**: entra no cálculo e é
+    desfeito se for recusado, ou fica fora até o aval? A segunda é mais simples
+    de explicar e mais chata de usar.
+  - como isso conversa com a **versão do cenário**, que já é o lugar onde se
+    fecha o que vale — a aprovação é por item, ou é a própria abertura/fechamento
+    de versão fazendo esse papel?
+  - quem aprova: o Gestor de Planejamento sempre, ou quem tiver escopo da área?
+
+  O caminho mais barato que enxergo hoje é **aproveitar o que já existe**:
+  `recurso` tem vigência e ativo, `cenario_versao` já tem um dono e um fechamento,
+  e `planejamento_passo` já registra "fulano confirmou esta etapa". Uma coluna de
+  estado no recurso (`PENDENTE`/`APROVADO`) resolveria o caso relatado sem tabela
+  nova. Vale uma conversa antes de qualquer linha de código.
+
+- **Configurar `HUB_SAIR_URL`** (é do Bruno, não do código): sem ela, a tela de
+  saída mostra *Voltar ao Hub* e não mostra *Sair também do Hub*. O valor é o
+  endereço de logout do portal; não deu para descobri-lo de fora, porque o Hub
+  manda qualquer rota sem sessão para `/entrar`.
+
+- **Validar em uso** o que subiu em 02/10: a grade de cadastro nos painéis, a
+  régua de cor única, o ∞ da ocupação, as duas telas de ticket com a conversa, o
+  Sair e o recorte dos Recursos no fluxo.
+
 ### Dos cenários, o que ficou de fora
 
 - **Parada por cenário.** `parada` não tem `origem`: ela é evento com data, e a
@@ -2791,12 +2852,6 @@ mesma nos dois), então o ano fica liberado se qualquer um dos dois o abriu.
   cenário no seletor, e o painel refaz a consulta. Uma coluna "Orçamento ×
   Simulação" lado a lado é outra construção. (Comparar duas **versões** do mesmo
   cenário já existe, na tela de Habilitação.)
-- ~~O passo Recursos do fluxo lista todas as áreas~~ — **feito em 02/10/2026**,
-  depois de o usuário convidado tropeçar nisso: a página passou a ler `?area=`
-  e a se recortar na fábrica do fluxo (lista, desativados e o seletor de área
-  do formulário). O escopo sempre valeu — as áreas de outros nunca apareceram —,
-  mas revisar a Tecelagem com as oito áreas da pessoa na frente é o mesmo que
-  não ter escolhido fábrica nenhuma.
 - **Auditoria por pessoa.** Continua sendo o que falta para o sistema saber o
   que mudou entre uma versão e a seguinte — é por não ter isso que quem abre a
   v4 precisa marcar à mão quais etapas ela exige.

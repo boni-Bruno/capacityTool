@@ -1,6 +1,6 @@
 ---
 name: migracao-e-cardinalidade
-description: "Migração vai antes do deploy — mas a que muda a CARDINALIDADE de uma tabela só pode ir antes do deploy que a acompanha"
+description: "Migração vai antes do deploy — exceto a que o código antigo leria errado: cardinalidade nova, ou significado novo"
 metadata:
   type: feedback
 ---
@@ -41,3 +41,17 @@ linhas existem por recurso, por área, por turno?* Se sim, separar em duas:
 E conferir os pontos que leem ou apagam por id da entidade sem o discriminador
 novo: são eles que quebram, e quebram em silêncio. `delete ... where
 recurso_id = X` é o padrão a procurar.
+
+## A emenda de 02/10/2026: não é só cardinalidade
+
+A migração 46 não mexeu em quantas linhas existem — mexeu no que elas
+**querem dizer**. `tickets.editar` deixou de significar "cuido da fila" e passou
+a significar "abro o meu chamado". Uma linha, um significado novo: rodada antes
+do deploy, ela daria a fila da ferramenta a todo mundo que abre chamado, pelos
+minutos do build. Rodou depois, e o pior caso virou um cargo ficar sem a tela
+nova por instantes.
+
+A pergunta que generaliza as duas é mais simples que a da cardinalidade:
+**se isto rodar e o deploy demorar dez minutos, o que o código que está no ar
+faz com estas linhas?** Se a resposta for "algo que ninguém quis", a migração
+espera o deploy. Ver [[rotulo-de-permissao]], que é a outra metade desse dia.

@@ -89,21 +89,32 @@ quando ela nasceu de um erro, a história vai para `memoria/` no mesmo commit.
    porquê. Migração aplicada direto no banco sem arquivo é mudança que ninguém
    consegue reconstruir.
 
-   **Quem aplica**: eu, pela conexão com o Neon, quando a permissão permitir
-   (`mcp__…__run_sql` está liberado em `.claude/settings.local.json`). Isso
+   **Quem aplica**: eu, pela conexão com o Neon (`run_sql` do MCP), quando a
+   permissão desta máquina permitir — ela vem da configuração local de cada
+   instalação, e não de arquivo versionado, então o jeito de saber é tentar. Em
+   02/10/2026 funcionou sem `.claude/settings.local.json` existir. Isso
    existe porque a ORDEM importa e ela não pode ficar partida entre nós dois:
    preencher dado e depois trocar o motor é uma sequência só, e o meio dela não
    é lugar para uma ida ao SQL Editor. Se a permissão recusar, entregar o nome
    do arquivo em bloco de código para ele rodar — e dizer que foi recusa de
    permissão, não escolha minha.
 
-   **Migração que muda a CARDINALIDADE de uma tabela é a exceção**: ela vai
-   junto com o deploy que a acompanha, nunca antes. Enquanto o número de linhas
-   por entidade não muda, o código antigo continua correto sem saber de nada; no
-   instante em que ele dobra, toda consulta que lê e todo `delete ... where
-   recurso_id = X` que apaga por id da entidade passa a estar errado — e errado
-   em silêncio. Separar em duas migrações: a estrutura antes, o preenchimento
-   que multiplica as linhas depois do deploy ficar verde.
+   **A exceção é a migração que o CÓDIGO ANTIGO leria errado**: ela vai junto
+   com o deploy que a acompanha, ou depois dele — nunca antes. A pergunta a
+   fazer é: *se isto rodar e o deploy demorar dez minutos, o que o código que
+   está no ar faz com estas linhas?* Dois casos já aconteceram:
+
+   - **CARDINALIDADE** (migração 41): enquanto o número de linhas por entidade
+     não muda, o código antigo continua correto sem saber de nada; no instante
+     em que ele dobra, toda consulta que lê e todo `delete ... where recurso_id
+     = X` passa a estar errado — e errado em silêncio. Separar em duas: a
+     estrutura antes, o preenchimento que multiplica as linhas depois do deploy
+     ficar verde.
+   - **SIGNIFICADO** (migração 46): a linha é uma só, mas quer dizer outra
+     coisa. `tickets.editar` deixou de ser "cuidar da fila" e virou "abrir o meu
+     chamado"; rodada antes do deploy, ela daria a fila da ferramenta a todo
+     mundo que abre chamado, por alguns minutos. Rodou depois, e o pior caso
+     virou um cargo ficar sem a tela nova por instantes.
 
    **Depois de aplicar, conferir no banco** que o efeito é o esperado, e dizer o
    que ficou faltando do lado dele: **Recalcular tudo**, reimportar, o que for.
@@ -122,15 +133,20 @@ ruído; comentário que conta a armadilha é o que salva a próxima pessoa.
 
 **Motor puro antes de tela.** Toda regra que decide número mora num módulo de
 `lib/` sem `import` de banco, com testes em `node:test`. Depois a tela consome.
-Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
+Os motores de REGRA são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
 `faixas.js`, `periodo.js`, `formato.js`, `ap.js`, `parquet.js`, `zip.js`,
 `pptx.js`, `documento.js`, `visual.js`, `slide-visual.js`, `faixa-cor.js`,
 `dia-util.js`, `ordem.js`, `anos.js`, `tema.js`, `origens.js`, `dias.js`,
 `grade.js`, `cores.js`, `xlsx.js`, `recursos-formato.js`, `simulador.js`,
 `pivot.js`, `permissoes.js`, `escopo.js`, `senha.js`, `sessao-token.js`,
-`ticket-formato.js`, `regime-sugerido.js`, `versao.js`, `prontidao.js`,
-`filtro-fluxo.js`, `grade-cadastro.js`, `ocupacao.js`. Nenhum deles importa
-`./db`.
+`ticket-formato.js`, `demanda-formato.js`, `regime-sugerido.js`, `versao.js`,
+`prontidao.js`, `filtro-fluxo.js`, `grade-cadastro.js`, `ocupacao.js`. Nenhum
+deles importa `./db`.
+
+A lista é dos motores de regra, e não de todo arquivo sem banco: `hub.js`,
+`jwt.js`, `sso.js`, `erros.js`, `revalidar.js` e `ordem-servidor.js` também são
+puros, mas são infraestrutura — não decidem número nenhum. Para conferir a lista
+contra o disco: os `.js` de `lib/` que não contêm `from './db'`.
 
 **Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
 quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número
@@ -173,6 +189,11 @@ de cargos e a guarda. A rota chama `exigeRota(req)` no topo, a página chama
 também em `ESCOPO_ROTAS`. Um teste (`lib/permissoes.test.js`) recusa rota
 sem entrada: rota esquecida nasceria fechada para todo mundo.
 
+Uma entrada de `ROTAS` pode ser uma LISTA, e aí basta ter uma das permissões —
+é para a rota que serve a dois papéis de verdade (o PUT do ticket, do dono e do
+curador). Nunca "todas estas": exigência composta é regra de domínio, e domínio
+mora no módulo que grava.
+
 **Estado na URL.** Filtros, recortes, unidade, aba, ordenação — tudo vive em
 `searchParams`. O endereço descreve por inteiro o que está na tela, e recarregar
 cai no mesmo lugar. Cookie só para o que o servidor precisa saber antes de
@@ -203,9 +224,13 @@ lib/regras.js      o motor: classificação, rateio, mix, capacidade por atribut
 lib/cadastro.js    turnos, turnos do recurso
 lib/estrutura.js   plantas, áreas, recursos, máquinas
 lib/acesso.js      cargos, usuários e escopo; lib/sessao.js é quem está na sessão
+lib/versao-db.js   as versões do cenário: abrir, fechar, fotografar, comparar
+lib/tickets.js     os chamados e a conversa deles
 app/painel/        Painel da Capacidade — "quanto cabe"
 app/ocupacao/      Painel da Ocupação — "cabe?"
+app/planejamento/  o fluxo guiado, que embute as telas de cadastro como passos
 app/cadastros/     todas as telas de cadastro
+app/saiu/          a tela de depois do Sair, fora do porteiro (ver middleware)
 manual/            o manual de quem opera; MANUAL.md na raiz é a junção
 memoria/           por que cada regra deste arquivo existe — o erro que a criou
 NN_*.sql           migrações, na ordem em que devem rodar

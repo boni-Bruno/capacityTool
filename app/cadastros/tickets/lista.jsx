@@ -314,7 +314,7 @@ export default function Lista({
           ? ' Esta é a fila de todo mundo, e o seu cargo responde por ela:'
             + ' mudar o estado vale na hora, a resposta aparece para quem abriu, e'
             + ' apagar é para o chamado repetido ou aberto por engano — o que não vai'
-            + ' ser feito se responde com "Não vamos fazer" e o porquê.'
+            + ' ser feito se responde com "Não procedente" e o porquê.'
           : vejoTodos
             ? ' Esta é a fila de todo mundo. O seu cargo acompanha, mas quem'
               + ' responde é quem tem editar nesta tela.'
