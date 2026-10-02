@@ -6,7 +6,7 @@ import { anoEscolhido, anosParaEscolha } from '../../../lib/anos';
 import { ORIGENS } from '../../../lib/origens';
 import AvisoBanco from '../aviso-banco';
 import Exportar from './exportar';
-import { exigeVer, soDoEscopo, SomenteLeitura } from '../guarda';
+import { exigeVer, podeEditarTela, soDoEscopo, SomenteLeitura } from '../guarda';
 
 export const metadata = { title: 'Extração das configurações' };
 export const dynamic = 'force-dynamic';
@@ -39,11 +39,17 @@ export default async function Page({ searchParams }) {
   let listaCargas;
   let corrente;
   let faixas;
+  let podeMudarCores;
   try {
-    [linhas, modelo, anos, listaCargas, corrente, faixas] = await Promise.all([
-      arvoreDeConfiguracao(), resumoModeloSlide(), anosComRodada(),
-      cargas(), cargaCorrente(), faixasDeOcupacao(),
-    ]);
+    [linhas, modelo, anos, listaCargas, corrente, faixas, podeMudarCores] =
+      await Promise.all([
+        arvoreDeConfiguracao(), resumoModeloSlide(), anosComRodada(),
+        cargas(), cargaCorrente(), faixasDeOcupacao(),
+        // A régua de cor é do Painel da Ocupação e é ele quem diz quem a muda —
+        // ela pinta os dois lugares, e duas portas para o mesmo cadastro seriam
+        // duas respostas para "quem pode mexer nisto?".
+        podeEditarTela('ocupacao'),
+      ]);
     linhas = await soDoEscopo(linhas, 'area_id');
   } catch (e) {
     return <AvisoBanco erro={e.message} />;
@@ -72,6 +78,7 @@ export default async function Page({ searchParams }) {
       ) : (
         <Exportar linhas={linhas} modelo={modelo} ano={ano} origem={origem}
                   anos={lista} cargas={listaCargas} faixas={faixas}
+                  podeMudarCores={podeMudarCores}
                   cargaCorrente={corrente?.id ?? null} />
       )}
     </>

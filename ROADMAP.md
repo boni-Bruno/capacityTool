@@ -2337,6 +2337,45 @@ estraga.
 pela razão que o slide já tinha: cor sozinha exige lembrar a legenda, e a
 legenda não está na tela.
 
+**Quem muda a régua é `ocupacao.editar`**, decidido pelo Bruno no mesmo dia: a
+primeira versão usava `extracao_config.editar`, com o argumento de que a régua
+pinta o documento apresentado. Ele inverteu — a régua é da tela onde a ocupação
+é a pergunta, e a permissão é a dela, inclusive dentro da extração. Quem exporta
+o documento e não edita o painel vê a legenda e não o botão. Na prática nenhum
+cargo perdeu acesso: nenhum dos dois existia marcado fora do cargo protegido.
+
+### A ocupação sem capacidade: ∞, e não travessão
+
+No mesmo dia, olhando a tela: *"quando não tem capacidade cadastrada mas tem
+demanda, a ocupação não está apresentando nada, porque nenhum número é divisível
+por 0"*.
+
+É o **caso mais grave da tela** saindo como travessão cinza — a mesma cara de
+"não há nada para ver aqui". O plano pede de um centro que não tem onde caber, e
+a célula dizia menos do que uma célula vazia.
+
+O pedido foi **dividir a demanda por 1** para sair algum número. Isso daria
+`demanda × 100` — 265.398.400% para um mês de 2,6 milhões de minutos —, e esse
+número tem dois defeitos: não se lê, e **muda com a unidade** (as mesmas horas
+dariam 4.423.307%), que é exatamente a armadilha que o projeto evita em toda
+parte. **A saída é ∞**: diz a mesma coisa — não cabe de jeito nenhum —, ordena
+no topo, cai na faixa de cor mais alta como qualquer estouro e não depende de
+unidade. Quanto falta já está escrito ao lado, em minutos.
+
+**Zero sobre zero continua sendo nada**: sem capacidade e sem demanda não existe
+ocupação, e 0% diria "folgado" sobre uma conta que não foi feita.
+
+A conta estava copiada em cinco lugares (painel, mês a mês, por atributo, a
+dinâmica e o slide), cada um com o seu `cap === 0 ? null`. Virou
+**`lib/ocupacao.js`** (motor puro, 8 testes), com `ocupacaoDe`, `razaoDe` — a
+mesma regra para a tabela dinâmica, que guarda razão em fração — e `fmtOcupacao`.
+Na troca, o painel passou a escrever a porcentagem **com vírgula**: ele mostrava
+"92.4%" ao lado de "3.793.659" na mesma linha, o milhar em português e o decimal
+em inglês. O slide já saía com vírgula.
+
+O `title` da célula infinita explica o que fazer: ou o centro não tem recurso
+com aquele CC-CT, ou tem e ainda não foi recalculado.
+
 ---
 
 ## O manual de quem opera — PRONTO, e cresce com o uso

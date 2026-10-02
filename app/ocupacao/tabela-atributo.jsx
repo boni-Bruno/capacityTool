@@ -1,5 +1,6 @@
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
 import { estiloDaOcupacao } from '../../lib/faixa-cor';
+import { fmtOcupacao, ocupacaoDe } from '../../lib/ocupacao';
 import { ROTULO, TOTAL } from '../painel/grade';
 
 // A ocupação repartida entre os rótulos de um atributo.
@@ -12,7 +13,8 @@ import { ROTULO, TOTAL } from '../painel/grade';
 // ela É da linha e a linha É classificada. Só a primeira precisa de rateio, e
 // é bom que a tabela diga isso: são naturezas diferentes na mesma linha.
 
-const fmtPct = (v) => (v === null ? '—' : `${v.toFixed(1)}%`);
+// A conta e o formato saem de lib/ocupacao.js, com o resto do painel e o slide.
+const fmtPct = fmtOcupacao;
 const num = (v) => Number(v ?? 0);
 
 // `faixas` é a régua cadastrada, a mesma do .pptx — ver ./faixas.jsx.
@@ -36,7 +38,7 @@ export default function TabelaAtributoOcupacao({
   const somaCap = (l) => meses.reduce((s, m) => s + cap(l, m.chave), 0);
   const somaDem = (l) => meses.reduce((s, m) => s + dem(l, m.chave), 0);
 
-  const ocupa = (d, c) => (c === 0 ? null : (d * 100) / c);
+  const ocupa = ocupacaoDe;
 
   // Do que pesa mais para o que pesa menos, pela demanda: é ela que faz a
   // pergunta deste painel — quem está pedindo mais.

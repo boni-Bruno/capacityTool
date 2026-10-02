@@ -7,6 +7,9 @@ import {
   porDia, porMes, porRecurso, rodadasDasAreas, ultimaExecucao,
 } from '../../lib/db';
 import { estiloDaOcupacao, faixaDe } from '../../lib/faixa-cor';
+import {
+  explicaInfinita, fmtOcupacao, ocupacaoDe, ocupacaoInfinita,
+} from '../../lib/ocupacao';
 import { anoEscolhido, anosParaEscolha } from '../../lib/anos';
 import {
   atributos as atributosDePara, cargas, cargaCorrente, combinacoesPorMes,
@@ -72,10 +75,11 @@ const MEDIDAS = [
 
 const num = (v) => Number(v ?? 0);
 
-// A ocupação em si: quanto do que cabe já está pedido.
-const ocupa = (dem, cap) => (num(cap) === 0 ? null : (num(dem) * 100) / num(cap));
-
-const fmtPct = (v) => (v === null ? '—' : `${v.toFixed(1)}%`);
+// A ocupação e o seu formato saem de lib/ocupacao.js — o mesmo motor do slide,
+// das outras tabelas e da dinâmica. Lá está a regra do caso sem capacidade:
+// demanda sem nada onde caber é INFINITA, e não "—".
+const ocupa = ocupacaoDe;
+const fmtPct = fmtOcupacao;
 
 // A COR SAI DA RÉGUA CADASTRADA (`faixa_ocupacao`), a mesma que pinta o número
 // no .pptx da Extração das configurações. Até 02/10/2026 esta tela tinha a sua
@@ -95,9 +99,9 @@ export default async function Page({ searchParams }) {
   try {
     [listaAreas, listaCargas, faixas, podeMexerNaRegua] = await Promise.all([
       areasDoEscopo(), cargas(), faixasDeOcupacao(),
-      // A régua é a MESMA do documento, então quem a muda é quem responde pelo
-      // documento. Aqui ela só aparece onde é lida.
-      podeEditarTela('extracao_config'),
+      // A régua é desta tela, e é ela que diz quem a muda. Quem só consulta vê
+      // a legenda — entender a cor é de quem lê.
+      podeEditarTela('ocupacao'),
     ]);
   } catch (e) {
     return (
@@ -492,8 +496,13 @@ export default async function Page({ searchParams }) {
         </span>
       ) },
     { chave: 'ocupacao', num: true, rot: 'Ocupação',
+      // O ∞ chama a atenção e não explica; o title explica. É aqui que ele
+      // importa mais: a tabela por CT é onde o centro sem recurso cadastrado
+      // aparece, e a pessoa precisa saber se é cadastro faltando ou recálculo.
       celula: (r) => (
-        <span {...estiloDaOcupacao(faixas, r.ocupacao)}>
+        <span {...estiloDaOcupacao(faixas, r.ocupacao)}
+              title={ocupacaoInfinita(r.ocupacao)
+                ? explicaInfinita(r.demanda) : undefined}>
           {fmtPct(r.ocupacao)}
         </span>
       ) },
@@ -538,7 +547,11 @@ export default async function Page({ searchParams }) {
               {faixaDe(faixas, totOcup)?.rotulo && (
                 <><strong>{faixaDe(faixas, totOcup).rotulo}</strong> · </>
               )}
-              {totOcup === null ? 'sem capacidade no período'
+              {/* O QUANTO FALTA continua certo no caso infinito: sem
+                  capacidade, o que falta é a demanda inteira — e esse número,
+                  em minutos, é o que se leva para a conversa. O ∞ diz que não
+                  cabe; esta linha diz quanto. */}
+              {totOcup === null ? 'sem capacidade e sem demanda no período'
                 : totOcup > 100
                   ? `falta ${formataUnidade(totDem - totCap, unidade)} `
                     + `${sufixoUnidade(unidade)}`
@@ -592,8 +605,8 @@ export default async function Page({ searchParams }) {
                 extração — longe de quem olha a ocupação todo dia.
                 `refrescar` porque as cores são pintadas no servidor: sem o
                 refresh, gravar mudaria a legenda e não a tabela.
-                Quem não publica o documento vê só a legenda: a régua é cadastro
-                de quem apresenta, mas o que a cor quer dizer é de quem lê. */}
+                Quem não edita ESTA tela vê só a legenda — a régua é daqui, e
+                `ocupacao.editar` é quem a governa, inclusive na extração. */}
             <Faixas faixas={faixas} refrescar editavel={podeMexerNaRegua} />
           </div>
         </div>
@@ -835,7 +848,8 @@ export default async function Page({ searchParams }) {
           <p className="rodape">
             <strong>{semRecurso.length} centro(s) com demanda e sem recurso
             cadastrado</strong> — o plano pede de uma máquina que este cadastro
-            não tem, e a ocupação deles não é calculável.
+            não tem. Eles aparecem com ocupação <strong>∞</strong>: não é erro
+            de conta, é demanda sem nenhuma capacidade onde caber.
             {' '}{semRecurso.slice(0, 8).map((r) => r.ct).join(' · ')}
             {semRecurso.length > 8 && ` … e mais ${semRecurso.length - 8}`}.
           </p>

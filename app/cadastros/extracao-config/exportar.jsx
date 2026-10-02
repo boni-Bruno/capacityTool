@@ -115,7 +115,7 @@ async function pede(url, corpo, metodo = 'POST') {
 
 export default function Exportar({ linhas, modelo, ano: anoInicial, origem: origemInicial,
                                    anos, cargas, cargaCorrente,
-                                   faixas: faixasIniciais }) {
+                                   faixas: faixasIniciais, podeMudarCores = false }) {
   const router = useRouter();
   const [escolha, setEscolha] = useState({ areas: [], ccs: [], recursos: 0, folhas: 0 });
   const [ocupado, setOcupado] = useState(null);
@@ -512,7 +512,11 @@ export default function Exportar({ linhas, modelo, ano: anoInicial, origem: orig
 
         <div className="linha-opcao">
           <span className="rotulo-opcao">Cores</span>
-          <Faixas faixas={faixas} onMudar={setFaixas} />
+          {/* A MESMA RÉGUA DO PAINEL DA OCUPAÇÃO, e governada por ele:
+              `ocupacao.editar` decide quem a muda, aqui também. Quem só exporta
+              vê a legenda — é ela que explica a cor que vai sair no slide. */}
+          <Faixas faixas={faixas} onMudar={setFaixas}
+                  editavel={podeMudarCores} />
         </div>
       </div>
 

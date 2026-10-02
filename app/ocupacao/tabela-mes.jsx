@@ -8,9 +8,10 @@
 // contra o indicador lá em cima.
 import { detalhe, formataUnidade, sufixoUnidade } from '../../lib/formato';
 import { estiloDaOcupacao } from '../../lib/faixa-cor';
+import {
+  explicaInfinita, fmtOcupacao, ocupacaoDe, ocupacaoInfinita,
+} from '../../lib/ocupacao';
 import { ROTULO, TOTAL } from '../painel/grade';
-
-const fmtPct = (v) => (v === null ? '—' : `${v.toFixed(1)}%`);
 
 // `faixas` é a régua cadastrada, a mesma do .pptx — ver ./faixas.jsx. Vazia, a
 // ocupação sai sem cor, que é o que a régua diz quando não diz nada.
@@ -22,7 +23,10 @@ export default function TabelaMesOcupacao({
 
   const totCap = dados.reduce((s, x) => s + Number(x.capacidade ?? 0), 0);
   const totDem = dados.reduce((s, x) => s + Number(x.demanda ?? 0), 0);
-  const ocupa = (d, c) => (Number(c) === 0 ? null : (Number(d) * 100) / Number(c));
+  // A regra do mês sem capacidade mora em lib/ocupacao.js, com o slide e o
+  // resto do painel: com demanda, infinita; sem os dois lados, nada.
+  const ocupa = ocupacaoDe;
+  const fmtPct = fmtOcupacao;
 
   const linhas = [
     { rot: medida, campo: 'capacidade', classe: 'med-disp' },
@@ -71,7 +75,8 @@ export default function TabelaMesOcupacao({
               const e = estiloDaOcupacao(faixas, o);
               return (
                 <td key={x.rotulo} className={`num col-mes ${e.className}`}
-                    style={e.style}>
+                    style={e.style}
+                    title={ocupacaoInfinita(o) ? explicaInfinita(x.demanda) : undefined}>
                   {fmtPct(o)}
                 </td>
               );

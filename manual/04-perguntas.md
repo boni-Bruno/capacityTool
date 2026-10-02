@@ -301,6 +301,24 @@ turno da parada contra o regime do recurso naquele mês.
 
 ---
 
+## A ocupação de um CT aparece como ∞
+
+**Causa.** Há demanda e **nenhuma capacidade** calculada naquele centro — e
+nenhum número é divisível por zero. Até 02/10/2026 isso saía como travessão
+cinza, que parecia "nada a ver aqui" justamente no caso mais grave.
+
+**O que fazer.** Duas possibilidades, nessa ordem:
+
+1. **Falta recalcular** — o recurso existe, foi cadastrado depois da última
+   rodada. *Recalcular* (parcial para a área resolve).
+2. **Falta recurso com aquele CC-CT** — o plano pede de uma máquina que este
+   cadastro não tem. A tela de Demanda lista esses CTs em *demanda sem
+   capacidade*.
+
+Quanto falta está na linha de **Demanda**: sem capacidade, o que falta é tudo.
+
+---
+
 ## A ocupação ficou sem cor nenhuma no painel
 
 **Causa.** A cor vem das **faixas cadastradas** (botão *Cores da ocupação*, no

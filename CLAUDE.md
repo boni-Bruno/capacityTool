@@ -129,7 +129,8 @@ Os motores puros são `regras.js` (DE/PARA, rateio, mix), `filtro.js`,
 `grade.js`, `cores.js`, `xlsx.js`, `recursos-formato.js`, `simulador.js`,
 `pivot.js`, `permissoes.js`, `escopo.js`, `senha.js`, `sessao-token.js`,
 `ticket-formato.js`, `regime-sugerido.js`, `versao.js`, `prontidao.js`,
-`filtro-fluxo.js`, `grade-cadastro.js`. Nenhum deles importa `./db`.
+`filtro-fluxo.js`, `grade-cadastro.js`, `ocupacao.js`. Nenhum deles importa
+`./db`.
 
 **Nunca uma crase dentro de `` sql`...` ``, nem em comentário SQL.** Isso já
 quebrou o build do Vercel duas vezes, e **`node --check` NÃO pega**: um número
@@ -184,6 +185,12 @@ soma do mês tem que bater com a multiplicação.
 **Divisão de somas, nunca média de divisões.** Vale para dia útil, ocupação,
 índice de conversão. Somar médias não dá média, e o total tem que bater com o
 indicador.
+
+**Denominador zero é INFINITO quando há numerador, e nada quando não há**
+(`lib/ocupacao.js`). Demanda sem capacidade nenhuma é o caso mais grave da
+ocupação, e saía como travessão cinza — a mesma cara de "não há nada aqui". Zero
+sobre zero continua sendo nulo: 0% diria "folgado" sobre uma conta que não foi
+feita.
 
 ---
 

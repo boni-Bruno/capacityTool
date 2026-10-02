@@ -359,12 +359,20 @@ aqui muda o documento.
 - A cor pinta **o número**, não o fundo. Como ela cai em dois fundos (a folha
   branca do slide e o painel, que pode estar em tema escuro), o editor avisa
   quando um tom some num dos dois.
-- Quem não pode editar a Extração das configurações vê a legenda, mas não o
-  botão.
+- **Quem muda a régua é quem tem *editar* neste painel** (`ocupacao.editar` no
+  cargo). Os demais veem a legenda, mas não o botão — inclusive na tela de
+  Extração das configurações, onde o mesmo botão aparece.
 
 ### Como ler
 
 - Ocupação **acima de 100%** = o plano pede mais do que cabe. Abaixo = folga.
+- **∞** = há demanda e **nenhuma** capacidade calculada ali: o plano pede de um
+  centro que não tem onde caber. Não é erro de conta — é divisão por zero, e o
+  número que importa (quanto falta) é a própria demanda, na linha de cima. Passe
+  o mouse para ver a explicação. Causa quase sempre: CT sem recurso cadastrado
+  com aquele CC-CT, ou recurso cadastrado e ainda **não recalculado**.
+- **—** = não há nem capacidade nem demanda. Aí não existe ocupação para
+  mostrar.
 - A ocupação de um período é sempre **Σ demanda ÷ Σ disponível** — a do ano
   não é a média dos meses.
 - CT com demanda e **sem capacidade** aparece com barra zero e ocupação
@@ -1966,6 +1974,24 @@ ao cadastro.
 
 **O que fazer.** Recalcular primeiro. Se continuar zero, confira a data e o
 turno da parada contra o regime do recurso naquele mês.
+
+---
+
+### A ocupação de um CT aparece como ∞
+
+**Causa.** Há demanda e **nenhuma capacidade** calculada naquele centro — e
+nenhum número é divisível por zero. Até 02/10/2026 isso saía como travessão
+cinza, que parecia "nada a ver aqui" justamente no caso mais grave.
+
+**O que fazer.** Duas possibilidades, nessa ordem:
+
+1. **Falta recalcular** — o recurso existe, foi cadastrado depois da última
+   rodada. *Recalcular* (parcial para a área resolve).
+2. **Falta recurso com aquele CC-CT** — o plano pede de uma máquina que este
+   cadastro não tem. A tela de Demanda lista esses CTs em *demanda sem
+   capacidade*.
+
+Quanto falta está na linha de **Demanda**: sem capacidade, o que falta é tudo.
 
 ---
 

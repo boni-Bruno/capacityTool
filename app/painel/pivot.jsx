@@ -8,6 +8,7 @@ import {
 import { MESES } from '../../lib/dias';
 import { detalhe, formataUnidade } from '../../lib/formato';
 import { estiloDaOcupacao } from '../../lib/faixa-cor';
+import { fmtOcupacao } from '../../lib/ocupacao';
 
 // A TABELA DINÂMICA dos dois painéis.
 //
@@ -26,8 +27,11 @@ import { estiloDaOcupacao } from '../../lib/faixa-cor';
 // grupo, seja qual for a função escolhida para as medidas — o motor garante e
 // o cabeçalho diz.
 
-const fmtPct = (v) => (v === null || v === undefined ? '—'
-  : `${(v * 100).toFixed(1)}%`);
+// A razão aqui é fração (0,92) e o formato pede porcentagem — daí o ×100, que
+// o infinito atravessa inteiro. O resto (vírgula, "∞", "—") é de
+// lib/ocupacao.js, para esta tabela dizer o mesmo que as outras.
+const fmtPct = (v) => fmtOcupacao(
+  v === null || v === undefined ? null : Number(v) * 100);
 
 // A MESMA RÉGUA CADASTRADA das outras tabelas de ocupação e do .pptx. A razão
 // aqui é fração (0,92) e a faixa é porcentagem (92) — daí o ×100, e é a única
