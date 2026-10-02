@@ -2085,6 +2085,13 @@ botão *"Sair também do Hub S&OP"*. Sem a variável, a tela explica a situaçã
 vez de chutar um endereço e mandar a pessoa para um 404 do portal justamente
 quando ela quer sair.
 
+**E "voltar ao Hub" é outro botão, de propósito.** A primeira versão tinha só
+*Entrar de novo*, que usa `enderecoDoHub('/')` — o `/ir/capacidade` do portal,
+que é o caminho de REENTRAR aqui. Numa tela de saída, ele devolve a pessoa ao
+lugar de onde ela acabou de sair. *Voltar ao Hub S&OP* vai para a raiz do portal
+(`enderecoDaHomeDoHub`), não precisa de variável nenhuma além da `HUB_URL` que
+já existe, e é o que a maioria quer dizer com "sair da ferramenta".
+
 ---
 
 ## A navegação estava lenta, e o motivo era geografia — PRONTO

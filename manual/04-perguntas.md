@@ -309,9 +309,16 @@ sessão aberta e devolvia você logado. A porta de entrada funcionando a um pass
 da saída.
 
 **O que fazer.** Agora o Sair leva a uma tela de despedida que não volta
-sozinha. Para sair **de tudo**, saia também pelo portal — a senha mora lá. Se o
-botão *"Sair também do Hub S&OP"* não aparece nessa tela, falta configurar o
-endereço de saída do portal (`HUB_SAIR_URL`); fale com quem cuida da ferramenta.
+sozinha, com três saídas:
+
+| botão | para onde vai |
+|---|---|
+| **Voltar ao Hub S&OP** | a home do portal — a sessão dele continua aberta |
+| **Sair também do Hub S&OP** | o logout do portal, encerrando os dois |
+| **Entrar de novo** | de volta para a Capacity Tool |
+
+Se o botão *"Sair também do Hub S&OP"* não aparece, falta configurar o endereço
+de saída do portal (`HUB_SAIR_URL`); fale com quem cuida da ferramenta.
 
 ---
 

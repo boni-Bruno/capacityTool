@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { enderecoDeSairDoHub, enderecoDoHub, entradaLocalLigada } from '../../lib/hub';
+import {
+  enderecoDaHomeDoHub, enderecoDeSairDoHub, enderecoDoHub, entradaLocalLigada,
+} from '../../lib/hub';
 
 export const metadata = { title: 'Você saiu' };
 export const dynamic = 'force-dynamic';
@@ -26,8 +28,15 @@ export const dynamic = 'force-dynamic';
 // =============================================================================
 
 export default function Page() {
-  const voltar = entradaLocalLigada() ? '/entrar' : (enderecoDoHub('/') ?? '/entrar');
+  // TRÊS SAÍDAS DIFERENTES, e confundi-las é fácil:
+  //   `home`      o portal, e só ele — é o "voltar para o Hub";
+  //   `sairDoHub` o logout de lá, quando o Hub expõe um e alguém o configurou;
+  //   `voltar`    de novo PARA CÁ, pelo /ir/capacidade do portal.
+  // O primeiro botão era `voltar` até 02/10/2026, e ele reentra na ferramenta —
+  // o contrário do que alguém espera de uma tela de saída.
+  const home = enderecoDaHomeDoHub();
   const sairDoHub = enderecoDeSairDoHub();
+  const voltar = entradaLocalLigada() ? '/entrar' : (enderecoDoHub('/') ?? '/entrar');
 
   return (
     // A mesma casca da tela de senha, e com a mesma razão de ser: é uma página
@@ -55,17 +64,20 @@ export default function Page() {
           </p>
         )}
 
-        <div className="acoes" style={{ marginTop: 18 }}>
+        {/* Links normais, e não <Link>: todos saem deste app, e o roteador do
+            Next não navega para fora. */}
+        <div className="acoes" style={{ marginTop: 18, flexWrap: 'wrap' }}>
           {sairDoHub && (
             <a className="btn btn-primario" href={sairDoHub}>
               Sair também do Hub S&amp;OP
             </a>
           )}
-          {/* Link normal, e não <Link>: voltar ao Hub é sair deste app, e o
-              roteador do Next não navega para fora. */}
-          <a className={sairDoHub ? 'btn' : 'btn btn-primario'} href={voltar}>
-            Entrar de novo
-          </a>
+          {home && (
+            <a className={sairDoHub ? 'btn' : 'btn btn-primario'} href={home}>
+              Voltar ao Hub S&amp;OP
+            </a>
+          )}
+          <a className="btn" href={voltar}>Entrar de novo</a>
         </div>
 
         <p className="rodape" style={{ marginTop: 18 }}>
